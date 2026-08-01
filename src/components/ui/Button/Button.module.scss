@@ -1,0 +1,64 @@
+.button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 500;
+  padding: 7px 11px;
+  border-radius: var(--radius-md);
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: opacity 0.15s ease, transform 0.1s ease;
+}
+
+.button:hover {
+  opacity: 0.85;
+}
+
+.button:active {
+  transform: scale(0.96);
+}
+
+.button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.ghost {
+  background: var(--surface-2);
+  border-color: var(--border);
+  color: var(--text-muted);
+}
+
+.accent {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.brand {
+  background: var(--brand-soft);
+  color: var(--brand-on-dark);
+}
+
+.ok {
+  background: var(--ok-soft);
+  color: var(--ok);
+}
+
+.cancel {
+  background: var(--crit-soft);
+  color: var(--crit);
+}
+
+.icon {
+  display: flex;
+  width: 12px;
+  height: 12px;
+}
+
+.icon svg {
+  width: 100%;
+  height: 100%;
+}
