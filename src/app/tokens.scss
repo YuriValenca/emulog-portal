@@ -1,0 +1,53 @@
+:root {
+  --bg: #14181C;
+  --surface: #1B2126;
+  --surface-2: #222A31;
+  --border: #2E3941;
+
+  --text: #E7EBEE;
+  --text-muted: #8C99A3;
+
+  --brand: #1F6452;
+  --brand-on-dark: color-mix(in srgb, var(--brand) 55%, var(--text));
+  --brand-soft: color-mix(in srgb, var(--brand) 16%, transparent);
+
+  --accent: #FF9621;
+  --accent-soft: color-mix(in srgb, var(--accent) 14%, transparent);
+
+  --warn: var(--accent);
+  --warn-soft: var(--accent-soft);
+
+  --ok: #4CAF50;
+  --ok-soft: color-mix(in srgb, var(--ok) 14%, transparent);
+
+  --crit: #D32F2F;
+  --crit-soft: color-mix(in srgb, var(--crit) 14%, transparent);
+
+  --data: #1A73E8;
+  --data-soft: color-mix(in srgb, var(--data) 14%, transparent);
+
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-50: 50%;
+
+  --spacing-none: 0;
+  --spacing-nano: 2px;
+  --spacing-tiny: 4px;
+  --spacing-xsmall: 8px;
+  --spacing-small: 12px;
+  --spacing-default: 16px;
+  --spacing-medium: 20px;
+  --spacing-large: 24px;
+  --spacing-xlarge: 32px;
+  --spacing-xxlarge: 36px;
+  --spacing-xxxlarge: 40px;
+  --spacing-huge: 48px;
+  --spacing-HUGE: 64px;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+}
