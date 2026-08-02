@@ -1,0 +1,61 @@
+.wrapper {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xsmall);
+  cursor: pointer;
+}
+
+.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.icon {
+  display: flex;
+  color: var(--text-muted);
+}
+
+.icon svg {
+  width: 14px;
+  height: 14px;
+}
+
+.label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.root {
+  width: 36px;
+  height: 20px;
+  background: var(--border);
+  border-radius: var(--radius-lg);
+  border: none;
+  position: relative;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.root[data-state='checked'] {
+  background: var(--brand);
+}
+
+.root:disabled {
+  cursor: not-allowed;
+}
+
+.thumb {
+  display: block;
+  width: 16px;
+  height: 16px;
+  background: var(--text);
+  border-radius: var(--radius-50);
+  transition: transform 0.15s ease, background 0.15s ease;
+  will-change: transform;
+}
+
+.thumb[data-state='checked'] {
+  transform: translateX(18px);
+  background: #fff;
+}

@@ -1,0 +1,164 @@
+.trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-xsmall);
+  width: 100%;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 0 var(--spacing-small);
+  color: var(--text);
+  font-family: var(--font-body);
+  cursor: pointer;
+}
+
+.trigger:hover {
+  border-color: var(--brand);
+}
+
+.trigger[data-disabled] {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.trigger[data-placeholder] {
+  color: var(--text-muted);
+}
+
+.sm {
+  height: 32px;
+  font-size: 13px;
+}
+
+.md {
+  height: 40px;
+  font-size: 14px;
+}
+
+.lg {
+  height: 48px;
+  font-size: 15px;
+}
+
+.icon {
+  color: var(--text-muted);
+  display: flex;
+  flex-shrink: 0;
+}
+
+.searchWrapper {
+  width: 100%;
+}
+
+.searchWrapper.disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.content {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  overflow: hidden;
+  z-index: 100;
+  animation: selectFadeIn 0.12s ease;
+  box-sizing: border-box;
+}
+
+.viewport {
+  padding: var(--spacing-tiny);
+  max-height: 280px;
+  overflow-y: auto;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  gap: var(--spacing-xsmall);
+  padding: var(--spacing-xsmall) var(--spacing-small);
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  font-size: 14px;
+  font-family: var(--font-body);
+  color: var(--text);
+  cursor: pointer;
+  outline: none;
+  user-select: none;
+  text-align: left;
+}
+
+.item[data-highlighted] {
+  background: var(--surface-2);
+}
+
+.item[data-state='checked'],
+.itemActive {
+  color: var(--brand-on-dark);
+}
+
+.itemIcon {
+  display: flex;
+  flex-shrink: 0;
+  color: var(--text-muted);
+}
+
+.itemText {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.itemIndicator {
+  margin-left: auto;
+  display: flex;
+  flex-shrink: 0;
+  color: var(--brand-on-dark);
+}
+
+.scrollButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 24px;
+  color: var(--text-muted);
+  cursor: default;
+}
+
+.stateRow {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xsmall);
+  padding: var(--spacing-small);
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.spinner {
+  animation: spin 0.6s linear infinite;
+}
+
+@keyframes selectFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-2px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
