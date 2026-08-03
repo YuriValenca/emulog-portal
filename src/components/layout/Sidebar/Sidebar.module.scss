@@ -1,0 +1,141 @@
+.sidebar {
+  width: 224px;
+  flex-shrink: 0;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  padding: var(--spacing-default);
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  position: sticky;
+  top: 0;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xsmall);
+  padding: var(--spacing-tiny);
+  margin-bottom: var(--spacing-xxlarge);
+}
+
+.brandMark {
+  padding: 4px;
+  border-radius: var(--radius-md);
+  background: var(--contrast);
+}
+
+.brandName {
+  font-family: var(--font-display);
+  font-size: 19px;
+  letter-spacing: 0.03em;
+  color: var(--text);
+}
+
+.navLabel {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  padding: 0 10px;
+  margin-bottom: var(--spacing-xsmall);
+}
+
+.nav {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-nano);
+  margin-bottom: var(--spacing-large);
+}
+
+.navItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 9px 10px;
+  border-radius: var(--radius-md);
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 14px;
+  text-align: left;
+  width: 100%;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.navItem:hover {
+  background: var(--surface-2);
+}
+
+.navItemActive {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.navItemDisabled {
+  cursor: default;
+  opacity: 0.55;
+}
+
+.navItemDisabled:hover {
+  background: transparent;
+}
+
+.navBadge {
+  font-size: 10px;
+  padding: 2px var(--spacing-tiny);
+  border-radius: var(--radius-50);
+  background: var(--surface-2);
+  color: var(--text-muted);
+}
+
+.sidebarUser {
+  margin-top: auto;
+  padding-top: var(--spacing-small);
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xsmall);
+  padding-left: 10px;
+}
+
+.avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-50);
+  background: var(--data-soft);
+  color: var(--data);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.userName {
+  font-size: 12.5px;
+  color: var(--text);
+}
+
+.userRole {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.logoutBtn {
+  margin-left: auto;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  padding: 6px;
+  border-radius: var(--radius-sm);
+  display: flex;
+}
+
+.logoutBtn:hover {
+  background: var(--surface-2);
+  color: var(--text);
+}
