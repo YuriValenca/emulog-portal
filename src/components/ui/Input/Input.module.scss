@@ -1,3 +1,14 @@
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-tiny);
+}
+
+.label {
+  font-size: var(--font-size-small);
+  color: var(--text-muted);
+}
+
 .wrapper {
   display: flex;
   align-items: center;
@@ -14,18 +25,18 @@
 }
 
 .sm {
-  height: 32px;
-  font-size: 13px;
+  height: var(--spacing-xlarge);
+  font-size: var(--font-size-small);
 }
 
 .md {
-  height: 40px;
-  font-size: 14px;
+  height: var(--spacing-xxxlarge);
+  font-size: var(--font-size-default);
 }
 
 .lg {
-  height: 48px;
-  font-size: 15px;
+  height: var(--spacing-huge);
+  font-size: var(--font-size-medium);
 }
 
 .input {
@@ -59,12 +70,17 @@
 
 .icon svg,
 .iconRight svg {
-  width: 16px;
-  height: 16px;
+  width: var(--spacing-default);
+  height: var(--spacing-default);
 }
 
 .error {
   border-color: var(--crit);
+}
+
+.fieldError {
+  font-size: var(--font-size-tooltip);
+  color: var(--crit);
 }
 
 .disabled {

@@ -11,23 +11,35 @@ interface InputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'size'>
   rightIcon?: ReactNode;
   size?: InputSize;
   error?: boolean;
+  label?: string;
+  errorMessage?: string;
 }
 
 export const Input = forwardRef<HTMLInputElement, InputProps>(
-  ({ icon, rightIcon, size = 'md', error, className, disabled, ...props }, ref) => {
+  ({ icon, rightIcon, size = 'md', error, label, errorMessage, className, disabled, id, ...props }, ref) => {
+    const hasError = error || Boolean(errorMessage);
+
     return (
-      <div
-        className={clsx(
-          styles.wrapper,
-          styles[size],
-          error && styles.error,
-          disabled && styles.disabled,
-          className
+      <div className={styles.field}>
+        {label && (
+          <label className={styles.label} htmlFor={id}>
+            {label}
+          </label>
         )}
-      >
-        {icon && <span className={styles.icon}>{icon}</span>}
-        <input ref={ref} disabled={disabled} className={styles.input} {...props} />
-        {rightIcon && <span className={styles.iconRight}>{rightIcon}</span>}
+        <div
+          className={clsx(
+            styles.wrapper,
+            styles[size],
+            hasError && styles.error,
+            disabled && styles.disabled,
+            className
+          )}
+        >
+          {icon && <span className={styles.icon}>{icon}</span>}
+          <input ref={ref} id={id} disabled={disabled} className={styles.input} {...props} />
+          {rightIcon && <span className={styles.iconRight}>{rightIcon}</span>}
+        </div>
+        {errorMessage && <span className={styles.fieldError}>{errorMessage}</span>}
       </div>
     );
   }
