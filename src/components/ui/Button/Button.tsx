@@ -9,21 +9,32 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: ButtonVariant;
   icon?: ReactNode;
   iconPosition?: IconPosition;
+  loading?: boolean;
 }
 
 export function Button({
   variant = 'ghost',
   icon,
   iconPosition = 'left',
+  loading = false,
+  disabled,
   children,
   className,
   ...rest
 }: ButtonProps) {
+  const isDisabled = disabled || loading;
+
   return (
-    <button className={clsx(styles.button, styles[variant], className)} {...rest}>
-      {icon && iconPosition === 'left' && <span className={styles.icon}>{icon}</span>}
+    <button
+      className={clsx(styles.button, styles[variant], className)}
+      disabled={isDisabled}
+      aria-busy={loading}
+      {...rest}
+    >
+      {loading && <span className={clsx(styles.icon, styles.spinner)} />}
+      {!loading && icon && iconPosition === 'left' && <span className={styles.icon}>{icon}</span>}
       {children}
-      {icon && iconPosition === 'right' && <span className={styles.icon}>{icon}</span>}
+      {!loading && icon && iconPosition === 'right' && <span className={styles.icon}>{icon}</span>}
     </button>
   );
 }
