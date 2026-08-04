@@ -1,11 +1,12 @@
 .button {
   display: flex;
   align-items: center;
-  gap: 6px;
+  justify-content: center;
+  gap: var(--spacing-xsmall);
   font-family: var(--font-body);
-  font-size: 12px;
-  font-weight: 500;
-  padding: 7px 11px;
+  font-size: var(--font-size-default);
+  font-weight: var(--font-weight-regular);
+  padding: var(--spacing-small) var(--spacing-default);
   border-radius: var(--radius-md);
   border: 1px solid transparent;
   cursor: pointer;
@@ -29,7 +30,7 @@
 .ghost {
   background: var(--surface-2);
   border-color: var(--border);
-  color: var(--text-muted);
+  color: var(--text);
 }
 
 .accent {
@@ -54,8 +55,8 @@
 
 .icon {
   display: flex;
-  width: 12px;
-  height: 12px;
+  width: var(--spacing-small);
+  height: var(--spacing-small);
 }
 
 .icon svg {
