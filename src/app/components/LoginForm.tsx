@@ -6,7 +6,9 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '@/lib/firebase/client';
+import { Input } from '@/components/ui/Input/Input';
 import styles from './LoginForm.module.scss';
+import { Button } from '@/components/ui/Button/Button';
 
 const loginSchema = z.object({
   email: z.string().email('Insira um e-mail válido.'),
@@ -50,36 +52,41 @@ export function LoginForm() {
 
   return (
     <form className={styles.form} onSubmit={handleSubmit(onSubmit)} noValidate>
-      <h1 className={styles.title}>Emulog Portal</h1>
-      <p className={styles.subtitle}>Entre com sua conta</p>
+      <h1 className={styles.title}>Portal Emulog</h1>
 
-      <label className={styles.label} htmlFor="email">E-mail</label>
-      <input
-        id="email"
-        type="email"
-        autoComplete="email"
-        className={styles.input}
-        disabled={submitting}
-        {...register('email')}
-      />
-      {errors.email && <span className={styles.fieldError}>{errors.email.message}</span>}
+      <div className={styles.inputs}>
+        <Input
+          id="email"
+          type="email"
+          label="E-mail"
+          autoComplete="email"
+          disabled={submitting}
+          error={Boolean(errors.email)}
+          errorMessage={errors.email?.message}
+          {...register('email')}
+        />
 
-      <label className={styles.label} htmlFor="password">Senha</label>
-      <input
-        id="password"
-        type="password"
-        autoComplete="current-password"
-        className={styles.input}
-        disabled={submitting}
-        {...register('password')}
-      />
-      {errors.password && <span className={styles.fieldError}>{errors.password.message}</span>}
+        <Input
+          id="password"
+          type="password"
+          label="Senha"
+          autoComplete="current-password"
+          disabled={submitting}
+          error={Boolean(errors.password)}
+          errorMessage={errors.password?.message}
+          {...register('password')}
+        />
+      </div>
 
       {firebaseError && <p className={styles.formError}>{firebaseError}</p>}
 
-      <button type="submit" className={styles.submit} disabled={submitting}>
-        {submitting ? 'Entrando...' : 'Entrar'}
-      </button>
+      <Button
+        variant="ok"
+        loading={submitting}
+        onClick={() => {
+          handleSubmit(onSubmit)();
+        }}
+      >Entrar</Button>
     </form>
   );
 }
