@@ -1,13 +1,10 @@
 import { z } from 'zod';
 import { zTimestamp } from './common';
-
-const zDensidade = z.union([z.string(), z.number()]).transform(v =>
-  typeof v === 'number' ? v.toFixed(3) : v
-);
+import { produtoRefSchema } from './produto';
 
 export const pesagemSchema = z.object({
   peso: z.string(),
-  densidade: zDensidade,
+  densidade: z.string(),
   timestamp: z.string(),
 });
 
@@ -20,7 +17,7 @@ export const legacyPesagemFlatSchema = z.object({
   grupoId: z.number().optional(),
   amostraId: z.number().optional(),
   peso: z.union([z.string(), z.number()]),
-  densidade: zDensidade,
+  densidade: z.union([z.string(), z.number()]),
   timestamp: z.string().optional(),
 });
 
@@ -50,7 +47,8 @@ export const informacoesOperacaoSchema = z.object({
   kgAplicado: z.string(),
   caminhao: caminhaoRefSchema.nullable(),
   equipe: z.array(operadorRefSchema),
-  informacoesGerais: z.string().optional().default(''),
+  produto: produtoRefSchema.nullable(),
+  informacoesGerais: z.string(),
 });
 
 export const projetoSchema = z.object({

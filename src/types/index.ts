@@ -1,8 +1,10 @@
 export type { UserRole, AppUser } from '@/schemas/user';
-export type { CompanyModules, Company, License } from '@/schemas/company';
+export type { CompanyModules, Company, License, AllowedUser } from '@/schemas/company';
 export type {
   Pesagem,
   AmostraGrupo,
+  LegacyPesagemFlat,
+  AmostraItem,
   ProjetoCalibragem,
   InformacoesOperacao,
   Projeto,
@@ -11,3 +13,10 @@ export type {
 export type { Caminhao } from '@/schemas/caminhao';
 export type { Operador } from '@/schemas/operador';
 export type { Calibragem } from '@/schemas/calibragem';
+export type { Produto, ProdutoRef } from '@/schemas/produto';
+export type {
+  Ocorrencia,
+  OcorrenciaTipo,
+  OcorrenciaOrigem,
+  OcorrenciaStatus,
+} from '@/schemas/ocorrencia';

@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { zTimestamp, zTimestampOrNull, zTimestampOrString } from './common';
+import { zTimestamp, zTimestampOrNull } from './common';
 
 export const companyModulesSchema = z.object({
   mobile: z.boolean(),
@@ -13,6 +13,7 @@ export const companySchema = z.object({
   logo: z.string().nullable(),
   primaryColor: z.string().nullable(),
   founding: z.boolean(),
+  parentCompanyId: z.string().nullable().optional(),
   licenseLimitOverride: z.number().nullable(),
   licenseExpiryOverride: zTimestampOrNull,
   active: z.boolean(),
@@ -38,12 +39,20 @@ export const licenseSchema = z.object({
   status: licenseStatusSchema,
   createdAt: zTimestamp,
   expiresAt: zTimestampOrNull,
-  claimedAt: zTimestampOrString.optional(),
+  claimedAt: zTimestamp.optional(),
   validityMonths: licenseValidityMonthsSchema.optional(),
   pricePerMonth: z.number().optional(),
   discountPct: z.number().optional(),
 });
 
+export const allowedUserSchema = z.object({
+  email: z.email(),
+  role: z.enum(['user', 'company_admin']),
+  createdAt: zTimestamp,
+  claimed: z.boolean(),
+});
+
 export type CompanyModules = z.infer<typeof companyModulesSchema>;
 export type Company = z.infer<typeof companySchema>;
 export type License = z.infer<typeof licenseSchema>;
+export type AllowedUser = z.infer<typeof allowedUserSchema>;
