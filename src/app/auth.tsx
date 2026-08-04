@@ -1,7 +1,6 @@
 import type { Metadata } from 'next';
 import { Providers } from './providers';
 import './globals.css';
-import './tokens.scss';
 
 export const metadata: Metadata = {
   title: 'Emulog Portal',
