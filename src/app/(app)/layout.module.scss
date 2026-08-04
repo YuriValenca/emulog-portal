@@ -27,13 +27,13 @@
 
 .stateTitle {
   font-family: var(--font-display);
-  font-size: 20px;
+  font-size: var(--font-size-h2);
   color: var(--text);
   margin: 0;
 }
 
 .stateBody {
-  font-size: 14px;
+  font-size: var(--font-size-default);
   color: var(--text-muted);
   max-width: 420px;
   line-height: 1.5;
@@ -41,7 +41,7 @@
 }
 
 .stateDebug {
-  font-size: 11px;
+  font-size: var(--font-size-tooltip);
   color: var(--warn);
   font-family: var(--font-mono);
   margin-top: 8px;
@@ -50,4 +50,10 @@
 .shell {
   min-height: 100vh;
   background: var(--bg);
+}
+
+.stateActions {
+  display: flex;
+  gap: var(--spacing-default);
+  margin-top: var(--spacing-xsmall);
 }
