@@ -4,7 +4,7 @@ import * as RadixSelect from '@radix-ui/react-select';
 import * as RadixPopover from '@radix-ui/react-popover';
 import { Check, ChevronDown, ChevronUp, Loader2, Search } from 'lucide-react';
 import clsx from 'clsx';
-import { ReactNode, useEffect, useMemo, useState } from 'react';
+import { CSSProperties, ReactNode, useEffect, useMemo, useState } from 'react';
 import { Input } from '@/components/ui/Input/Input';
 import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import styles from './Select.module.scss';
@@ -16,11 +16,13 @@ export interface SelectOption {
 }
 
 type SelectSize = 'sm' | 'md' | 'lg';
+type SelectWidth = number | string;
 
 interface BaseSelectProps {
   options: SelectOption[];
   placeholder?: string;
   size?: SelectSize;
+  width?: SelectWidth;
   disabled?: boolean;
   value?: string;
   onValueChange?: (value: string) => void;
@@ -41,6 +43,11 @@ interface SearchableSelectProps extends BaseSelectProps {
 
 type SelectProps = StaticSelectProps | SearchableSelectProps;
 
+function widthStyle(width?: SelectWidth): CSSProperties | undefined {
+  if (width === undefined) return undefined;
+  return { width: typeof width === 'number' ? `${width}px` : width };
+}
+
 export function Select(props: SelectProps) {
   if (props.searchable) return <SearchableSelect {...props} />;
   return <StaticSelect {...props} />;
@@ -52,11 +59,12 @@ function StaticSelect({
   options,
   placeholder = 'Selecionar...',
   size = 'md',
+  width,
   disabled,
 }: StaticSelectProps) {
   return (
-    <RadixSelect.Root value={value} onValueChange={onValueChange} disabled={disabled}>
-      <RadixSelect.Trigger className={clsx(styles.trigger, styles[size])}>
+    <RadixSelect.Root value={value ?? ''} onValueChange={onValueChange} disabled={disabled}>
+      <RadixSelect.Trigger className={clsx(styles.trigger, styles[size])} style={widthStyle(width)}>
         <RadixSelect.Value placeholder={placeholder} />
         <RadixSelect.Icon className={styles.icon}>
           <ChevronDown size={16} />
@@ -103,6 +111,7 @@ function SearchableSelect({
   options,
   placeholder = 'Buscar...',
   size = 'md',
+  width,
   disabled,
   searchValue,
   onSearchChange,
@@ -141,7 +150,7 @@ function SearchableSelect({
   return (
     <RadixPopover.Root open={open} onOpenChange={setOpen}>
       <RadixPopover.Anchor asChild>
-        <div className={clsx(styles.searchWrapper, disabled && styles.disabled)}>
+        <div className={clsx(styles.searchWrapper, disabled && styles.disabled)} style={widthStyle(width)}>
           <Input
             icon={<Search size={16} />}
             size={size}
