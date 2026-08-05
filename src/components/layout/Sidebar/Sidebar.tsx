@@ -3,7 +3,8 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { signOut } from 'firebase/auth';
-import { LogOut } from 'lucide-react';
+import { ReactNode } from 'react';
+import { Building2, CalendarX, FilePlus, FileText, Flame, LayoutGrid, LogOut, TriangleAlert } from 'lucide-react';
 import { auth } from '@/lib/firebase/client';
 import type { AppUser, Company, UserRole } from '@/types';
 import styles from './Sidebar.module.scss';
@@ -16,16 +17,19 @@ interface SidebarProps {
 }
 
 interface NavLink {
+  icon: ReactNode;
   label: string;
   href: string;
   disabled?: boolean;
 }
 
 const operationLinks: NavLink[] = [
-  { label: 'Painel operacional', href: '/dashboard' },
-  { label: 'Gestão de fogos', href: '/fogos' },
-  { label: 'Ocorrências', href: '/ocorrencias', disabled: true },
-  { label: 'Vencimentos', href: '/vencimentos', disabled: true },
+  { icon: <LayoutGrid size={16} />, label: 'Painel operacional', href: '/dashboard' },
+  { icon: <FileText size={16} />, label: 'Cadastros', href: '/cadastros' },
+  { icon: <Flame size={16} />, label: 'Gestão de fogos', href: '/fogos' },
+  { icon: <FilePlus size={16} />, label: 'Relatórios', href: '/relatorios', disabled: true },
+  { icon: <TriangleAlert size={16} />, label: 'Ocorrências', href: '/ocorrencias', disabled: true },
+  { icon: <CalendarX size={16} />, label: 'Vencimentos', href: '/vencimentos', disabled: true },
 ];
 
 export default function Sidebar({ company, appUser, role }: SidebarProps) {
@@ -56,8 +60,8 @@ export default function Sidebar({ company, appUser, role }: SidebarProps) {
         {operationLinks.map((link) =>
           link.disabled ? (
             <span key={link.href} className={`${styles.navItem} ${styles.navItemDisabled}`}>
+              {link.icon}
               {link.label}
-              <span className={styles.navBadge}>em breve</span>
             </span>
           ) : (
             <Link
@@ -65,6 +69,7 @@ export default function Sidebar({ company, appUser, role }: SidebarProps) {
               href={link.href}
               className={`${styles.navItem} ${pathname?.startsWith(link.href) ? styles.navItemActive : ''}`}
             >
+              {link.icon}
               {link.label}
             </Link>
           )
@@ -79,6 +84,7 @@ export default function Sidebar({ company, appUser, role }: SidebarProps) {
               href="/empresas"
               className={`${styles.navItem} ${pathname?.startsWith('/empresas') ? styles.navItemActive : ''}`}
             >
+              <Building2 size={16} />
               Empresas
             </Link>
           </nav>

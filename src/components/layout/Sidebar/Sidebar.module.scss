@@ -51,7 +51,7 @@
 .navItem {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
   gap: 10px;
   padding: 9px 10px;
   border-radius: var(--radius-md);
@@ -75,20 +75,12 @@
 }
 
 .navItemDisabled {
-  cursor: default;
+  cursor: not-allowed;
   opacity: 0.55;
 }
 
 .navItemDisabled:hover {
   background: transparent;
-}
-
-.navBadge {
-  font-size: 10px;
-  padding: 2px var(--spacing-tiny);
-  border-radius: var(--radius-50);
-  background: var(--surface-2);
-  color: var(--text-muted);
 }
 
 .sidebarUser {
