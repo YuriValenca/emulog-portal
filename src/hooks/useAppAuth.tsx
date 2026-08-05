@@ -2,12 +2,13 @@
 
 import React, { createContext, useContext, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, collection, getDocs } from 'firebase/firestore';
 import { db } from '@/lib/firebase/client';
 import { useAuthUser } from './useAuthUser';
 import { appUserSchema, type AppUser } from '@/schemas/user';
 import { companySchema, type Company } from '@/schemas/company';
 import { getCompanyModules } from '@/lib/companyModules';
+import { useCompanySelection } from '@/stores/useCompanySelection';
 
 type AuthStatus =
   | 'loading'
@@ -23,6 +24,7 @@ type AppAuthValue = {
   debugError: string | null;
   appUser: AppUser | null;
   company: Company | null;
+  companies: Company[] | null;
   companyId: string | null;
   role: AppUser['role'] | null;
   isSuperadmin: boolean;
@@ -43,8 +45,14 @@ async function fetchCompany(companyId: string): Promise<Company> {
   return companySchema.parse({ id: snap.id, ...snap.data() });
 }
 
+async function fetchAllCompanies(): Promise<Company[]> {
+  const snap = await getDocs(collection(db, 'companies'));
+  return snap.docs.map((d) => companySchema.parse({ id: d.id, ...d.data() }));
+}
+
 export function AppAuthProvider({ children }: { children: React.ReactNode }) {
   const authUser = useAuthUser();
+  const selectedCompanyId = useCompanySelection((state) => state.selectedCompanyId);
 
   const userQuery = useQuery({
     queryKey: ['appUser', authUser?.uid],
@@ -55,7 +63,7 @@ export function AppAuthProvider({ children }: { children: React.ReactNode }) {
 
   const appUser = userQuery.data ?? null;
   const isSuperadmin = appUser?.role === 'superadmin';
-  const companyId = !isSuperadmin ? appUser?.companyId ?? null : null;
+  const companyId = isSuperadmin ? selectedCompanyId : appUser?.companyId ?? null;
 
   const companyQuery = useQuery({
     queryKey: ['company', companyId],
@@ -64,10 +72,20 @@ export function AppAuthProvider({ children }: { children: React.ReactNode }) {
     retry: false,
   });
 
+  const companiesQuery = useQuery({
+    queryKey: ['companies'],
+    queryFn: fetchAllCompanies,
+    enabled: isSuperadmin,
+    retry: false,
+  });
+
   const value = useMemo<AppAuthValue>(() => {
+    const companies = companiesQuery.data ?? null;
+
     const empty = {
       appUser: null,
       company: null,
+      companies,
       companyId: null,
       role: null,
       isSuperadmin: false,
@@ -103,8 +121,9 @@ export function AppAuthProvider({ children }: { children: React.ReactNode }) {
         authStatus: 'authenticated',
         debugError: null,
         appUser: user,
-        company: null,
-        companyId: null,
+        company: companyQuery.data ?? null,
+        companies,
+        companyId,
         role: 'superadmin',
         isSuperadmin: true,
         isCompanyAdmin: false,
@@ -129,6 +148,7 @@ export function AppAuthProvider({ children }: { children: React.ReactNode }) {
         debugError: (companyQuery.error as Error)?.message ?? 'company-not-found',
         appUser: user,
         company: null,
+        companies,
         companyId: user.companyId,
         role: user.role,
         isSuperadmin: false,
@@ -145,6 +165,7 @@ export function AppAuthProvider({ children }: { children: React.ReactNode }) {
         debugError: null,
         appUser: user,
         company,
+        companies,
         companyId: user.companyId,
         role: user.role,
         isSuperadmin: false,
@@ -161,6 +182,7 @@ export function AppAuthProvider({ children }: { children: React.ReactNode }) {
         debugError: null,
         appUser: user,
         company,
+        companies,
         companyId: user.companyId,
         role: user.role,
         isSuperadmin: false,
@@ -174,6 +196,7 @@ export function AppAuthProvider({ children }: { children: React.ReactNode }) {
       debugError: null,
       appUser: user,
       company,
+      companies,
       companyId: user.companyId,
       role: user.role,
       isSuperadmin: false,
@@ -189,6 +212,7 @@ export function AppAuthProvider({ children }: { children: React.ReactNode }) {
     companyQuery.isLoading,
     companyQuery.isError,
     companyQuery.error,
+    companiesQuery.data,
     companyId,
   ]);
 
