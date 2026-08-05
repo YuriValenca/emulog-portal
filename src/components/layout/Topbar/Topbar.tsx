@@ -1,8 +1,9 @@
 'use client';
 
-import { useState } from 'react';
-import { Building2, ChevronDown } from 'lucide-react';
+import { Building2 } from 'lucide-react';
 import type { Company } from '@/types';
+import { useCompanySelection } from '@/stores/useCompanySelection';
+import { Select, type SelectOption } from '@/components/ui/Select/Select';
 import styles from './Topbar.module.scss';
 
 interface TopbarProps {
@@ -10,15 +11,19 @@ interface TopbarProps {
   company: Company | null;
   isSuperadmin: boolean;
   companies?: Company[];
-  onSwitchCompany?: (companyId: string) => void;
 }
 
-export default function Topbar({ title, company, isSuperadmin, companies = [], onSwitchCompany }: TopbarProps) {
-  const [open, setOpen] = useState(false);
+export default function Topbar({ title, company, isSuperadmin, companies = [] }: TopbarProps) {
+  const selectedCompanyId = useCompanySelection((state) => state.selectedCompanyId);
+  const setSelectedCompanyId = useCompanySelection((state) => state.setSelectedCompanyId);
+
+  const companyOptions: SelectOption[] = companies.map((item) => ({
+    value: item.id,
+    label: item.name,
+  }));
 
   const handleSelect = (companyId: string) => {
-    setOpen(false);
-    onSwitchCompany?.(companyId);
+    setSelectedCompanyId(companyId);
   };
 
   return (
@@ -27,23 +32,14 @@ export default function Topbar({ title, company, isSuperadmin, companies = [], o
 
       {isSuperadmin ? (
         <div className={styles.companySwitchWrapper}>
-          <button type="button" className={styles.companySwitch} onClick={() => setOpen((prev) => !prev)}>
-            <Building2 size={16} className={styles.icon} />
-            {company?.name ?? 'Selecionar empresa'}
-            <ChevronDown size={16} className={styles.icon} />
-          </button>
-
-          {open && companies.length > 0 && (
-            <ul className={styles.companyDropdown}>
-              {companies.map((item) => (
-                <li key={item.id}>
-                  <button type="button" onClick={() => handleSelect(item.id)}>
-                    {item.name}
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
+          <Select
+            options={companyOptions}
+            value={selectedCompanyId ?? undefined}
+            onValueChange={handleSelect}
+            placeholder="Selecionar empresa"
+            size="sm"
+            width={240}
+          />
         </div>
       ) : (
         <div className={styles.companyBadge}>
