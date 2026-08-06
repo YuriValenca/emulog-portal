@@ -9,6 +9,7 @@ import type { Company, CompanyModules } from '@/schemas/company';
 export interface EmpresaFormValues {
   name: string;
   cnpj: string;
+  logo: string | null;
   primaryColor: string;
   parentCompanyId: string | null;
   active: boolean;
@@ -45,6 +46,7 @@ export function useModifyCompany() {
       await updateDoc(doc(db, 'companies', id), {
         name: values.name.trim(),
         cnpj: values.cnpj.trim() || null,
+        logo: values.logo,
         primaryColor: values.primaryColor,
         parentCompanyId: values.parentCompanyId,
         active: values.active,
