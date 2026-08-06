@@ -100,7 +100,7 @@ export function AppAuthProvider({ children }: { children: React.ReactNode }) {
       return { authUser, authStatus: 'unauthenticated', debugError: null, ...empty };
     }
 
-    if (userQuery.isLoading || (companyId && companyQuery.isLoading)) {
+    if (userQuery.isLoading || (companyId && companyQuery.isLoading) || (isSuperadmin && companiesQuery.isLoading)) {
       return { authUser, authStatus: 'loading', debugError: null, ...empty };
     }
 
@@ -213,6 +213,8 @@ export function AppAuthProvider({ children }: { children: React.ReactNode }) {
     companyQuery.isError,
     companyQuery.error,
     companiesQuery.data,
+    companiesQuery.isLoading,
+    companiesQuery.isError,
     companyId,
   ]);
 
