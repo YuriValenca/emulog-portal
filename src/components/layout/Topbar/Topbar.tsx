@@ -5,6 +5,7 @@ import type { Company } from '@/types';
 import { useCompanySelection } from '@/stores/useCompanySelection';
 import { Select, type SelectOption } from '@/components/ui/Select/Select';
 import styles from './Topbar.module.scss';
+import { usePathname } from 'next/navigation';
 
 interface TopbarProps {
   title: string;
@@ -14,6 +15,8 @@ interface TopbarProps {
 }
 
 export default function Topbar({ title, company, isSuperadmin, companies = [] }: TopbarProps) {
+  const pathName = usePathname();
+
   const selectedCompanyId = useCompanySelection((state) => state.selectedCompanyId);
   const setSelectedCompanyId = useCompanySelection((state) => state.setSelectedCompanyId);
 
@@ -30,7 +33,7 @@ export default function Topbar({ title, company, isSuperadmin, companies = [] }:
     <header className={styles.topbar}>
       <h1 className={styles.pageTitle}>{title}</h1>
 
-      {isSuperadmin ? (
+      {isSuperadmin && !pathName?.startsWith('/empresas') && (
         <div className={styles.companySwitchWrapper}>
           <Select
             options={companyOptions}
@@ -41,7 +44,8 @@ export default function Topbar({ title, company, isSuperadmin, companies = [] }:
             width={240}
           />
         </div>
-      ) : (
+      )}
+      {!isSuperadmin && (
         <div className={styles.companyBadge}>
           <Building2 size={16} className={styles.icon} />
           {company?.name ?? '—'}
