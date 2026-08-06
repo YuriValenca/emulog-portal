@@ -9,6 +9,7 @@ import { auth } from '@/lib/firebase/client';
 import type { AppUser, Company, UserRole } from '@/types';
 import styles from './Sidebar.module.scss';
 import Image from 'next/image';
+import { Button } from '@/components/ui/Button/Button';
 
 interface SidebarProps {
   company: Company | null;
@@ -97,9 +98,7 @@ export default function Sidebar({ company, appUser, role }: SidebarProps) {
           <div className={styles.userName}>{appUser?.nome ?? 'Usuário'}</div>
           <div className={styles.userRole}>{isSuperadmin ? 'Superadmin' : 'Gestor'}</div>
         </div>
-        <button type="button" onClick={handleLogout} className={styles.logoutBtn} aria-label="Sair">
-          <LogOut size={16} />
-        </button>
+        <Button onClick={handleLogout} className={styles.logoutBtn} icon={<LogOut size={16} />} iconPosition="left"></Button>
       </div>
     </aside>
   );

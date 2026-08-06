@@ -91,6 +91,11 @@
   align-items: center;
   gap: var(--spacing-xsmall);
   padding-left: 10px;
+
+  button {
+    background: none;
+    border: none;
+  }
 }
 
 .avatar {
