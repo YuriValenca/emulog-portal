@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { signOut } from 'firebase/auth';
 import { auth } from '@/lib/firebase/client';
 import { useAppAuth } from '@/hooks/useAppAuth';
@@ -11,14 +11,29 @@ import styles from './layout.module.scss';
 import { Button } from '@/components/ui/Button/Button';
 import { ArrowLeft, LogOut } from 'lucide-react';
 
+const PAGE_TITLES: Record<string, string> = {
+  '/dashboard': 'Dashboard',
+  '/empresas': 'Empresas',
+  '/fogos': 'Gestão de fogos',
+  '/ocorrencias': 'Ocorrências',
+  '/vencimentos': 'Vencimentos',
+};
+
+function resolvePageTitle(pathname: string) {
+  const match = Object.keys(PAGE_TITLES)
+    .filter((path) => pathname.startsWith(path))
+    .sort((a, b) => b.length - a.length)[0];
+  return match ? PAGE_TITLES[match] : 'Portal Emulog';
+}
+
 function StateActions({ onLogout, onBack }: { onLogout: () => void; onBack?: () => void }) {
   return (
     <div className={styles.stateActions}>
-      {/* {onBack && ( */}
+      {onBack && (
         <Button onClick={onBack} className={styles.stateBtnSecondary} icon={<ArrowLeft />} iconPosition="left">
           Voltar
         </Button>
-      {/* )} */}
+      )}
       <Button onClick={onLogout} className={styles.stateBtnPrimary} icon={<LogOut />} iconPosition="left">
         Sair
       </Button>
@@ -28,7 +43,8 @@ function StateActions({ onLogout, onBack }: { onLogout: () => void; onBack?: () 
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
-  const { authStatus, debugError, company, appUser, role, isSuperadmin } = useAppAuth();
+  const pathname = usePathname();
+  const { authStatus, debugError, company, companies, appUser, role, isSuperadmin } = useAppAuth();
 
   useEffect(() => {
     if (authStatus === 'unauthenticated') {
@@ -97,7 +113,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     <div className={styles.shell} style={{ display: 'flex', width: '100%', minHeight: '100vh' }}>
       <Sidebar company={company} appUser={appUser} role={role} />
       <main style={{ flex: 1 }}>
-        <Topbar title="Dashboard" company={company} isSuperadmin={isSuperadmin} />
+        <Topbar
+          title={resolvePageTitle(pathname)}
+          company={company}
+          isSuperadmin={isSuperadmin}
+          companies={isSuperadmin ? companies ?? [] : []}
+        />
         {children}
       </main>
     </div>
