@@ -21,6 +21,7 @@ type SelectWidth = number | string;
 interface BaseSelectProps {
   options: SelectOption[];
   placeholder?: string;
+  label?: string;
   size?: SelectSize;
   width?: SelectWidth;
   disabled?: boolean;
@@ -58,50 +59,54 @@ function StaticSelect({
   onValueChange,
   options,
   placeholder = 'Selecionar...',
+  label,
   size = 'md',
   width,
   disabled,
 }: StaticSelectProps) {
   return (
-    <RadixSelect.Root value={value ?? ''} onValueChange={onValueChange} disabled={disabled}>
-      <RadixSelect.Trigger className={clsx(styles.trigger, styles[size])} style={widthStyle(width)}>
-        <RadixSelect.Value placeholder={placeholder} />
-        <RadixSelect.Icon className={styles.icon}>
-          <ChevronDown size={16} />
-        </RadixSelect.Icon>
-      </RadixSelect.Trigger>
+    <div className={styles.field} style={widthStyle(width)}>
+      {label && <span className={styles.label}>{label}</span>}
+      <RadixSelect.Root value={value ?? ''} onValueChange={onValueChange} disabled={disabled}>
+        <RadixSelect.Trigger className={clsx(styles.trigger, styles[size])}>
+          <RadixSelect.Value placeholder={placeholder} />
+          <RadixSelect.Icon className={styles.icon}>
+            <ChevronDown size={16} />
+          </RadixSelect.Icon>
+        </RadixSelect.Trigger>
 
-      <RadixSelect.Portal>
-        <RadixSelect.Content
-          className={styles.content}
-          position="popper"
-          sideOffset={4}
-          style={{ width: 'var(--radix-select-trigger-width)' }}
-        >
-          <RadixSelect.ScrollUpButton className={styles.scrollButton}>
-            <ChevronUp size={14} />
-          </RadixSelect.ScrollUpButton>
+        <RadixSelect.Portal>
+          <RadixSelect.Content
+            className={styles.content}
+            position="popper"
+            sideOffset={4}
+            style={{ width: 'var(--radix-select-trigger-width)' }}
+          >
+            <RadixSelect.ScrollUpButton className={styles.scrollButton}>
+              <ChevronUp size={14} />
+            </RadixSelect.ScrollUpButton>
 
-          <RadixSelect.Viewport className={styles.viewport}>
-            {options.map((option) => (
-              <RadixSelect.Item key={option.value} value={option.value} className={styles.item}>
-                {option.icon && <span className={styles.itemIcon}>{option.icon}</span>}
-                <RadixSelect.ItemText className={styles.itemText}>
-                  {option.label}
-                </RadixSelect.ItemText>
-                <RadixSelect.ItemIndicator className={styles.itemIndicator}>
-                  <Check size={14} />
-                </RadixSelect.ItemIndicator>
-              </RadixSelect.Item>
-            ))}
-          </RadixSelect.Viewport>
+            <RadixSelect.Viewport className={styles.viewport}>
+              {options.map((option) => (
+                <RadixSelect.Item key={option.value} value={option.value} className={styles.item}>
+                  {option.icon && <span className={styles.itemIcon}>{option.icon}</span>}
+                  <RadixSelect.ItemText className={styles.itemText}>
+                    {option.label}
+                  </RadixSelect.ItemText>
+                  <RadixSelect.ItemIndicator className={styles.itemIndicator}>
+                    <Check size={14} />
+                  </RadixSelect.ItemIndicator>
+                </RadixSelect.Item>
+              ))}
+            </RadixSelect.Viewport>
 
-          <RadixSelect.ScrollDownButton className={styles.scrollButton}>
-            <ChevronDown size={14} />
-          </RadixSelect.ScrollDownButton>
-        </RadixSelect.Content>
-      </RadixSelect.Portal>
-    </RadixSelect.Root>
+            <RadixSelect.ScrollDownButton className={styles.scrollButton}>
+              <ChevronDown size={14} />
+            </RadixSelect.ScrollDownButton>
+          </RadixSelect.Content>
+        </RadixSelect.Portal>
+      </RadixSelect.Root>
+    </div>
   );
 }
 
@@ -110,6 +115,7 @@ function SearchableSelect({
   onValueChange,
   options,
   placeholder = 'Buscar...',
+  label,
   size = 'md',
   width,
   disabled,
@@ -149,29 +155,32 @@ function SearchableSelect({
 
   return (
     <RadixPopover.Root open={open} onOpenChange={setOpen}>
-      <RadixPopover.Anchor asChild>
-        <div className={clsx(styles.searchWrapper, disabled && styles.disabled)} style={widthStyle(width)}>
-          <Input
-            icon={<Search size={16} />}
-            size={size}
-            placeholder={selectedOption ? selectedOption.label : placeholder}
-            value={inputText}
-            disabled={disabled}
-            onFocus={() => setOpen(true)}
-            onChange={(e) => {
-              setInputText(e.target.value);
-              if (!open) setOpen(true);
-            }}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && filteredOptions[0]) {
-                e.preventDefault();
-                handleSelect(filteredOptions[0]);
-              }
-              if (e.key === 'Escape') setOpen(false);
-            }}
-          />
-        </div>
-      </RadixPopover.Anchor>
+      <div className={styles.field} style={widthStyle(width)}>
+        {label && <span className={styles.label}>{label}</span>}
+        <RadixPopover.Anchor asChild>
+          <div className={clsx(styles.searchWrapper, disabled && styles.disabled)}>
+            <Input
+              icon={<Search size={16} />}
+              size={size}
+              placeholder={selectedOption ? selectedOption.label : placeholder}
+              value={inputText}
+              disabled={disabled}
+              onFocus={() => setOpen(true)}
+              onChange={(e) => {
+                setInputText(e.target.value);
+                if (!open) setOpen(true);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && filteredOptions[0]) {
+                  e.preventDefault();
+                  handleSelect(filteredOptions[0]);
+                }
+                if (e.key === 'Escape') setOpen(false);
+              }}
+            />
+          </div>
+        </RadixPopover.Anchor>
+      </div>
 
       <RadixPopover.Portal>
         <RadixPopover.Content
