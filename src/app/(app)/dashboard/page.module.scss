@@ -1,4 +1,8 @@
-.container {
+.container {  
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: var(--spacing-large);
   padding: var(--spacing-large);
 }
 
@@ -6,7 +10,6 @@
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: var(--spacing-default);
-  margin-bottom: var(--spacing-large);
 }
 
 @media (min-width: 900px) {

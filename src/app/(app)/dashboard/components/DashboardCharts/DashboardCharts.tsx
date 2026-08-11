@@ -4,12 +4,13 @@ import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
   ResponsiveContainer, PieChart, Pie, Sector,
 } from 'recharts';
-import type { FogoPorSemana } from '@/hooks/useDashboardStats';
+import type { FogoPorPeriodo, GranularidadeGrafico } from '@/hooks/useDashboardStats';
 import styles from './DashboardCharts.module.scss';
 
 interface DashboardChartsProps {
   periodoLabel: string;
-  fogosPorSemana: FogoPorSemana[];
+  fogosAgrupados: FogoPorPeriodo[];
+  granularidadeGrafico: GranularidadeGrafico;
   licencasAtivas: number;
   licencasExpirando: number;
   licencasDisponiveis: number;
@@ -18,6 +19,11 @@ interface DashboardChartsProps {
 }
 
 const CORES = { accent: '#FF9621', data: '#1A73E8', ok: '#4CAF50', crit: '#E2503F', border: '#2E3941', textMuted: '#8C99A3', surface: '#1B2126' };
+
+const LABEL_GRANULARIDADE: Record<GranularidadeGrafico, string> = {
+  diaria: 'por dia',
+  semanal: 'por semana',
+};
 
 interface FatiaColorida {
   cx: number;
@@ -46,7 +52,8 @@ function renderFatiaColorida(props: FatiaColorida) {
 
 export function DashboardCharts({
   periodoLabel,
-  fogosPorSemana,
+  fogosAgrupados,
+  granularidadeGrafico,
   licencasAtivas,
   licencasExpirando,
   licencasDisponiveis,
@@ -70,12 +77,14 @@ export function DashboardCharts({
     <>
       <div className={styles.row}>
         <div className={styles.panel}>
-          <span className={styles.title}>Fogos e Kg aplicado por semana</span>
+          <span className={styles.title}>
+            Fogos e Kg aplicado {LABEL_GRANULARIDADE[granularidadeGrafico]} ({periodoLabel})
+          </span>
           <div className={styles.chartBox}>
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={fogosPorSemana}>
+              <LineChart data={fogosAgrupados}>
                 <CartesianGrid stroke={CORES.border} vertical={false} />
-                <XAxis dataKey="semana" stroke={CORES.textMuted} fontSize={12} tickLine={false} axisLine={false} />
+                <XAxis dataKey="rotulo" stroke={CORES.textMuted} fontSize={12} tickLine={false} axisLine={false} />
                 <YAxis yAxisId="fogos" stroke={CORES.accent} fontSize={12} tickLine={false} axisLine={false} allowDecimals={false} />
                 <YAxis yAxisId="kg" orientation="right" stroke={CORES.data} fontSize={12} tickLine={false} axisLine={false} />
                 <Tooltip contentStyle={tooltipStyle} labelStyle={{ color: '#E7EBEE' }} />

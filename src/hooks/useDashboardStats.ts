@@ -1,14 +1,17 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
-import { collection, getDocs, query, where, Timestamp } from 'firebase/firestore';
-import { db } from '@/lib/firebase/client';
+import { useMemo } from 'react';
+import { useProjetosPeriodo } from './useProjetosPeriodo';
+import { useLicencas } from './useLicencas';
 import { densidadeMediaDoProjeto, projetoForaDaFaixa, FAIXA_DENSIDADE_PADRAO, type FaixaDensidade } from '@/lib/densidade';
+import type { PeriodoDias } from '@/lib/periodo';
 import { parseFloatPTBR } from '@/helpers/parseNumbers';
 import type { License, Projeto } from '@/types';
 
-export interface FogoPorSemana {
-  semana: string;
+export type GranularidadeGrafico = 'diaria' | 'semanal';
+
+export interface FogoPorPeriodo {
+  rotulo: string;
   totalFogos: number;
   kgAplicado: number;
 }
@@ -23,12 +26,13 @@ export interface DashboardStats {
   licencasExpirando: number;
   licencasDisponiveis: number;
   licencasTotal: number;
-  fogosPorSemana: FogoPorSemana[];
+  fogosAgrupados: FogoPorPeriodo[];
+  granularidadeGrafico: GranularidadeGrafico;
 }
 
 const MS_DIA = 1000 * 60 * 60 * 24;
 const JANELA_EXPIRACAO_LICENCA_DIAS = 30;
-const DIAS_MINIMOS_PARA_GRAFICO_SEMANAL = 56; // 8 semanas
+const DIAS_LIMITE_AGRUPAMENTO_DIARIO = 31;
 
 function toDate(value: unknown): Date {
   const v = value as { toDate?: () => Date; seconds?: number };
@@ -37,27 +41,26 @@ function toDate(value: unknown): Date {
   return new Date(value as string);
 }
 
-async function fetchDashboardStats(
-  companyId: string,
+function granularidadePara(diasPeriodo: number): GranularidadeGrafico {
+  return diasPeriodo <= DIAS_LIMITE_AGRUPAMENTO_DIARIO ? 'diaria' : 'semanal';
+}
+
+function chaveAgrupamento(dataCriacao: Date, granularidade: GranularidadeGrafico): string {
+  if (granularidade === 'diaria') return dataCriacao.toISOString().slice(0, 10);
+  const inicioSemana = new Date(dataCriacao);
+  inicioSemana.setDate(inicioSemana.getDate() - inicioSemana.getDay());
+  return inicioSemana.toISOString().slice(0, 10);
+}
+
+function calcularStats(
+  projetos: Projeto[],
+  licencas: License[],
   diasPeriodo: number,
   faixaDensidade: FaixaDensidade
-): Promise<DashboardStats> {
+): DashboardStats {
   const agora = new Date();
-  const diasHistoricoGrafico = Math.max(diasPeriodo, DIAS_MINIMOS_PARA_GRAFICO_SEMANAL);
   const inicioPeriodo = new Date(agora.getTime() - diasPeriodo * MS_DIA);
-  const inicioHistoricoGrafico = new Date(agora.getTime() - diasHistoricoGrafico * MS_DIA);
-
-  const projetosQuery = query(
-    collection(db, 'projetos'),
-    where('companyId', '==', companyId),
-    where('dataCriacao', '>=', Timestamp.fromDate(inicioHistoricoGrafico))
-  );
-  const licencasQuery = collection(db, 'companies', companyId, 'licenses');
-
-  const [projetosSnap, licencasSnap] = await Promise.all([
-    getDocs(projetosQuery),
-    getDocs(licencasQuery),
-  ]);
+  const granularidadeGrafico = granularidadePara(diasPeriodo);
 
   let totalFogosPeriodo = 0;
   let kgAplicadoPeriodo = 0;
@@ -65,48 +68,43 @@ async function fetchDashboardStats(
   let projetosComDensidadePeriodo = 0;
   let fogosConformesPeriodo = 0;
   let fogosAlertaPeriodo = 0;
-  const semanas = new Map<string, { totalFogos: number; kgAplicado: number }>();
+  const agrupamentos = new Map<string, { totalFogos: number; kgAplicado: number }>();
 
-  projetosSnap.docs.forEach((docSnap) => {
-    const data = docSnap.data() as Projeto;
+  projetos.forEach((data) => {
     const dataCriacao = toDate(data.dataCriacao);
+    if (dataCriacao < inicioPeriodo) return;
 
-    if (dataCriacao >= inicioPeriodo) {
-      totalFogosPeriodo += 1;
-      const kgAplicado = parseFloatPTBR(data.informacoesOperacao?.kgAplicado);
-      if (!isNaN(kgAplicado)) kgAplicadoPeriodo += kgAplicado;
+    totalFogosPeriodo += 1;
+    const kgAplicado = parseFloatPTBR(data.informacoesOperacao?.kgAplicado);
+    if (!isNaN(kgAplicado)) kgAplicadoPeriodo += kgAplicado;
 
-      const densidadeDoFogo = densidadeMediaDoProjeto(data.amostras ?? []);
-      if (densidadeDoFogo !== null) {
-        somaDensidadesPeriodo += densidadeDoFogo;
-        projetosComDensidadePeriodo += 1;
-      }
-      if (data.amostras?.length) {
-        if (projetoForaDaFaixa(data.amostras, faixaDensidade)) {
-          fogosAlertaPeriodo += 1;
-        } else {
-          fogosConformesPeriodo += 1;
-        }
+    const densidadeDoFogo = densidadeMediaDoProjeto(data.amostras ?? []);
+    if (densidadeDoFogo !== null) {
+      somaDensidadesPeriodo += densidadeDoFogo;
+      projetosComDensidadePeriodo += 1;
+    }
+    if (data.amostras?.length) {
+      if (projetoForaDaFaixa(data.amostras, faixaDensidade)) {
+        fogosAlertaPeriodo += 1;
+      } else {
+        fogosConformesPeriodo += 1;
       }
     }
 
-    const inicioSemana = new Date(dataCriacao);
-    inicioSemana.setDate(inicioSemana.getDate() - inicioSemana.getDay());
-    const chave = inicioSemana.toISOString().slice(0, 10);
-    const kgAplicadoSemana = parseFloatPTBR(data.informacoesOperacao?.kgAplicado);
-    const atual = semanas.get(chave) ?? { totalFogos: 0, kgAplicado: 0 };
+    const chave = chaveAgrupamento(dataCriacao, granularidadeGrafico);
+    const atual = agrupamentos.get(chave) ?? { totalFogos: 0, kgAplicado: 0 };
     atual.totalFogos += 1;
-    if (!isNaN(kgAplicadoSemana)) atual.kgAplicado += kgAplicadoSemana;
-    semanas.set(chave, atual);
+    if (!isNaN(kgAplicado)) atual.kgAplicado += kgAplicado;
+    agrupamentos.set(chave, atual);
   });
 
   const densidadeMediaPeriodo =
     projetosComDensidadePeriodo > 0 ? somaDensidadesPeriodo / projetosComDensidadePeriodo : null;
 
-  const fogosPorSemana = Array.from(semanas.entries())
+  const fogosAgrupados = Array.from(agrupamentos.entries())
     .sort(([a], [b]) => a.localeCompare(b))
-    .map(([semana, valores]) => ({
-      semana: new Date(semana).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }),
+    .map(([chave, valores]) => ({
+      rotulo: new Date(chave).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }),
       totalFogos: valores.totalFogos,
       kgAplicado: Math.round(valores.kgAplicado),
     }));
@@ -115,9 +113,7 @@ async function fetchDashboardStats(
   let licencasExpirando = 0;
   let licencasDisponiveis = 0;
 
-  licencasSnap.docs.forEach((docSnap) => {
-    const data = docSnap.data() as License;
-
+  licencas.forEach((data) => {
     if (data.status === 'active') {
       licencasAtivas += 1;
       if (data.expiresAt) {
@@ -126,7 +122,6 @@ async function fetchDashboardStats(
         if (diasRestantes >= 0 && diasRestantes <= JANELA_EXPIRACAO_LICENCA_DIAS) licencasExpirando += 1;
       }
     }
-
     if (data.status === 'available') licencasDisponiveis += 1;
   });
 
@@ -139,21 +134,28 @@ async function fetchDashboardStats(
     licencasAtivas,
     licencasExpirando,
     licencasDisponiveis,
-    licencasTotal: licencasSnap.size,
-    fogosPorSemana,
+    licencasTotal: licencas.length,
+    fogosAgrupados,
+    granularidadeGrafico,
   };
 }
 
 export function useDashboardStats(
   companyId: string | null,
-  diasPeriodo = 30,
+  diasPeriodo: PeriodoDias,
   faixaDensidade: FaixaDensidade = FAIXA_DENSIDADE_PADRAO
 ) {
-  return useQuery({
-    queryKey: ['dashboardStats', companyId, diasPeriodo, faixaDensidade],
-    queryFn: () => fetchDashboardStats(companyId as string, diasPeriodo, faixaDensidade),
-    enabled: !!companyId,
-    staleTime: 5 * 60 * 1000,
-    refetchOnWindowFocus: false,
-  });
+  const projetosQuery = useProjetosPeriodo(companyId);
+  const licencasQuery = useLicencas(companyId);
+
+  const data = useMemo(() => {
+    if (!projetosQuery.data || !licencasQuery.data) return undefined;
+    return calcularStats(projetosQuery.data, licencasQuery.data, diasPeriodo, faixaDensidade);
+  }, [projetosQuery.data, licencasQuery.data, diasPeriodo, faixaDensidade]);
+
+  return {
+    data,
+    isLoading: projetosQuery.isLoading || licencasQuery.isLoading,
+    isError: projetosQuery.isError || licencasQuery.isError,
+  };
 }

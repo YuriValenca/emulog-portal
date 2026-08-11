@@ -1,19 +1,27 @@
 'use client';
 
+import { useState } from 'react';
 import { Flame, Weight, ShieldCheck, Timer, Gauge } from 'lucide-react';
 import { FAIXA_DENSIDADE_PADRAO } from '@/lib/densidade';
+import { opcoesPeriodoDisponiveis, labelPeriodo, type PeriodoDias } from '@/lib/periodo';
 import { useAppAuth } from '@/hooks/useAppAuth';
 import { useDashboardStats } from '@/hooks/useDashboardStats';
+import { Select } from '@/components/ui/Select/Select';
 import { StatCard } from './components/StatCard/StatCard';
 import { DashboardCharts } from './components/DashboardCharts/DashboardCharts';
 import styles from './page.module.scss';
 
-const DIAS_PERIODO_PADRAO = 30;
 const EMPRESA_FOUNDING_ID = 'explog-founding';
+
+const OPCOES_SELECT_PERIODO = opcoesPeriodoDisponiveis().map((dias) => ({
+  value: String(dias),
+  label: labelPeriodo(dias),
+}));
 
 export default function DashboardPage() {
   const { companyId, isSuperadmin } = useAppAuth();
-  const { data, isLoading, isError } = useDashboardStats(companyId, DIAS_PERIODO_PADRAO);
+  const [diasPeriodo, setDiasPeriodo] = useState<PeriodoDias>(30);
+  const { data, isLoading, isError } = useDashboardStats(companyId, diasPeriodo);
 
   if (isSuperadmin && !companyId) {
     return (
@@ -22,6 +30,8 @@ export default function DashboardPage() {
       </div>
     );
   }
+
+  const periodoLabel = labelPeriodo(diasPeriodo);
 
   if (isLoading) {
     return (
@@ -51,8 +61,8 @@ export default function DashboardPage() {
   return (
     <div className={styles.container}>
       <div className={styles.grid}>
-        <StatCard icon={<Flame size={22} />} label={`Fogos (${DIAS_PERIODO_PADRAO} dias)`} value={data.totalFogosPeriodo} color="var(--accent)" />
-        <StatCard icon={<Weight size={22} />} label={`Kg aplicados (${DIAS_PERIODO_PADRAO} dias)`} value={data.kgAplicadoPeriodo.toFixed(0)} sub="kg" color="var(--data)" />
+        <StatCard icon={<Flame size={22} />} label={`Fogos (${periodoLabel})`} value={data.totalFogosPeriodo} color="var(--accent)" />
+        <StatCard icon={<Weight size={22} />} label={`Kg aplicados (${periodoLabel})`} value={data.kgAplicadoPeriodo.toFixed(0)} sub="kg" color="var(--data)" />
         {companyId !== EMPRESA_FOUNDING_ID && (
           <>
             <StatCard icon={<ShieldCheck size={22} />} label="Licenças ativas" value={data.licencasAtivas} sub={`${data.licencasTotal} no total`} color="var(--ok)" />
@@ -61,16 +71,27 @@ export default function DashboardPage() {
         )}
         <StatCard
           icon={<Gauge size={22} />}
-          label={`Densidade média (${DIAS_PERIODO_PADRAO} dias)`}
+          label={`Densidade média (${periodoLabel})`}
           value={data.densidadeMediaPeriodo !== null ? data.densidadeMediaPeriodo.toFixed(2) : '—'}
           sub={data.densidadeMediaPeriodo !== null ? 'g/cm³' : undefined}
           color={densidadeDentroDaFaixa ? 'var(--ok)' : 'var(--crit)'}
         />
       </div>
+      <div className={styles.filtros}>
+        <Select
+          value={String(diasPeriodo)}
+          onValueChange={(value) => setDiasPeriodo(Number(value) as PeriodoDias)}
+          options={OPCOES_SELECT_PERIODO}
+          size="sm"
+          label='Período'
+          width={200}
+        />
+      </div>
 
       <DashboardCharts
-        periodoLabel={`${DIAS_PERIODO_PADRAO} dias`}
-        fogosPorSemana={data.fogosPorSemana}
+        periodoLabel={periodoLabel}
+        fogosAgrupados={data.fogosAgrupados}
+        granularidadeGrafico={data.granularidadeGrafico}
         licencasAtivas={data.licencasAtivas}
         licencasExpirando={data.licencasExpirando}
         licencasDisponiveis={data.licencasDisponiveis}
