@@ -1,11 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Flame, Weight, ShieldCheck, Timer, Gauge } from 'lucide-react';
 import { FAIXA_DENSIDADE_PADRAO } from '@/lib/densidade';
 import { opcoesPeriodoDisponiveis, labelPeriodo, type PeriodoDias } from '@/lib/periodo';
 import { useAppAuth } from '@/hooks/useAppAuth';
 import { useDashboardStats } from '@/hooks/useDashboardStats';
+import { useCaminhoes } from '@/hooks/useCaminhoes';
 import { Select } from '@/components/ui/Select/Select';
 import { StatCard } from './components/StatCard/StatCard';
 import { DashboardCharts } from './components/DashboardCharts/DashboardCharts';
@@ -21,7 +22,20 @@ const OPCOES_SELECT_PERIODO = opcoesPeriodoDisponiveis().map((dias) => ({
 export default function DashboardPage() {
   const { companyId, isSuperadmin } = useAppAuth();
   const [diasPeriodo, setDiasPeriodo] = useState<PeriodoDias>(30);
-  const { data, isLoading, isError } = useDashboardStats(companyId, diasPeriodo);
+  const [caminhaoId, setCaminhaoId] = useState<string>('');
+
+  const { data: caminhoes } = useCaminhoes(companyId);
+  const { data, isLoading, isError } = useDashboardStats(
+    companyId,
+    diasPeriodo,
+    caminhaoId === '' ? null : caminhaoId
+  );
+
+  useEffect(() => {
+    setCaminhaoId('');
+  }, [companyId]);
+
+  const opcoesSelectUmb = (caminhoes ?? []).map((c) => ({ value: c.id, label: c.tag ?? c.placa }));
 
   if (isSuperadmin && !companyId) {
     return (
@@ -84,6 +98,15 @@ export default function DashboardPage() {
           options={OPCOES_SELECT_PERIODO}
           size="sm"
           label='Período'
+          width={200}
+        />
+        <Select
+          value={caminhaoId}
+          onValueChange={setCaminhaoId}
+          options={opcoesSelectUmb}
+          resetOption="Todas"
+          size="sm"
+          label='UMB'
           width={200}
         />
       </div>

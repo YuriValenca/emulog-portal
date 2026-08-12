@@ -18,6 +18,12 @@
   }
 }
 
+.filtros {
+  display: flex;
+  flex-direction: row;
+  gap: var(--spacing-default);
+}
+
 .skeletonCard {
   height: 104px;
   border-radius: var(--radius-lg);

@@ -56,7 +56,8 @@ function calcularStats(
   projetos: Projeto[],
   licencas: License[],
   diasPeriodo: number,
-  faixaDensidade: FaixaDensidade
+  faixaDensidade: FaixaDensidade,
+  caminhaoId: string | null
 ): DashboardStats {
   const agora = new Date();
   const inicioPeriodo = new Date(agora.getTime() - diasPeriodo * MS_DIA);
@@ -73,6 +74,7 @@ function calcularStats(
   projetos.forEach((data) => {
     const dataCriacao = toDate(data.dataCriacao);
     if (dataCriacao < inicioPeriodo) return;
+    if (caminhaoId && data.informacoesOperacao?.caminhao?.id !== caminhaoId) return;
 
     totalFogosPeriodo += 1;
     const kgAplicado = parseFloatPTBR(data.informacoesOperacao?.kgAplicado);
@@ -143,6 +145,7 @@ function calcularStats(
 export function useDashboardStats(
   companyId: string | null,
   diasPeriodo: PeriodoDias,
+  caminhaoId: string | null = null,
   faixaDensidade: FaixaDensidade = FAIXA_DENSIDADE_PADRAO
 ) {
   const projetosQuery = useProjetosPeriodo(companyId);
@@ -150,8 +153,8 @@ export function useDashboardStats(
 
   const data = useMemo(() => {
     if (!projetosQuery.data || !licencasQuery.data) return undefined;
-    return calcularStats(projetosQuery.data, licencasQuery.data, diasPeriodo, faixaDensidade);
-  }, [projetosQuery.data, licencasQuery.data, diasPeriodo, faixaDensidade]);
+    return calcularStats(projetosQuery.data, licencasQuery.data, diasPeriodo, faixaDensidade, caminhaoId);
+  }, [projetosQuery.data, licencasQuery.data, diasPeriodo, faixaDensidade, caminhaoId]);
 
   return {
     data,
