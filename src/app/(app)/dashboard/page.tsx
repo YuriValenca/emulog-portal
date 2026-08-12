@@ -7,7 +7,9 @@ import { opcoesPeriodoDisponiveis, labelPeriodo, type PeriodoDias } from '@/lib/
 import { useAppAuth } from '@/hooks/useAppAuth';
 import { useDashboardStats } from '@/hooks/useDashboardStats';
 import { useCaminhoes } from '@/hooks/useCaminhoes';
+import { useOperadores } from '@/hooks/useOperadores';
 import { Select } from '@/components/ui/Select/Select';
+import { MultiSelect } from '@/components/ui/Multiselect/Multiselect';
 import { StatCard } from './components/StatCard/StatCard';
 import { DashboardCharts } from './components/DashboardCharts/DashboardCharts';
 import styles from './page.module.scss';
@@ -23,19 +25,24 @@ export default function DashboardPage() {
   const { companyId, isSuperadmin } = useAppAuth();
   const [diasPeriodo, setDiasPeriodo] = useState<PeriodoDias>(30);
   const [caminhaoId, setCaminhaoId] = useState<string>('');
+  const [operadorIds, setOperadorIds] = useState<string[]>([]);
 
   const { data: caminhoes } = useCaminhoes(companyId);
+  const { data: operadores } = useOperadores(companyId);
   const { data, isLoading, isError } = useDashboardStats(
     companyId,
     diasPeriodo,
-    caminhaoId === '' ? null : caminhaoId
+    caminhaoId === '' ? null : caminhaoId,
+    operadorIds
   );
 
   useEffect(() => {
     setCaminhaoId('');
+    setOperadorIds([]);
   }, [companyId]);
 
   const opcoesSelectUmb = (caminhoes ?? []).map((c) => ({ value: c.id, label: c.tag ?? c.placa }));
+  const opcoesSelectOperador = (operadores ?? []).map((o) => ({ value: o.id, label: o.nome }));
 
   if (isSuperadmin && !companyId) {
     return (
@@ -108,6 +115,15 @@ export default function DashboardPage() {
           size="sm"
           label='UMB'
           width={200}
+        />
+        <MultiSelect
+          values={operadorIds}
+          onValuesChange={setOperadorIds}
+          options={opcoesSelectOperador}
+          placeholder="Todos"
+          size="sm"
+          label='Operadores'
+          width={250}
         />
       </div>
 
