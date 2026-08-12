@@ -112,6 +112,13 @@
   color: var(--brand-on-dark);
 }
 
+.itemReset {
+  border-bottom: 1px solid var(--border);
+  border-radius: 0;
+  margin-bottom: var(--spacing-tiny);
+  padding-bottom: calc(var(--spacing-xsmall) + var(--spacing-tiny));
+}
+
 .itemIcon {
   display: flex;
   flex-shrink: 0;
@@ -131,15 +138,6 @@
   display: flex;
   flex-shrink: 0;
   color: var(--brand-on-dark);
-}
-
-.scrollButton {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 24px;
-  color: var(--text-muted);
-  cursor: default;
 }
 
 .stateRow {

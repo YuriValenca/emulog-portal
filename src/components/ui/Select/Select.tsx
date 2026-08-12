@@ -2,7 +2,7 @@
 
 import * as RadixSelect from '@radix-ui/react-select';
 import * as RadixPopover from '@radix-ui/react-popover';
-import { Check, ChevronDown, ChevronUp, Loader2, Search } from 'lucide-react';
+import { Check, ChevronDown, Loader2, Search } from 'lucide-react';
 import clsx from 'clsx';
 import { CSSProperties, ReactNode, useEffect, useMemo, useState } from 'react';
 import { Input } from '@/components/ui/Input/Input';
@@ -27,6 +27,7 @@ interface BaseSelectProps {
   disabled?: boolean;
   value?: string;
   onValueChange?: (value: string) => void;
+  resetOption?: string;
 }
 
 interface StaticSelectProps extends BaseSelectProps {
@@ -43,6 +44,8 @@ interface SearchableSelectProps extends BaseSelectProps {
 }
 
 type SelectProps = StaticSelectProps | SearchableSelectProps;
+
+const RESET_VALUE = '__select_reset__';
 
 function widthStyle(width?: SelectWidth): CSSProperties | undefined {
   if (width === undefined) return undefined;
@@ -63,11 +66,18 @@ function StaticSelect({
   size = 'md',
   width,
   disabled,
+  resetOption,
 }: StaticSelectProps) {
+  const rootValue = value ? value : resetOption ? RESET_VALUE : '';
+
+  const handleChange = (v: string) => {
+    onValueChange?.(v === RESET_VALUE ? '' : v);
+  };
+
   return (
     <div className={styles.field} style={widthStyle(width)}>
       {label && <span className={styles.label}>{label}</span>}
-      <RadixSelect.Root value={value ?? ''} onValueChange={onValueChange} disabled={disabled}>
+      <RadixSelect.Root value={rootValue} onValueChange={handleChange} disabled={disabled}>
         <RadixSelect.Trigger className={clsx(styles.trigger, styles[size])}>
           <RadixSelect.Value placeholder={placeholder} />
           <RadixSelect.Icon className={styles.icon}>
@@ -82,11 +92,21 @@ function StaticSelect({
             sideOffset={4}
             style={{ width: 'var(--radix-select-trigger-width)' }}
           >
-            <RadixSelect.ScrollUpButton className={styles.scrollButton}>
-              <ChevronUp size={14} />
-            </RadixSelect.ScrollUpButton>
-
             <RadixSelect.Viewport className={styles.viewport}>
+              {resetOption && (
+                <RadixSelect.Item
+                  value={RESET_VALUE}
+                  className={clsx(styles.item, styles.itemReset)}
+                >
+                  <RadixSelect.ItemText className={styles.itemText}>
+                    {resetOption}
+                  </RadixSelect.ItemText>
+                  <RadixSelect.ItemIndicator className={styles.itemIndicator}>
+                    <Check size={14} />
+                  </RadixSelect.ItemIndicator>
+                </RadixSelect.Item>
+              )}
+
               {options.map((option) => (
                 <RadixSelect.Item key={option.value} value={option.value} className={styles.item}>
                   {option.icon && <span className={styles.itemIcon}>{option.icon}</span>}
@@ -99,10 +119,6 @@ function StaticSelect({
                 </RadixSelect.Item>
               ))}
             </RadixSelect.Viewport>
-
-            <RadixSelect.ScrollDownButton className={styles.scrollButton}>
-              <ChevronDown size={14} />
-            </RadixSelect.ScrollDownButton>
           </RadixSelect.Content>
         </RadixSelect.Portal>
       </RadixSelect.Root>
@@ -124,6 +140,7 @@ function SearchableSelect({
   debounceMs = 400,
   loading,
   emptyMessage = 'Nenhum resultado encontrado',
+  resetOption,
 }: SearchableSelectProps) {
   const [open, setOpen] = useState(false);
   const [inputText, setInputText] = useState(searchValue ?? '');
@@ -148,6 +165,13 @@ function SearchableSelect({
 
   const handleSelect = (option: SelectOption) => {
     onValueChange?.(option.value);
+    setInputText('');
+    onSearchChange?.('');
+    setOpen(false);
+  };
+
+  const handleReset = () => {
+    onValueChange?.('');
     setInputText('');
     onSearchChange?.('');
     setOpen(false);
@@ -190,6 +214,21 @@ function SearchableSelect({
           onOpenAutoFocus={(e) => e.preventDefault()}
         >
           <div className={styles.viewport}>
+            {resetOption && (
+              <button
+                type="button"
+                className={clsx(styles.item, styles.itemReset, !value && styles.itemActive)}
+                onClick={handleReset}
+              >
+                <span className={styles.itemText}>{resetOption}</span>
+                {!value && (
+                  <span className={styles.itemIndicator}>
+                    <Check size={14} />
+                  </span>
+                )}
+              </button>
+            )}
+
             {loading && (
               <div className={styles.stateRow}>
                 <Loader2 size={14} className={styles.spinner} />
