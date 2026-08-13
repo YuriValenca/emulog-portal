@@ -110,16 +110,16 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className={styles.shell} style={{ display: 'flex', width: '100%', minHeight: '100vh' }}>
+    <div className={styles.shell}>
       <Sidebar company={company} appUser={appUser} role={role} />
-      <main style={{ flex: 1 }}>
+      <main className={styles.main}>
         <Topbar
           title={resolvePageTitle(pathname)}
           company={company}
           isSuperadmin={isSuperadmin}
           companies={isSuperadmin ? companies ?? [] : []}
         />
-        {children}
+        <div className={styles.content}>{children}</div>
       </main>
     </div>
   );
