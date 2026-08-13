@@ -22,6 +22,14 @@ export interface RankingItem {
   totalFogos: number;
 }
 
+export interface FogoNaoConforme {
+  id: string;
+  nomeProjeto: string;
+  umb: string | null;
+  data: string;
+  densidadeMedia: number | null;
+}
+
 interface RefRanking {
   id: string;
   label: string;
@@ -33,6 +41,7 @@ export interface DashboardStats {
   densidadeMediaPeriodo: number | null;
   fogosConformesPeriodo: number;
   fogosAlertaPeriodo: number;
+  fogosNaoConformes: FogoNaoConforme[];
   licencasAtivas: number;
   licencasExpirando: number;
   licencasDisponiveis: number;
@@ -92,11 +101,23 @@ function calcularTotais(projetos: Projeto[]) {
   return { totalFogosPeriodo, kgAplicadoPeriodo };
 }
 
+function itemNaoConforme(data: Projeto, densidadeMedia: number | null): FogoNaoConforme {
+  const dataCriacao = toDate(data.dataCriacao);
+  return {
+    id: data.id,
+    nomeProjeto: data.nomeProjeto || 'Projeto sem nome',
+    umb: data.informacoesOperacao?.caminhao?.placa ?? null,
+    data: dataCriacao.toLocaleDateString('pt-BR'),
+    densidadeMedia,
+  };
+}
+
 function calcularConformidadeDensidade(projetos: Projeto[], faixaDensidade: FaixaDensidade) {
   let somaDensidades = 0;
   let projetosComDensidade = 0;
   let fogosConformesPeriodo = 0;
   let fogosAlertaPeriodo = 0;
+  const naoConformes: { data: Projeto; densidadeMedia: number | null; timestamp: number }[] = [];
 
   projetos.forEach((data) => {
     const densidadeDoFogo = densidadeMediaDoProjeto(data.amostras ?? []);
@@ -105,13 +126,21 @@ function calcularConformidadeDensidade(projetos: Projeto[], faixaDensidade: Faix
       projetosComDensidade += 1;
     }
     if (data.amostras?.length) {
-      if (projetoForaDaFaixa(data.amostras, faixaDensidade)) fogosAlertaPeriodo += 1;
-      else fogosConformesPeriodo += 1;
+      if (projetoForaDaFaixa(data.amostras, faixaDensidade)) {
+        fogosAlertaPeriodo += 1;
+        naoConformes.push({ data, densidadeMedia: densidadeDoFogo, timestamp: toDate(data.dataCriacao).getTime() });
+      } else {
+        fogosConformesPeriodo += 1;
+      }
     }
   });
 
+  const fogosNaoConformes = naoConformes
+    .sort((a, b) => b.timestamp - a.timestamp)
+    .map((item) => itemNaoConforme(item.data, item.densidadeMedia));
+
   const densidadeMediaPeriodo = projetosComDensidade > 0 ? somaDensidades / projetosComDensidade : null;
-  return { densidadeMediaPeriodo, fogosConformesPeriodo, fogosAlertaPeriodo };
+  return { densidadeMediaPeriodo, fogosConformesPeriodo, fogosAlertaPeriodo, fogosNaoConformes };
 }
 
 function calcularAgrupamentos(projetos: Projeto[], granularidade: GranularidadeGrafico): FogoPorPeriodo[] {

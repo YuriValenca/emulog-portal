@@ -4,7 +4,7 @@ import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
   ResponsiveContainer, PieChart, Pie, Sector,
 } from 'recharts';
-import type { FogoPorPeriodo, GranularidadeGrafico } from '@/hooks/useDashboardStats';
+import type { FogoPorPeriodo, FogoNaoConforme, GranularidadeGrafico } from '@/hooks/useDashboardStats';
 import styles from './DashboardCharts.module.scss';
 
 interface DashboardChartsProps {
@@ -16,6 +16,7 @@ interface DashboardChartsProps {
   licencasDisponiveis: number;
   fogosConformesPeriodo: number;
   fogosAlertaPeriodo: number;
+  fogosNaoConformes: FogoNaoConforme[];
 }
 
 const CORES = { accent: '#FF9621', data: '#1A73E8', ok: '#4CAF50', crit: '#E2503F', border: '#2E3941', textMuted: '#8C99A3', surface: '#1B2126' };
@@ -59,6 +60,7 @@ export function DashboardCharts({
   licencasDisponiveis,
   fogosConformesPeriodo,
   fogosAlertaPeriodo,
+  fogosNaoConformes,
 }: DashboardChartsProps) {
   const licencasData = [
     { nome: 'Ativas', valor: licencasAtivas, cor: CORES.ok },
@@ -132,25 +134,53 @@ export function DashboardCharts({
       <div className={styles.row}>
         <div className={styles.panel}>
           <span className={styles.title}>Conformidade de densidade ({periodoLabel})</span>
-          <div className={styles.chartBox}>
-            {conformidadeData.length === 0 ? (
-              <p className={styles.empty}>Nenhuma amostra de densidade no período.</p>
-            ) : (
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={conformidadeData}
-                    dataKey="valor"
-                    nameKey="nome"
-                    innerRadius="60%"
-                    outerRadius="85%"
-                    paddingAngle={2}
-                    shape={renderFatiaColorida as never}
-                  />
-                  <Tooltip contentStyle={tooltipStyle} labelStyle={{ color: '#E7EBEE' }} />
-                </PieChart>
-              </ResponsiveContainer>
-            )}
+          <div className={styles.conformidadeContent}>
+            <div className={styles.chartBox}>
+              {conformidadeData.length === 0 ? (
+                <p className={styles.empty}>Nenhuma amostra de densidade no período.</p>
+              ) : (
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={conformidadeData}
+                      dataKey="valor"
+                      nameKey="nome"
+                      innerRadius="60%"
+                      outerRadius="85%"
+                      paddingAngle={2}
+                      shape={renderFatiaColorida as never}
+                    />
+                    <Tooltip contentStyle={tooltipStyle} labelStyle={{ color: '#E7EBEE' }} />
+                  </PieChart>
+                </ResponsiveContainer>
+              )}
+            </div>
+
+            <div className={styles.naoConformesList}>
+              <div className={styles.naoConformesHeader}>
+                <span className={styles.naoConformesTitle}>Fora da faixa</span>
+                <span className={styles.naoConformesCount}>{fogosNaoConformes.length}</span>
+              </div>
+              {fogosNaoConformes.length === 0 ? (
+                <p className={styles.empty}>Nenhum fogo fora da faixa.</p>
+              ) : (
+                <ul className={styles.naoConformesScroll}>
+                  {fogosNaoConformes.map((item) => (
+                    <li key={item.id} className={styles.naoConformeItem}>
+                      <div className={styles.naoConformeInfo}>
+                        <span className={styles.naoConformeNome}>{item.nomeProjeto}</span>
+                        <span className={styles.naoConformeMeta}>
+                          {item.umb ? `${item.umb} · ${item.data}` : item.data}
+                        </span>
+                      </div>
+                      <span className={styles.naoConformeDensidade}>
+                        {item.densidadeMedia !== null ? `${item.densidadeMedia.toFixed(2)}` : '—'}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
           </div>
           <div className={styles.legend}>
             {conformidadeData.map((item) => (

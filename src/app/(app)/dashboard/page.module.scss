@@ -3,7 +3,7 @@
   flex-direction: column;
   justify-content: flex-end;
   gap: var(--spacing-large);
-  padding: var(--spacing-large);
+  padding: var(--spacing-large) var(--spacing-large) var(--spacing-HUGE);
 }
 
 .grid {

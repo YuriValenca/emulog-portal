@@ -37,6 +37,7 @@
   height: 100%;
   color: var(--text-muted);
   font-size: var(--font-size-small);
+  text-align: center;
 }
 
 .legend {
@@ -58,4 +59,120 @@
   width: 8px;
   height: 8px;
   border-radius: var(--radius-50);
+}
+
+.conformidadeContent {
+  display: flex;
+  gap: var(--spacing-default);
+  align-items: stretch;
+
+  .chartBox {
+    flex: 1;
+    min-width: 0;
+  }
+}
+
+.naoConformesList {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.naoConformesHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--spacing-xsmall);
+}
+
+.naoConformesTitle {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.naoConformesCount {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--crit);
+  background: var(--crit-soft);
+  border-radius: 999px;
+  padding: 2px 8px;
+}
+
+.naoConformesScroll {
+  list-style: none;
+  margin: 0;
+  padding: 0 6px 0 0;
+  height: 220px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+
+  &::-webkit-scrollbar {
+    width: 5px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 999px;
+  }
+
+  &::-webkit-scrollbar-thumb:hover {
+    background: var(--text-muted);
+  }
+}
+
+.naoConformeItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-xsmall);
+  padding: 8px 10px;
+  border-radius: var(--radius-md);
+  background: var(--surface-2);
+  border-left: 2px solid var(--crit);
+}
+
+.naoConformeInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.naoConformeNome {
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.naoConformeMeta {
+  font-size: 11px;
+  color: var(--text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.naoConformeDensidade {
+  flex-shrink: 0;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--crit);
 }

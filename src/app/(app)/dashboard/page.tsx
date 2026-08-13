@@ -25,7 +25,7 @@ const OPCOES_SELECT_PERIODO = opcoesPeriodoDisponiveis().map((dias) => ({
 export default function DashboardPage() {
   const { companyId, isSuperadmin } = useAppAuth();
   const [diasPeriodo, setDiasPeriodo] = useState<PeriodoDias>(30);
-  const [caminhaoId, setCaminhaoId] = useState<string>('');
+  const [caminhaoId, setCaminhaoId] = useState<string[]>([]);
   const [operadorIds, setOperadorIds] = useState<string[]>([]);
 
   const { data: caminhoes } = useCaminhoes(companyId);
@@ -33,12 +33,12 @@ export default function DashboardPage() {
   const { data, isLoading, isError } = useDashboardStats(
     companyId,
     diasPeriodo,
-    caminhaoId === '' ? null : caminhaoId,
+    caminhaoId.length === 0 ? null : caminhaoId[0] ?? null,
     operadorIds
   );
 
   useEffect(() => {
-    setCaminhaoId('');
+    setCaminhaoId([]);
     setOperadorIds([]);
   }, [companyId]);
 
@@ -106,16 +106,16 @@ export default function DashboardPage() {
           options={OPCOES_SELECT_PERIODO}
           size="sm"
           label='Período'
-          width={125}
+          width={150}
         />
-        <Select
-          value={caminhaoId}
-          onValueChange={setCaminhaoId}
+        <MultiSelect
+          values={caminhaoId}
+          onValuesChange={setCaminhaoId}
           options={opcoesSelectUmb}
-          resetOption="Todas"
+          placeholder="Todas"
           size="sm"
           label='UMB'
-          width={125}
+          width={150}
         />
         <MultiSelect
           values={operadorIds}
@@ -124,13 +124,13 @@ export default function DashboardPage() {
           placeholder="Todos"
           size="sm"
           label='Operadores'
-          width={375}
+          width={325}
         />
       </div>
 
       <RankingsSection
         rankingUmb={data.rankingUmb}
-        mostrarUmb={caminhaoId === ''}
+        mostrarUmb={caminhaoId.length === 0}
         rankingOperadores={data.rankingOperadores}
         mostrarOperadores={operadorIds.length === 0}
       />
@@ -144,6 +144,7 @@ export default function DashboardPage() {
         licencasDisponiveis={data.licencasDisponiveis}
         fogosConformesPeriodo={data.fogosConformesPeriodo}
         fogosAlertaPeriodo={data.fogosAlertaPeriodo}
+        fogosNaoConformes={data.fogosNaoConformes}
       />
     </div>
   );
