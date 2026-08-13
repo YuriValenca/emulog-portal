@@ -1,0 +1,22 @@
+.row {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 320px));
+  justify-content: start;
+  align-items: start;
+  gap: var(--spacing-default);
+  margin-bottom: var(--spacing-large);
+}
+
+.card {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-small) var(--spacing-default);
+}
+
+.cardTitle {
+  font-size: var(--font-size-default);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text);
+  margin: 0 0 var(--spacing-xsmall);
+}

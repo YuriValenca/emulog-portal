@@ -12,6 +12,7 @@ import { Select } from '@/components/ui/Select/Select';
 import { MultiSelect } from '@/components/ui/Multiselect/Multiselect';
 import { StatCard } from './components/StatCard/StatCard';
 import { DashboardCharts } from './components/DashboardCharts/DashboardCharts';
+import { RankingsSection } from './components/RankingsSection/RankingsSection';
 import styles from './page.module.scss';
 
 const EMPRESA_FOUNDING_ID = 'explog-founding';
@@ -105,7 +106,7 @@ export default function DashboardPage() {
           options={OPCOES_SELECT_PERIODO}
           size="sm"
           label='Período'
-          width={200}
+          width={125}
         />
         <Select
           value={caminhaoId}
@@ -114,7 +115,7 @@ export default function DashboardPage() {
           resetOption="Todas"
           size="sm"
           label='UMB'
-          width={200}
+          width={125}
         />
         <MultiSelect
           values={operadorIds}
@@ -123,9 +124,16 @@ export default function DashboardPage() {
           placeholder="Todos"
           size="sm"
           label='Operadores'
-          width={250}
+          width={375}
         />
       </div>
+
+      <RankingsSection
+        rankingUmb={data.rankingUmb}
+        mostrarUmb={caminhaoId === ''}
+        rankingOperadores={data.rankingOperadores}
+        mostrarOperadores={operadorIds.length === 0}
+      />
 
       <DashboardCharts
         periodoLabel={periodoLabel}
