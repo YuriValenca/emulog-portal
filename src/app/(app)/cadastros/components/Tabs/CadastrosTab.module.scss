@@ -1,0 +1,52 @@
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-default);
+}
+
+.formError {
+  font-size: 13px;
+  color: var(--crit);
+  background: var(--crit-soft);
+  border-radius: var(--radius-sm);
+  padding: var(--spacing-xsmall) var(--spacing-small);
+}
+
+.note {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: var(--spacing-small);
+}
+
+.empty {
+  font-size: 13px;
+  color: var(--text-muted);
+  font-style: italic;
+  padding: var(--spacing-small) 0;
+}
+
+.loadingRow {
+  display: flex;
+  justify-content: center;
+  padding: var(--spacing-large) 0;
+}
+
+.actionsCell {
+  text-align: right;
+  vertical-align: middle;
+}
+
+.actionsRow {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--spacing-tiny);
+}
+
+.row {
+  display: flex;
+  gap: var(--spacing-small);
+}
+
+.rowItem {
+  flex: 1;
+}
