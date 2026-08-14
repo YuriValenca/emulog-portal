@@ -10,6 +10,7 @@ import Topbar from '@/components/layout/Topbar/Topbar';
 import styles from './layout.module.scss';
 import { Button } from '@/components/ui/Button/Button';
 import { ArrowLeft, LogOut } from 'lucide-react';
+import { Spinner } from '@/components/ui/Spinner/Spinner';
 
 const PAGE_TITLES: Record<string, string> = {
   '/dashboard': 'Dashboard',
@@ -63,7 +64,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   if (authStatus === 'loading' || authStatus === 'unauthenticated') {
     return (
       <div className={styles.stateScreen}>
-        <span className={styles.spinner} />
+        <Spinner />
       </div>
     );
   }

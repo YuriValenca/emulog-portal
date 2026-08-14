@@ -8,6 +8,7 @@ import EmpresasTable from './components/EmpresasTable/EmpresasTable';
 import EmpresaFormModal from './components/EmpresasFormModal/EmpresasFormModal';
 import styles from './page.module.scss';
 import type { Company } from '@/types';
+import { Spinner } from '@/components/ui/Spinner/Spinner';
 
 export default function EmpresasPage() {
   const { companies } = useAppAuth();
@@ -35,7 +36,7 @@ export default function EmpresasPage() {
 
       {companies === null ? (
         <div className={styles.loading}>
-          <span className={styles.spinner} />
+          <Spinner />
         </div>
       ) : (
         <EmpresasTable empresas={companies} onEditar={abrirEdicao} />

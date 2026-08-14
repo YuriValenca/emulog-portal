@@ -13,13 +13,6 @@
   transition: opacity 0.15s ease, transform 0.1s ease;
 }
 
-.spinner {
-  border: 2px solid currentColor;
-  border-top-color: transparent;
-  border-radius: var(--radius-50);
-  animation: spin 0.6s linear infinite;
-}
-
 @keyframes spin {
   from {
     transform: rotate(0deg);

@@ -1,6 +1,7 @@
 import { ButtonHTMLAttributes, ReactNode } from 'react';
 import clsx from 'clsx';
 import styles from './Button.module.scss';
+import { Spinner } from '../Spinner/Spinner';
 
 type ButtonVariant = 'accent' | 'ghost' | 'brand' | 'ok' | 'cancel';
 type IconPosition = 'left' | 'right';
@@ -31,7 +32,7 @@ export function Button({
       aria-busy={loading}
       {...rest}
     >
-      {loading && <span className={clsx(styles.icon, styles.spinner)} />}
+      {loading && <Spinner size='xsm' />}
       {!loading && icon && iconPosition === 'left' && <span className={styles.icon}>{icon}</span>}
       {children}
       {!loading && icon && iconPosition === 'right' && <span className={styles.icon}>{icon}</span>}

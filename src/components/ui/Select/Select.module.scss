@@ -149,10 +149,6 @@
   color: var(--text-muted);
 }
 
-.spinner {
-  animation: spin 0.6s linear infinite;
-}
-
 @keyframes selectFadeIn {
   from {
     opacity: 0;

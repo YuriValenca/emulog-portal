@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useAppAuth } from '@/hooks/useAppAuth';
 import { LoginForm } from './components/LoginForm';
 import styles from './page.module.scss';
+import { Spinner } from '@/components/ui/Spinner/Spinner';
 
 export default function RootPage() {
   const router = useRouter();
@@ -19,7 +20,7 @@ export default function RootPage() {
   if (authStatus !== 'unauthenticated') {
     return (
       <div className={styles.page}>
-        <span className={styles.spinner} />
+        <Spinner />
       </div>
     );
   }
