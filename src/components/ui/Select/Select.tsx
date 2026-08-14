@@ -1,13 +1,14 @@
 'use client';
 
 import * as RadixSelect from '@radix-ui/react-select';
-import * as RadixPopover from '@radix-ui/react-popover';
-import { Check, ChevronDown, Loader2, Search } from 'lucide-react';
+// import * as RadixPopover from '@radix-ui/react-popover';
+import { Check, ChevronDown /* , Search */ } from 'lucide-react';
 import clsx from 'clsx';
-import { CSSProperties, ReactNode, useEffect, useMemo, useState } from 'react';
-import { Input } from '@/components/ui/Input/Input';
-import { useDebouncedValue } from '@/hooks/useDebouncedValue';
+import { CSSProperties, ReactNode /* , useEffect, useMemo, useState */ } from 'react';
+// import { Input } from '@/components/ui/Input/Input';
+// import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import styles from './Select.module.scss';
+// import { Spinner } from '../Spinner/Spinner';
 
 export interface SelectOption {
   value: string;
@@ -34,6 +35,7 @@ interface StaticSelectProps extends BaseSelectProps {
   searchable?: false;
 }
 
+/*
 interface SearchableSelectProps extends BaseSelectProps {
   searchable: true;
   searchValue?: string;
@@ -42,8 +44,9 @@ interface SearchableSelectProps extends BaseSelectProps {
   loading?: boolean;
   emptyMessage?: string;
 }
+*/
 
-type SelectProps = StaticSelectProps | SearchableSelectProps;
+type SelectProps = StaticSelectProps /* | SearchableSelectProps */;
 
 const RESET_VALUE = '__select_reset__';
 
@@ -53,7 +56,7 @@ function widthStyle(width?: SelectWidth): CSSProperties | undefined {
 }
 
 export function Select(props: SelectProps) {
-  if (props.searchable) return <SearchableSelect {...props} />;
+  // if (props.searchable) return <SearchableSelect {...props} />;
   return <StaticSelect {...props} />;
 }
 
@@ -126,6 +129,7 @@ function StaticSelect({
   );
 }
 
+/*
 function SearchableSelect({
   value,
   onValueChange,
@@ -231,7 +235,7 @@ function SearchableSelect({
 
             {loading && (
               <div className={styles.stateRow}>
-                <Loader2 size={14} className={styles.spinner} />
+                <Spinner size='xsm' />
                 Carregando...
               </div>
             )}
@@ -263,3 +267,4 @@ function SearchableSelect({
     </RadixPopover.Root>
   );
 }
+*/
