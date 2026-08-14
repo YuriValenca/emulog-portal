@@ -6,8 +6,8 @@ import { FAIXA_DENSIDADE_PADRAO } from '@/lib/densidade';
 import { opcoesPeriodoDisponiveis, labelPeriodo, type PeriodoDias } from '@/lib/periodo';
 import { useAppAuth } from '@/hooks/useAppAuth';
 import { useDashboardStats } from '@/hooks/useDashboardStats';
-import { useCaminhoes } from '@/hooks/useCaminhoes';
-import { useOperadores } from '@/hooks/useOperadores';
+import { useCaminhoes } from '@/hooks/cadastro/useCaminhoes';
+import { useOperadores } from '@/hooks/cadastro/useOperadores';
 import { Select } from '@/components/ui/Select/Select';
 import { MultiSelect } from '@/components/ui/Multiselect/Multiselect';
 import { StatCard } from './components/StatCard/StatCard';
@@ -28,8 +28,8 @@ export default function DashboardPage() {
   const [caminhaoId, setCaminhaoId] = useState<string[]>([]);
   const [operadorIds, setOperadorIds] = useState<string[]>([]);
 
-  const { data: caminhoes } = useCaminhoes(companyId);
-  const { data: operadores } = useOperadores(companyId);
+  const { caminhoes } = useCaminhoes(companyId);
+  const { operadores } = useOperadores(companyId);
   const { data, isLoading, isError } = useDashboardStats(
     companyId,
     diasPeriodo,
