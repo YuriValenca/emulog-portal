@@ -15,8 +15,6 @@ import { DashboardCharts } from './components/DashboardCharts/DashboardCharts';
 import { RankingsSection } from './components/RankingsSection/RankingsSection';
 import styles from './page.module.scss';
 
-const EMPRESA_FOUNDING_ID = 'explog-founding';
-
 const OPCOES_SELECT_PERIODO = opcoesPeriodoDisponiveis().map((dias) => ({
   value: String(dias),
   label: labelPeriodo(dias),
@@ -85,12 +83,6 @@ export default function DashboardPage() {
       <div className={styles.grid}>
         <StatCard icon={<Flame size={22} />} label={`Fogos (${periodoLabel})`} value={data.totalFogosPeriodo} color="var(--accent)" />
         <StatCard icon={<Weight size={22} />} label={`Kg aplicados (${periodoLabel})`} value={data.kgAplicadoPeriodo.toFixed(0)} sub="kg" color="var(--data)" />
-        {companyId !== EMPRESA_FOUNDING_ID && (
-          <>
-            <StatCard icon={<ShieldCheck size={22} />} label="Licenças ativas" value={data.licencasAtivas} sub={`${data.licencasTotal} no total`} color="var(--ok)" />
-            <StatCard icon={<Timer size={22} />} label="Expirando em 30d" value={data.licencasExpirando} color="var(--accent)" />
-          </>
-        )}
         <StatCard
           icon={<Gauge size={22} />}
           label={`Densidade média (${periodoLabel})`}

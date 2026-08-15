@@ -1,3 +1,9 @@
 .content {
   padding: var(--spacing-large);
 }
+
+.empty {
+  color: var(--text-muted);
+  padding: var(--spacing-xlarge) 0;
+  text-align: center;
+}

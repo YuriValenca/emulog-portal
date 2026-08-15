@@ -9,7 +9,15 @@ import { ProdutosTab } from './components/Tabs/ProdutosTab';
 import styles from './page.module.scss';
 
 export default function CadastrosPage() {
-  const { companyId } = useAppAuth();
+  const { companyId, isSuperadmin } = useAppAuth();
+
+  if (isSuperadmin && !companyId) {
+    return (
+      <div className={styles.content}>
+        <p className={styles.empty}>Selecione uma empresa no topo da página para ver os cadastros.</p>
+      </div>
+    );
+  }
 
   return (
     <div className={styles.content}>

@@ -6,7 +6,7 @@ import { Check, ChevronDown /* , Search */ } from 'lucide-react';
 import clsx from 'clsx';
 import { CSSProperties, ReactNode /* , useEffect, useMemo, useState */ } from 'react';
 // import { Input } from '@/components/ui/Input/Input';
-// import { useDebouncedValue } from '@/hooks/useDebouncedValue';
+// import { useDebouncedValue } from '@/hooks/helpers/useDebouncedValue';
 import styles from './Select.module.scss';
 // import { Spinner } from '../Spinner/Spinner';
 

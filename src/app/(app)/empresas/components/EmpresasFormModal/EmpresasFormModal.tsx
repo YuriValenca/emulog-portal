@@ -122,7 +122,7 @@ export default function EmpresaFormModal({ visible, onClose, empresaEditando, em
   const isFounding = !!empresaEditando?.founding;
 
   const opcoesMatriz = [
-    { value: NENHUMA_MATRIZ, label: 'Nenhuma — esta é uma Matriz' },
+    { value: NENHUMA_MATRIZ, label: 'Nenhuma' },
     ...empresas
       .filter((empresa) => !empresa.parentCompanyId && empresa.id !== empresaEditando?.id)
       .map((empresa) => ({ value: empresa.id, label: empresa.name })),
@@ -172,6 +172,7 @@ export default function EmpresaFormModal({ visible, onClose, empresaEditando, em
       open={visible}
       onOpenChange={(open) => !open && onClose()}
       title={isEditing ? 'Editar Empresa' : 'Nova Empresa'}
+      width={500}
       footer={
         <>
           <Button variant="ghost" onClick={onClose} disabled={saving}>
@@ -255,17 +256,17 @@ export default function EmpresaFormModal({ visible, onClose, empresaEditando, em
               <Switch checked={field.value} onCheckedChange={field.onChange} label="Módulo Portal" disabled={saving} />
             )}
           />
+          {!isFounding && (
+            <Controller
+              control={control}
+              name="active"
+              render={({ field }) => (
+                <Switch checked={field.value} onCheckedChange={field.onChange} label="Empresa ativa" disabled={saving} />
+              )}
+            />
+          )}
         </div>
 
-        {!isFounding && (
-          <Controller
-            control={control}
-            name="active"
-            render={({ field }) => (
-              <Switch checked={field.value} onCheckedChange={field.onChange} label="Empresa ativa" disabled={saving} />
-            )}
-          />
-        )}
       </form>
     </Modal>
   );

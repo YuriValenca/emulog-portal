@@ -49,4 +49,8 @@
 
 .rowItem {
   flex: 1;
+
+  input {
+    max-width: 175px;
+  }
 }

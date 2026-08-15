@@ -2,7 +2,7 @@
 
 import * as RadixDialog from '@radix-ui/react-dialog';
 import { X } from 'lucide-react';
-import { ReactNode } from 'react';
+import { CSSProperties, ReactNode } from 'react';
 import styles from './Modal.module.scss';
 
 interface ModalProps {
@@ -12,14 +12,19 @@ interface ModalProps {
   description?: string;
   children: ReactNode;
   footer?: ReactNode;
+  width?: number;
 }
 
-export function Modal({ open, onOpenChange, title, description, children, footer }: ModalProps) {
+export function Modal({ open, onOpenChange, title, description, children, footer, width, }: ModalProps) {
+  const contentStyle = width
+    ? ({ '--modal-width': `${width}px` } as CSSProperties)
+    : undefined;
+
   return (
     <RadixDialog.Root open={open} onOpenChange={onOpenChange}>
       <RadixDialog.Portal>
         <RadixDialog.Overlay className={styles.overlay} />
-        <RadixDialog.Content className={styles.content}>
+        <RadixDialog.Content className={styles.content} style={contentStyle}>
           <div className={styles.header}>
             <div>
               <RadixDialog.Title className={styles.title}>{title}</RadixDialog.Title>

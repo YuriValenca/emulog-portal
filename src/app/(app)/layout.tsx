@@ -14,6 +14,7 @@ import { Spinner } from '@/components/ui/Spinner/Spinner';
 
 const PAGE_TITLES: Record<string, string> = {
   '/dashboard': 'Dashboard',
+  '/cadastros': 'Cadastros',
   '/empresas': 'Empresas',
   '/fogos': 'Gestão de fogos',
   '/ocorrencias': 'Ocorrências',

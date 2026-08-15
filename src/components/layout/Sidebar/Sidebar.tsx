@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { signOut } from 'firebase/auth';
 import { ReactNode } from 'react';
 import { Building2, CalendarX, FilePlus, FileText, Flame, LayoutGrid, LogOut, TriangleAlert } from 'lucide-react';
@@ -37,6 +37,8 @@ export default function Sidebar({ company, appUser, role }: SidebarProps) {
   const pathname = usePathname();
   const isSuperadmin = role === 'superadmin';
 
+  const router = useRouter();
+
   const handleLogout = () => {
     signOut(auth).catch(() => {});
   };
@@ -51,7 +53,7 @@ export default function Sidebar({ company, appUser, role }: SidebarProps) {
 
   return (
     <aside className={styles.sidebar}>
-      <div className={styles.brand}>
+      <div className={styles.brand} onClick={() => router.replace('/dashboard')}>
         <Image src="/assets/emulogLogo.svg" alt="EMULOG" className={styles.brandMark} width={32} height={32} />
         <span className={styles.brandName}>EMULOG</span>
       </div>
