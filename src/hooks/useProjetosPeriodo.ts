@@ -26,8 +26,5 @@ export function useProjetosPeriodo(companyId: string | null) {
     queryKey: ['projetosPeriodo', companyId, MAX_DIAS_JANELA],
     queryFn: () => fetchProjetosPeriodo(companyId as string),
     enabled: !!companyId,
-    staleTime: 5 * 60 * 1000,
-    gcTime: 30 * 60 * 1000,
-    refetchOnWindowFocus: false,
   });
 }

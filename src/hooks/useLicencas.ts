@@ -15,8 +15,5 @@ export function useLicencas(companyId: string | null) {
     queryKey: ['licencas', companyId],
     queryFn: () => fetchLicencas(companyId as string),
     enabled: !!companyId,
-    staleTime: 5 * 60 * 1000,
-    gcTime: 30 * 60 * 1000,
-    refetchOnWindowFocus: false,
   });
 }
