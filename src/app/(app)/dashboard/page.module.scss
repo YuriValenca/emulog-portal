@@ -43,7 +43,6 @@
 
 .empty {
   color: var(--text-muted);
-  font-size: var(--font-size-default);
   text-align: center;
-  padding: var(--spacing-xxxlarge) 0;
+  padding: var(--spacing-xlarge) var(--spacing-none);
 }
