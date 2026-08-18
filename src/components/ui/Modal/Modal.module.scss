@@ -14,11 +14,12 @@
   width: 100%;
   max-width: var(--modal-width, 480px);
   max-height: 85vh;
-  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
-  padding: var(--spacing-large);
   z-index: 100;
   animation: contentIn 0.15s ease;
 }
@@ -32,7 +33,8 @@
   align-items: flex-start;
   justify-content: space-between;
   gap: var(--spacing-default);
-  margin-bottom: var(--spacing-default);
+  flex-shrink: 0;
+  padding: var(--spacing-large) var(--spacing-large) var(--spacing-default);
 }
 
 .title {
@@ -68,14 +70,20 @@
 }
 
 .body {
+  flex: 1;
+  overflow-y: auto;
   color: var(--text);
+  padding: 0 var(--spacing-large) var(--spacing-large);
 }
 
 .footer {
   display: flex;
   justify-content: flex-end;
+  align-items: center;
   gap: var(--spacing-xsmall);
-  margin-top: var(--spacing-large);
+  flex-shrink: 0;
+  border-top: 1px solid var(--border);
+  padding: var(--spacing-default) var(--spacing-large);
 }
 
 @keyframes overlayIn {

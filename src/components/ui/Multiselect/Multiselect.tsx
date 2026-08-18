@@ -26,6 +26,7 @@ interface MultiSelectProps {
   searchable?: boolean;
   searchPlaceholder?: string;
   emptyMessage?: string;
+  portalContainer?: HTMLElement | null;
 }
 
 function widthStyle(width?: MultiSelectWidth): CSSProperties | undefined {
@@ -45,6 +46,7 @@ export function MultiSelect({
   searchable = true,
   searchPlaceholder = 'Buscar...',
   emptyMessage = 'Nenhum resultado encontrado',
+  portalContainer,
 }: MultiSelectProps) {
   const [open, setOpen] = useState(false);
   const [searchText, setSearchText] = useState('');
@@ -104,10 +106,10 @@ export function MultiSelect({
         </RadixPopover.Trigger>
       </div>
 
-      <RadixPopover.Portal>
+      <RadixPopover.Portal container={portalContainer}>
         <RadixPopover.Content
           className={styles.content}
-          style={{ width: 'var(--radix-popover-trigger-width)' }}
+          style={{ width: 'var(--radix-popover-trigger-width)', zIndex: 10000 }}
           sideOffset={4}
           onOpenAutoFocus={(event) => {
             if (!searchable) event.preventDefault();
