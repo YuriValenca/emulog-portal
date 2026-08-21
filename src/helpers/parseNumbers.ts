@@ -1,5 +1,8 @@
-export function parseFloatAuto(valor: string | undefined): number {
-  if (!valor) return NaN;
+export function parseFloatAuto(valor: string | number | undefined): number {
+  if (valor === undefined || valor === null) return NaN;
+  if (typeof valor === 'number') return valor;
+  if (valor === '') return NaN;
+
   const limpo = valor.trim();
   const temVirgula = limpo.includes(',');
   const temPonto = limpo.includes('.');
