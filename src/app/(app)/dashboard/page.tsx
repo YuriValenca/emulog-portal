@@ -116,7 +116,7 @@ export default function DashboardPage() {
           placeholder="Todos"
           size="sm"
           label='Operadores'
-          width={325}
+          width={320}
         />
       </div>
 
