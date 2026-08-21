@@ -1,0 +1,28 @@
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.table th {
+  color: var(--text-muted);
+  text-align: left;
+  font-weight: 400;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding-bottom: var(--spacing-xsmall);
+}
+
+.table td {
+  padding: 10px 0;
+  border-top: 1px solid var(--border);
+}
+
+.row {
+  cursor: pointer;
+}
+
+.row:hover {
+  background: var(--surface-2);
+}

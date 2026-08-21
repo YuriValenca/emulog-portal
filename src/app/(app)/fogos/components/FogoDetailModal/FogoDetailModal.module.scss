@@ -1,0 +1,95 @@
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--spacing-xsmall);
+  margin-bottom: var(--spacing-default);
+}
+
+.box {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  background: var(--surface-2);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-xsmall) var(--spacing-small);
+}
+
+.label {
+  font-size: 11px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.mono {
+  font-family: var(--font-mono);
+}
+
+.observacao {
+  background: var(--surface-2);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-small);
+  margin-bottom: var(--spacing-default);
+}
+
+.observacao p {
+  margin-top: 4px;
+  font-size: 14px;
+  color: var(--text);
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xsmall);
+}
+
+.sectionTitle {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--brand-on-dark);
+  border-left: 3px solid var(--brand);
+  padding-left: var(--spacing-xsmall);
+}
+
+.amostraBox {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-small);
+}
+
+.pesagensTable td:first-child {
+  padding-left: var(--spacing-large);
+}
+
+.pesagensTable td:not(:first-child),
+.pesagensTable th:not(:first-child) {
+  text-align: center;
+}
+
+.amostraTitulo {
+  font-weight: 700;
+  font-size: 14px;
+  display: block;
+  margin-bottom: var(--spacing-xsmall);
+}
+
+.densidadeRow {
+  display: grid;
+  grid-template-columns: repeat(4, auto);
+  align-items: baseline;
+  gap: var(--spacing-xsmall);
+  font-size: 13px;
+}
+
+.densidadeLabel {
+  color: var(--text-muted);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.densidadeValue {
+  font-family: var(--font-mono);
+  color: var(--text);
+}

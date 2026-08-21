@@ -1,0 +1,163 @@
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-default);
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--spacing-xsmall);
+}
+
+.amostras {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-small);
+}
+
+.amostraBox {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-small);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xsmall);
+}
+
+.amostraHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--spacing-xsmall);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.amostraTitulo {
+  flex: 1;
+}
+
+.amostraProgress {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--text-secondary, #888);
+  white-space: nowrap;
+}
+
+.amostraProgressDone {
+  color: var(--ok, #2e7d32);
+}
+
+.collapseBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+  border-radius: var(--radius-md);
+  border: none;
+  background: none;
+  color: var(--text-secondary, #888);
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.collapseBtn:hover {
+  background: var(--hover-bg, rgba(0, 0, 0, 0.06));
+  color: var(--text);
+}
+
+.removeBtn {
+  background: none;
+  border: none;
+  color: var(--crit);
+  cursor: pointer;
+  padding: 4px;
+}
+
+.collapseWrapper {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.25s ease;
+}
+
+.collapseWrapperOpen {
+  grid-template-rows: 1fr;
+}
+
+.collapseInner {
+  overflow: hidden;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-default);
+}
+
+.horaRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--spacing-xsmall);
+}
+
+.pesagensList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-tiny);
+}
+
+.densidadeRow {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--spacing-xsmall);
+  margin-bottom: var(--spacing-small);
+}
+
+.densidadeInputWrapper {
+  flex: 1;
+}
+
+.densidadeConfirmedRow {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xsmall);
+  margin-bottom: var(--spacing-small);
+}
+
+.fieldError {
+  font-size: 12px;
+  color: var(--crit);
+}
+
+.footerContent {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-xsmall);
+  width: 100%;
+
+  button {
+    margin-left: auto;
+    min-width: 170px;
+    max-width: 170px;
+  }
+}
+
+.saveHint {
+  font-size: 12px;
+  color: var(--text-secondary, #888);
+}
+
+.confirmPopup {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-default);
+}
+
+.confirmActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--spacing-xsmall);
+}

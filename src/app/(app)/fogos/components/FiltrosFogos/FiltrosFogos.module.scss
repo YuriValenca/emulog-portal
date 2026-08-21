@@ -1,0 +1,28 @@
+.container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: var(--spacing-xsmall);
+  margin-bottom: var(--spacing-default);
+  align-items: end;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-tiny);
+}
+
+.label {
+  font-size: var(--font-size-small);
+  color: var(--text-muted);
+}
+
+.dateInput {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 0 var(--spacing-small);
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 14px;
+}
