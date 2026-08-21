@@ -10,12 +10,13 @@ interface ModalProps {
   onOpenChange: (open: boolean) => void;
   title: string;
   description?: string;
+  headerAction?: ReactNode;
   children: ReactNode;
   footer?: ReactNode;
   width?: number;
 }
 
-export function Modal({ open, onOpenChange, title, description, children, footer, width, }: ModalProps) {
+export function Modal({ open, onOpenChange, title, description, headerAction, children, footer, width }: ModalProps) {
   const contentStyle = width
     ? ({ '--modal-width': `${width}px` } as CSSProperties)
     : undefined;
@@ -34,9 +35,12 @@ export function Modal({ open, onOpenChange, title, description, children, footer
                 </RadixDialog.Description>
               )}
             </div>
-            <RadixDialog.Close className={styles.close}>
-              <X size={18} />
-            </RadixDialog.Close>
+            <div className={styles.headerActions}>
+              {headerAction}
+              <RadixDialog.Close className={styles.close}>
+                <X size={18} />
+              </RadixDialog.Close>
+            </div>
           </div>
 
           <div className={styles.body}>{children}</div>

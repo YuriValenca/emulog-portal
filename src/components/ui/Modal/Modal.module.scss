@@ -24,6 +24,13 @@
   animation: contentIn 0.15s ease;
 }
 
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xsmall);
+  flex-shrink: 0;
+}
+
 .content:focus {
   outline: none;
 }
