@@ -3,14 +3,16 @@ import { zTimestamp } from './common';
 import { produtoRefSchema } from './produto';
 
 export const pesagemSchema = z.object({
-  peso: z.string(),
-  densidade: z.string(),
+  peso: z.union([z.number(), z.literal('')]),
+  densidade: z.union([z.number(), z.literal('')]),
   timestamp: z.string(),
 });
 
 export const amostraGrupoSchema = z.object({
   amostraId: z.number(),
-  pesagens: z.array(pesagemSchema),
+  pesagens: z.array(pesagemSchema).optional(),
+  densidadeInicial: z.number().nullable().optional(),
+  densidadeFinal: z.number().nullable().optional(),
 });
 
 export const legacyPesagemFlatSchema = z.object({
@@ -45,9 +47,9 @@ export const informacoesOperacaoSchema = z.object({
   numeroNF: z.string(),
   kgPrevisto: z.string(),
   kgAplicado: z.string(),
-  caminhao: caminhaoRefSchema.nullable(),
-  equipe: z.array(operadorRefSchema),
-  produto: produtoRefSchema.nullable(),
+  caminhao: caminhaoRefSchema.nullable().optional(),
+  equipe: z.array(operadorRefSchema).optional(),
+  produto: produtoRefSchema.nullable().optional(),
   informacoesGerais: z.string(),
 });
 
