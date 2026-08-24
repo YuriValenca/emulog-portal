@@ -7,6 +7,7 @@ import { EquipeTab } from './components/Tabs/EquipeTab';
 import { UmbsTab } from './components/Tabs/UMBTab';
 import { ProdutosTab } from './components/Tabs/ProdutosTab';
 import styles from './page.module.scss';
+import { ClientesTab } from './components/Tabs/ClientesTab';
 
 export default function CadastrosPage() {
   const { companyId, isSuperadmin } = useAppAuth();
@@ -27,6 +28,7 @@ export default function CadastrosPage() {
           { value: 'equipe', label: 'Equipe', content: <EquipeTab companyId={companyId} /> },
           { value: 'umbs', label: 'UMBs', content: <UmbsTab companyId={companyId} /> },
           { value: 'produtos', label: 'Produtos', content: <ProdutosTab companyId={companyId} /> },
+          { value: 'clientes', label: 'Clientes', content: <ClientesTab companyId={companyId} /> },
         ]}
       />
     </div>

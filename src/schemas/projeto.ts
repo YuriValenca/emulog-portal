@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { zTimestamp } from './common';
 import { produtoRefSchema } from './produto';
+import { clienteRefSchema } from './cliente';
 
 export const pesagemSchema = z.object({
   peso: z.union([z.number(), z.literal('')]),
@@ -50,6 +51,7 @@ export const informacoesOperacaoSchema = z.object({
   caminhao: caminhaoRefSchema.nullable().optional(),
   equipe: z.array(operadorRefSchema).optional(),
   produto: produtoRefSchema.nullable().optional(),
+  cliente: clienteRefSchema.nullable().optional(),
   informacoesGerais: z.string(),
 });
 

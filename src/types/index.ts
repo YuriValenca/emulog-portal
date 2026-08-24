@@ -14,6 +14,7 @@ export type { Caminhao } from '@/schemas/caminhao';
 export type { Operador } from '@/schemas/operador';
 export type { Calibragem } from '@/schemas/calibragem';
 export type { Produto, ProdutoRef } from '@/schemas/produto';
+export type { Cliente, ClienteRef } from '@/schemas/cliente';
 export type {
   Ocorrencia,
   OcorrenciaTipo,
