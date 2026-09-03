@@ -3,17 +3,17 @@ import { zTimestamp } from './common';
 import { produtoRefSchema } from './produto';
 import { clienteRefSchema } from './cliente';
 
+const pesoOuVazio = z.union([z.number(), z.literal('')]).transform((v) => (v === '' ? null : v));
+
 export const pesagemSchema = z.object({
-  peso: z.union([z.number(), z.literal('')]),
-  densidade: z.union([z.number(), z.literal('')]),
+  peso: pesoOuVazio,
+  densidade: pesoOuVazio,
   timestamp: z.string(),
 });
 
 export const amostraGrupoSchema = z.object({
   amostraId: z.number(),
-  pesagens: z.array(pesagemSchema).optional(),
-  densidadeInicial: z.number().nullable().optional(),
-  densidadeFinal: z.number().nullable().optional(),
+  pesagens: z.array(pesagemSchema),
 });
 
 export const legacyPesagemFlatSchema = z.object({
@@ -24,7 +24,17 @@ export const legacyPesagemFlatSchema = z.object({
   timestamp: z.string().optional(),
 });
 
-export const amostraItemSchema = z.union([amostraGrupoSchema, legacyPesagemFlatSchema]);
+export const amostraManualSchema = z.object({
+  amostraId: z.number(),
+  densidadeInicial: z.number().nullable(),
+  densidadeFinal: z.number().nullable(),
+});
+
+export const amostraItemSchema = z.union([
+  amostraGrupoSchema,
+  legacyPesagemFlatSchema,
+  amostraManualSchema,
+]);
 
 export const projetoCalibragemSchema = z.object({
   tara: z.union([z.string(), z.number()]),
@@ -48,16 +58,16 @@ export const informacoesOperacaoSchema = z.object({
   numeroNF: z.string(),
   kgPrevisto: z.string(),
   kgAplicado: z.string(),
-  caminhao: caminhaoRefSchema.nullable().optional(),
-  equipe: z.array(operadorRefSchema).optional(),
+  caminhao: caminhaoRefSchema.nullable(),
+  equipe: z.array(operadorRefSchema),
   produto: produtoRefSchema.nullable().optional(),
-  cliente: clienteRefSchema.nullable().optional(),
   informacoesGerais: z.string(),
 });
 
 export const projetoSchema = z.object({
   id: z.string(),
   nomeProjeto: z.string(),
+  cliente: clienteRefSchema.nullable().optional(),
   dataCriacao: zTimestamp,
   uidUsuario: z.string(),
   companyId: z.string(),
@@ -79,6 +89,7 @@ export type Pesagem = z.infer<typeof pesagemSchema>;
 export type AmostraGrupo = z.infer<typeof amostraGrupoSchema>;
 export type LegacyPesagemFlat = z.infer<typeof legacyPesagemFlatSchema>;
 export type AmostraItem = z.infer<typeof amostraItemSchema>;
+export type AmostraManual = z.infer<typeof amostraManualSchema>;
 export type ProjetoCalibragem = z.infer<typeof projetoCalibragemSchema>;
 export type InformacoesOperacao = z.infer<typeof informacoesOperacaoSchema>;
 export type Projeto = z.infer<typeof projetoSchema>;
