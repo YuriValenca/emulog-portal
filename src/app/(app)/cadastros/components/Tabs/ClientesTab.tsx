@@ -9,6 +9,7 @@ import { useCadastroForm } from '@/hooks/cadastro/useCadastroForm';
 import { CadastroPanel } from '../CadastroPanel/CadastroPanel';
 import type { Cliente } from '@/schemas/cliente';
 import styles from './CadastrosTab.module.scss';
+import { formatCNPJ } from '@/helpers/formatCNPJ';
 
 interface ClientesTabProps {
   companyId: string | null;
@@ -23,7 +24,7 @@ interface ClienteFormValues {
 const initialValues: ClienteFormValues = { nome: '', cnpj: '', endereco: '' };
 
 export function ClientesTab({ companyId }: ClientesTabProps) {
-  const { clientes, isLoading, criarCliente, isCriando, editarCliente, isEditando, excluirCliente } =
+  const { clientes, isLoading, isError, error, criarCliente, isCriando, editarCliente, isEditando, excluirCliente } =
     useClientes(companyId);
 
   const { modalOpen, editando, values, setValues, erro, salvando, abrir, fechar, handleSalvar } =
@@ -41,9 +42,9 @@ export function ClientesTab({ companyId }: ClientesTabProps) {
       editar: (v) =>
         editarCliente({
           id: v.id,
-          nome: v.nome?.trim(),
-          cnpj: v.cnpj !== undefined ? v.cnpj.trim() || null : undefined,
-          endereco: v.endereco !== undefined ? v.endereco.trim() || null : undefined,
+          nome: v.nome.trim(),
+          cnpj: v.cnpj.trim() || null,
+          endereco: v.endereco.trim() || null,
         }),
       companyId,
       isCriando,
@@ -52,8 +53,12 @@ export function ClientesTab({ companyId }: ClientesTabProps) {
     });
 
   const handleToggleAtivo = (c: Cliente) => {
-    editarCliente({ id: c.id, ativo: !c.ativo });
+    editarCliente({ id: c.id, nome: c.nome, cnpj: c.cnpj, endereco: c.endereco, ativo: !c.ativo });
   };
+
+  if (isError) {
+    console.error('Falha ao carregar clientes:', error);
+  }
 
   return (
     <CadastroPanel<Cliente>
@@ -75,7 +80,7 @@ export function ClientesTab({ companyId }: ClientesTabProps) {
       renderRow={(c) => (
         <tr key={c.id}>
           <td>{c.nome}</td>
-          <td>{c.cnpj || '—'}</td>
+          <td>{c.cnpj ? formatCNPJ(c.cnpj) : '—'}</td>
           <td>
             <Switch checked={c.ativo} onCheckedChange={() => handleToggleAtivo(c)} />
           </td>

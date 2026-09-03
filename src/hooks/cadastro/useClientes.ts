@@ -14,15 +14,31 @@ interface CriarClienteInput {
 
 interface EditarClienteInput {
   id: string;
-  nome?: string;
-  cnpj?: string | null;
-  endereco?: string | null;
+  nome: string;
+  cnpj: string | null;
+  endereco: string | null;
   ativo?: boolean;
+}
+
+function normalizeCnpj(cnpj: unknown): string | null {
+  if (typeof cnpj !== 'string') return null;
+  const limpo = cnpj.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+  return limpo || null;
 }
 
 async function fetchClientes(companyId: string): Promise<Cliente[]> {
   const snap = await getDocs(query(collection(db, 'clientes'), where('companyId', '==', companyId)));
-  return snap.docs.map((d) => clienteSchema.parse({ id: d.id, ...d.data() }));
+  const resultados: Cliente[] = [];
+  for (const d of snap.docs) {
+    const raw = { id: d.id, ...d.data(), cnpj: normalizeCnpj(d.data().cnpj) };
+    const parsed = clienteSchema.safeParse(raw);
+    if (!parsed.success) {
+      console.error(`Documento clientes/${d.id} inválido:`, parsed.error.flatten(), raw);
+      continue;
+    }
+    resultados.push(parsed.data);
+  }
+  return resultados;
 }
 
 export function useClientes(companyId: string | null) {
@@ -39,21 +55,23 @@ export function useClientes(companyId: string | null) {
     mutationFn: async (input: CriarClienteInput) => {
       await addDoc(collection(db, 'clientes'), {
         nome: input.nome,
-        cnpj: input.cnpj,
+        cnpj: normalizeCnpj(input.cnpj),
         endereco: input.endereco,
         ativo: true,
         companyId: input.companyId,
         criadoEm: new Date().toISOString(),
       });
     },
+    onError: (err) => console.error('Erro ao criar cliente:', err),
     onSuccess: () => queryClient.invalidateQueries({ queryKey }),
   });
 
   const editarMutation = useMutation({
     mutationFn: async (input: EditarClienteInput) => {
-      const { id, ...rest } = input;
-      await updateDoc(doc(db, 'clientes', id), rest);
+      const { id, cnpj, ...rest } = input;
+      await updateDoc(doc(db, 'clientes', id), { ...rest, cnpj: normalizeCnpj(cnpj) });
     },
+    onError: (err) => console.error('Erro ao editar cliente:', err),
     onSuccess: () => queryClient.invalidateQueries({ queryKey }),
   });
 
@@ -61,12 +79,15 @@ export function useClientes(companyId: string | null) {
     mutationFn: async (id: string) => {
       await deleteDoc(doc(db, 'clientes', id));
     },
+    onError: (err) => console.error('Erro ao excluir cliente:', err),
     onSuccess: () => queryClient.invalidateQueries({ queryKey }),
   });
 
   return {
     clientes: clientesQuery.data ?? [],
     isLoading: clientesQuery.isLoading,
+    isError: clientesQuery.isError,
+    error: clientesQuery.error,
     criarCliente: criarMutation.mutateAsync,
     isCriando: criarMutation.isPending,
     editarCliente: editarMutation.mutateAsync,
