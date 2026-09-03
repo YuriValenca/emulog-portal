@@ -3,7 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   addDoc, collection, doc, getDoc, getDocs,
-  orderBy, query, setDoc, Timestamp, where,
+  orderBy, query, setDoc, Timestamp, where, writeBatch,
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase/client';
 import { projetoSchema, projetoMetaSchema, type Projeto, type ProjetoMeta } from '@/schemas/projeto';
@@ -225,5 +225,32 @@ export function useCreateProjeto() {
   return {
     criarProjeto: criarMutation.mutateAsync,
     isCriando: criarMutation.isPending,
+  };
+}
+
+async function deletarProjeto(id: string): Promise<string> {
+  const batch = writeBatch(db);
+  batch.delete(doc(db, 'projetos', id));
+  batch.delete(doc(db, 'projetos_meta', id));
+  await batch.commit();
+  return id;
+}
+
+export function useDeleteProjeto() {
+  const queryClient = useQueryClient();
+
+  const deletarMutation = useMutation({
+    mutationFn: deletarProjeto,
+    onSuccess: (idRemovido) => {
+      queryClient.setQueriesData<MetaResult>({ queryKey: ['projetosMeta'] }, (old) => {
+        if (!old) return old;
+        return { ...old, items: old.items.filter((item) => item.id !== idRemovido) };
+      });
+    },
+  });
+
+  return {
+    deletarProjeto: deletarMutation.mutateAsync,
+    isDeletando: deletarMutation.isPending,
   };
 }

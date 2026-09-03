@@ -1,7 +1,8 @@
 'use client';
 
-import { ChevronRight } from 'lucide-react';
+import { Eye, Trash2 } from 'lucide-react';
 import { StatusPill } from '@/components/ui/StatusPill/StatusPill';
+import { ActionsMenu } from '@/components/ui/ActionsMenu/ActionsMenu';
 import { diffPercent, densidadeInicialFinalMedia, statusConformidade } from '@/lib/fogoUtils';
 import type { Projeto, Produto } from '@/types';
 import styles from './FogosTable.module.scss';
@@ -10,9 +11,10 @@ interface FogosTableProps {
   projetos: Projeto[];
   produtosById: Map<string, Produto>;
   onSelect: (projeto: Projeto) => void;
+  onDelete: (projeto: Projeto) => void;
 }
 
-export default function FogosTable({ projetos, produtosById, onSelect }: FogosTableProps) {
+export default function FogosTable({ projetos, produtosById, onSelect, onDelete }: FogosTableProps) {
   return (
     <table className={styles.table}>
       <thead>
@@ -53,7 +55,24 @@ export default function FogosTable({ projetos, produtosById, onSelect }: FogosTa
                 <StatusPill label={statusLabel} tone={status} />
               </td>
               <td>
-                <ChevronRight size={16} />
+                <ActionsMenu
+                  ariaLabel={`Ações para ${projeto.nomeProjeto}`}
+                  items={[
+                    {
+                      key: 'ver',
+                      label: 'Ver',
+                      icon: <Eye size={16} />,
+                      onClick: () => onSelect(projeto),
+                    },
+                    {
+                      key: 'apagar',
+                      label: 'Apagar',
+                      icon: <Trash2 size={16} />,
+                      variant: 'danger',
+                      onClick: () => onDelete(projeto),
+                    },
+                  ]}
+                />
               </td>
             </tr>
           );

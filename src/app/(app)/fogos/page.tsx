@@ -4,12 +4,13 @@ import { useMemo, useState } from 'react';
 import { Plus } from 'lucide-react';
 import { useAppAuth } from '@/hooks/useAppAuth';
 import { useCompanyGroup } from '@/hooks/fogos/useCompanyGroup';
-import { useProjetosList, DEFAULT_PAGE_SIZE } from '@/hooks/fogos/useProjetos';
+import { useProjetosList, useDeleteProjeto, DEFAULT_PAGE_SIZE } from '@/hooks/fogos/useProjetos';
 import { useCaminhoes } from '@/hooks/cadastro/useCaminhoes';
 import { useOperadores } from '@/hooks/cadastro/useOperadores';
 import { useProdutos } from '@/hooks/cadastro/useProdutos';
 import { Button } from '@/components/ui/Button/Button';
 import { Pagination } from '@/components/ui/Pagination/Pagination';
+import ConfirmModal from './components/ConfirmModal/ConfirmModal';
 import FiltrosFogos from './components/FiltrosFogos/FiltrosFogos';
 import FogosTable from './components/FogosTable/FogosTable';
 import FogoDetailModal from './components/FogoDetailModal/FogoDetailModa';
@@ -24,6 +25,34 @@ export default function FogosPage() {
   const { caminhoes } = useCaminhoes(companyId);
   const { operadores } = useOperadores(companyId);
   const { produtos } = useProdutos(companyId);
+  const { deletarProjeto, isDeletando } = useDeleteProjeto();
+  const [projetoParaExcluir, setProjetoParaExcluir] = useState<Projeto | null>(null);
+  const [etapaExclusao, setEtapaExclusao] = useState<'confirmar' | 'final' | null>(null);
+
+  const handleDelete = (projeto: Projeto) => {
+    setProjetoParaExcluir(projeto);
+    setEtapaExclusao('confirmar');
+  };
+
+  const avancarParaConfirmacaoFinal = () => {
+    setEtapaExclusao('final');
+  };
+
+  const cancelarExclusao = () => {
+    setEtapaExclusao(null);
+    setProjetoParaExcluir(null);
+  };
+
+  const confirmarExclusao = async () => {
+    if (!projetoParaExcluir) return;
+    try {
+      await deletarProjeto(projetoParaExcluir.id);
+      cancelarExclusao();
+    } catch (err) {
+      console.error('[FogosPage] falha ao apagar projeto:', err);
+      window.alert('Não foi possível apagar o fogo. Tente novamente.');
+    }
+  };
 
   const [filtros, setFiltros] = useState({
     busca: '', dataInicio: '', dataFim: '', produtoIds: [] as string[], caminhaoIds: [] as string[], pageSize: DEFAULT_PAGE_SIZE,
@@ -76,12 +105,43 @@ export default function FogosPage() {
       ) : isLoadingMeta || isLoadingPagina ? (
         <div className={styles.loading}>Carregando fogos...</div>
       ) : (
-        <FogosTable projetos={projetos} produtosById={produtosById} onSelect={setSelecionado} />
+        <FogosTable projetos={projetos} produtosById={produtosById} onSelect={setSelecionado} onDelete={handleDelete} />
       )}
 
       <Pagination page={page} totalPages={totalPaginas} onPageChange={setPage} />
 
       <FogoDetailModal projeto={selecionado} onClose={() => setSelecionado(null)} />
+
+      <ConfirmModal
+        open={etapaExclusao === 'confirmar'}
+        title="Tem certeza?"
+        description={
+          projetoParaExcluir
+            ? `Você está prestes a apagar o fogo "${projetoParaExcluir.nomeProjeto}".`
+            : undefined
+        }
+        confirmLabel="Continuar"
+        cancelLabel="Cancelar"
+        tone="default"
+        onConfirm={avancarParaConfirmacaoFinal}
+        onCancel={cancelarExclusao}
+      />
+
+      <ConfirmModal
+        open={etapaExclusao === 'final'}
+        title="Apagar permanentemente?"
+        description={
+          projetoParaExcluir
+            ? `Essa ação não pode ser desfeita. "${projetoParaExcluir.nomeProjeto}" será apagado para sempre.`
+            : undefined
+        }
+        confirmLabel="Apagar"
+        cancelLabel="Cancelar"
+        tone="danger"
+        isConfirming={isDeletando}
+        onConfirm={confirmarExclusao}
+        onCancel={cancelarExclusao}
+      />
 
       {companyId && appUser && (
         <CriarFogoModal
