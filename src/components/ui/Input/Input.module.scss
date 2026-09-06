@@ -78,9 +78,23 @@
   border-color: var(--crit);
 }
 
+.fieldFooter {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--spacing-xsmall);
+}
+
 .fieldError {
   font-size: var(--font-size-tooltip);
   color: var(--crit);
+}
+
+.charCount {
+  margin-left: auto;
+  font-size: var(--font-size-tooltip);
+  color: var(--text-muted);
+  white-space: nowrap;
 }
 
 .disabled {

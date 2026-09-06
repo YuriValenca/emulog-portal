@@ -13,11 +13,31 @@ interface InputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'size'>
   error?: boolean;
   label?: string;
   errorMessage?: string;
+  showCharCount?: boolean;
 }
 
 export const Input = forwardRef<HTMLInputElement, InputProps>(
-  ({ icon, rightIcon, size = 'md', error, label, errorMessage, className, disabled, id, ...props }, ref) => {
+  (
+    {
+      icon,
+      rightIcon,
+      size = 'md',
+      error,
+      label,
+      errorMessage,
+      className,
+      disabled,
+      id,
+      showCharCount,
+      maxLength,
+      value,
+      ...props
+    },
+    ref
+  ) => {
     const hasError = error || Boolean(errorMessage);
+    const charCount = showCharCount && maxLength !== undefined ? String(value ?? '').length : null;
+    const showFooter = Boolean(errorMessage) || charCount !== null;
 
     return (
       <div className={styles.field}>
@@ -36,10 +56,27 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
           )}
         >
           {icon && <span className={styles.icon}>{icon}</span>}
-          <input ref={ref} id={id} disabled={disabled} className={styles.input} {...props} />
+          <input
+            ref={ref}
+            id={id}
+            disabled={disabled}
+            className={styles.input}
+            maxLength={maxLength}
+            value={value}
+            {...props}
+          />
           {rightIcon && <span className={styles.iconRight}>{rightIcon}</span>}
         </div>
-        {errorMessage && <span className={styles.fieldError}>{errorMessage}</span>}
+        {showFooter && (
+          <div className={styles.fieldFooter}>
+            {errorMessage && <span className={styles.fieldError}>{errorMessage}</span>}
+            {charCount !== null && (
+              <span className={styles.charCount}>
+                {charCount}/{maxLength}
+              </span>
+            )}
+          </div>
+        )}
       </div>
     );
   }
