@@ -5,6 +5,12 @@ import { usePathname, useRouter } from 'next/navigation';
 import { signOut } from 'firebase/auth';
 import { auth } from '@/lib/firebase/client';
 import { useAppAuth } from '@/hooks/useAppAuth';
+import { useCompanyGroup } from '@/hooks/fogos/useCompanyGroup';
+import { useOcorrencias } from '@/hooks/ocorrencias/useOcorrencias';
+import { useScanOcorrencias } from '@/hooks/ocorrencias/useScanOcorrencias';
+import { useOcorrenciasNaoVistas } from '@/hooks/ocorrencias/useOcorrenciasNaoVistas';
+import { useMarcarOcorrenciasVisitadas } from '@/hooks/ocorrencias/useMarcarOcorrenciasVisitadas';
+import { ScanProgressCard } from '@/components/layout/ScanProgressCard/ScanProgressCard';
 import Sidebar from '@/components/layout/Sidebar/Sidebar';
 import Topbar from '@/components/layout/Topbar/Topbar';
 import styles from './layout.module.scss';
@@ -46,7 +52,19 @@ function StateActions({ onLogout, onBack }: { onLogout: () => void; onBack?: () 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
-  const { authStatus, debugError, company, companies, appUser, role, isSuperadmin } = useAppAuth();
+  const { authStatus, debugError, company, companies, appUser, role, isSuperadmin, companyId } = useAppAuth();
+
+  const { companyIds } = useCompanyGroup(companyId);
+  const { ocorrencias } = useOcorrencias(companyIds);
+  const scanState = useScanOcorrencias(companyId);
+  const temOcorrenciasNaoVistas = useOcorrenciasNaoVistas(ocorrencias, appUser);
+  const marcarVisitadas = useMarcarOcorrenciasVisitadas();
+
+  useEffect(() => {
+    if (pathname === '/ocorrencias' && appUser?.uid) {
+      marcarVisitadas(appUser.uid);
+    }
+  }, [pathname, appUser?.uid, marcarVisitadas]);
 
   useEffect(() => {
     if (authStatus === 'unauthenticated') {
@@ -113,7 +131,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <div className={styles.shell}>
-      <Sidebar company={company} appUser={appUser} role={role} />
+      <Sidebar company={company} appUser={appUser} role={role} temOcorrenciasNaoVistas={temOcorrenciasNaoVistas} />
       <main className={styles.main}>
         <Topbar
           title={resolvePageTitle(pathname)}
@@ -123,6 +141,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         />
         <div className={styles.content}>{children}</div>
       </main>
+      {scanState.isScanning && <ScanProgressCard total={scanState.total} processados={scanState.processados} />}
     </div>
   );
 }

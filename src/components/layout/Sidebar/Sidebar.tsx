@@ -15,6 +15,7 @@ interface SidebarProps {
   company: Company | null;
   appUser: AppUser | null;
   role: UserRole | 'superadmin' | null;
+  temOcorrenciasNaoVistas?: boolean;
 }
 
 interface NavLink {
@@ -29,11 +30,11 @@ const operationLinks: NavLink[] = [
   { icon: <FileText size={16} />, label: 'Cadastros', href: '/cadastros' },
   { icon: <Flame size={16} />, label: 'Gestão de fogos', href: '/fogos' },
   { icon: <FilePlus size={16} />, label: 'Relatórios', href: '/relatorios', disabled: true },
-  { icon: <TriangleAlert size={16} />, label: 'Ocorrências', href: '/ocorrencias', disabled: true },
+  { icon: <TriangleAlert size={16} />, label: 'Ocorrências', href: '/ocorrencias' },
   { icon: <CalendarX size={16} />, label: 'Vencimentos', href: '/vencimentos', disabled: true },
 ];
 
-export default function Sidebar({ company, appUser, role }: SidebarProps) {
+export default function Sidebar({ company, appUser, role, temOcorrenciasNaoVistas }: SidebarProps) {
   const pathname = usePathname();
   const isSuperadmin = role === 'superadmin';
 
@@ -74,6 +75,7 @@ export default function Sidebar({ company, appUser, role }: SidebarProps) {
             >
               {link.icon}
               {link.label}
+              {link.href === '/ocorrencias' && temOcorrenciasNaoVistas && <span className={styles.navDot} />}
             </Link>
           )
         )}

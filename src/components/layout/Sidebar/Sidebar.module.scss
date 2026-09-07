@@ -138,3 +138,12 @@
   background: var(--surface-2);
   color: var(--text);
 }
+
+.navDot {
+  width: 7px;
+  height: 7px;
+  border-radius: var(--radius-50);
+  background: var(--crit);
+  margin-left: auto;
+  flex-shrink: 0;
+}
