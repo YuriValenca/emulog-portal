@@ -7,7 +7,7 @@ import { auth } from '@/lib/firebase/client';
 import { useAppAuth } from '@/hooks/useAppAuth';
 import { useCompanyGroup } from '@/hooks/fogos/useCompanyGroup';
 import { useOcorrencias } from '@/hooks/ocorrencias/useOcorrencias';
-import { useScanOcorrencias } from '@/hooks/ocorrencias/useScanOcorrencias';
+import { useOcorrenciasAutoScan } from '@/hooks/ocorrencias/useOcorrenciasAutoScan';
 import { useOcorrenciasNaoVistas } from '@/hooks/ocorrencias/useOcorrenciasNaoVistas';
 import { useMarcarOcorrenciasVisitadas } from '@/hooks/ocorrencias/useMarcarOcorrenciasVisitadas';
 import { ScanProgressCard } from '@/components/layout/ScanProgressCard/ScanProgressCard';
@@ -56,7 +56,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   const { companyIds } = useCompanyGroup(companyId);
   const { ocorrencias } = useOcorrencias(companyIds);
-  const scanState = useScanOcorrencias(companyId);
+  const scanState = useOcorrenciasAutoScan(companyId);
   const temOcorrenciasNaoVistas = useOcorrenciasNaoVistas(ocorrencias, appUser);
   const marcarVisitadas = useMarcarOcorrenciasVisitadas();
 

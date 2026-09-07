@@ -6,16 +6,19 @@ export const ocorrenciaTipoSchema = z.enum([
   'diferenca_kg_excedente',
   'documentacao_pendente',
   'equipamento',
+  'licenca',
   'manual',
 ]);
 
 export const ocorrenciaOrigemSchema = z.enum(['automatica', 'manual']);
 export const ocorrenciaStatusSchema = z.enum(['aberta', 'em_acompanhamento', 'encerrada']);
+export const ocorrenciaMotivoLicencaSchema = z.enum(['expirando', 'expirada']);
 
 export const ocorrenciaSchema = z.object({
   id: z.string(),
   companyId: z.string(),
   projetoId: z.string().nullable(),
+  licenseId: z.string().nullable().optional(),
   tipo: ocorrenciaTipoSchema,
   tituloManual: z.string().max(80).nullable().optional(),
   origem: ocorrenciaOrigemSchema,
@@ -24,6 +27,7 @@ export const ocorrenciaSchema = z.object({
   valorReferencia: z.number().nullable(),
   responsavelUid: z.string().nullable(),
   criadoEm: zTimestamp,
+  motivo: ocorrenciaMotivoLicencaSchema.optional(),
 });
 
 export type OcorrenciaTipo = z.infer<typeof ocorrenciaTipoSchema>;

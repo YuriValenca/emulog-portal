@@ -27,6 +27,7 @@ const TIPO_OPTIONS: { value: OcorrenciaTipo; label: string }[] = [
   { value: 'diferenca_kg_excedente', label: 'Diferença de Kg excedente' },
   { value: 'documentacao_pendente', label: 'Documentação pendente' },
   { value: 'equipamento', label: 'Equipamento' },
+  { value: 'licenca', label: 'Licença' },
   { value: 'manual', label: 'Manual' },
 ];
 
@@ -36,7 +37,7 @@ const STATUS_OPTIONS: { value: OcorrenciaStatus; label: string }[] = [
   { value: 'encerrada', label: 'Encerrada' },
 ];
 
-const TIPO_TONE_MAP: Record<OcorrenciaTipo, 'ok' | 'warn' | 'crit' | 'data' | 'neutral'> = {
+const TIPO_TONE_MAP: Partial<Record<OcorrenciaTipo, 'ok' | 'warn' | 'crit' | 'data' | 'neutral'>> = {
   densidade_fora_da_faixa: 'crit',
   diferenca_kg_excedente: 'crit',
   documentacao_pendente: 'warn',
@@ -49,8 +50,9 @@ function tipoLabel(o: Ocorrencia) {
   return TIPO_OPTIONS.find((option) => option.value === o.tipo)?.label ?? o.tipo;
 }
 
-function tipoTone(tipo: OcorrenciaTipo): 'ok' | 'warn' | 'crit' | 'data' | 'neutral' {
-  return TIPO_TONE_MAP[tipo] ?? 'neutral';
+function tipoTone(o: Ocorrencia): 'ok' | 'warn' | 'crit' | 'data' | 'neutral' {
+  if (o.tipo === 'licenca') return o.motivo === 'expirada' ? 'crit' : 'warn';
+  return TIPO_TONE_MAP[o.tipo] ?? 'neutral';
 }
 
 function categoriaOcorrencia(o: Ocorrencia): 'fogo' | 'geral' {
@@ -244,7 +246,7 @@ export default function OcorrenciasPage() {
                     <CategoriaTag categoria={categoriaOcorrencia(o)} />
                   </td>
                   <td>
-                    <StatusPill label={tipoLabel(o)} tone={tipoTone(o.tipo)} />
+                    <StatusPill label={tipoLabel(o)} tone={tipoTone(o)} />
                   </td>
                   <td>{o.origem === 'manual' ? 'Manual' : 'Automática'}</td>
                   <td>{o.descricao || '—'}</td>
