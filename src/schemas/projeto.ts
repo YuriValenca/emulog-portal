@@ -75,6 +75,7 @@ export const projetoSchema = z.object({
   amostras: z.array(amostraItemSchema),
   calibragem: projetoCalibragemSchema,
   informacoesOperacao: informacoesOperacaoSchema.optional(),
+  ocorrenciasVerificadas: z.boolean().optional(),
 });
 
 export const projetoMetaSchema = z.object({

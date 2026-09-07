@@ -6,7 +6,7 @@ export const ocorrenciaTipoSchema = z.enum([
   'diferenca_kg_excedente',
   'documentacao_pendente',
   'equipamento',
-  'outro',
+  'manual',
 ]);
 
 export const ocorrenciaOrigemSchema = z.enum(['automatica', 'manual']);
@@ -17,9 +17,10 @@ export const ocorrenciaSchema = z.object({
   companyId: z.string(),
   projetoId: z.string().nullable(),
   tipo: ocorrenciaTipoSchema,
+  tituloManual: z.string().max(80).nullable().optional(),
   origem: ocorrenciaOrigemSchema,
   status: ocorrenciaStatusSchema,
-  descricao: z.string().nullable(),
+  descricao: z.string().max(500).nullable(),
   valorReferencia: z.number().nullable(),
   responsavelUid: z.string().nullable(),
   criadoEm: zTimestamp,

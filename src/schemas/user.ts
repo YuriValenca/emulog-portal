@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { zTimestamp } from './common';
+import { zTimestamp, zTimestampOrNull } from './common';
 
 export const userRoleSchema = z.enum(['user', 'company_admin', 'superadmin']);
 
@@ -11,6 +11,7 @@ export const appUserSchema = z.object({
   companyId: z.string().nullable(),
   role: userRoleSchema,
   ultimoLogin: zTimestamp.nullable(),
+  ultimaVisitaOcorrencias: zTimestampOrNull.optional(),
 });
 
 export type UserRole = z.infer<typeof userRoleSchema>;

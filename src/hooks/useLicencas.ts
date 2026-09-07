@@ -5,7 +5,7 @@ import { collection, getDocs } from 'firebase/firestore';
 import { db } from '@/lib/firebase/client';
 import type { License } from '@/types';
 
-async function fetchLicencas(companyId: string): Promise<License[]> {
+export async function fetchLicencas(companyId: string): Promise<License[]> {
   const snap = await getDocs(collection(db, 'companies', companyId, 'licenses'));
   return snap.docs.map((docSnap) => ({ id: docSnap.id, ...docSnap.data() }) as License);
 }
