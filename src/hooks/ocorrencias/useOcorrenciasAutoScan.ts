@@ -13,10 +13,8 @@ import { useCompanyGroup } from '@/hooks/fogos/useCompanyGroup';
 import { useToast } from '@/components/ui/Toast/Toast';
 import { detectarOcorrenciasDoProjeto } from '@/lib/deteccaoOcorrencia';
 import { fetchLicencas } from '@/hooks/useLicencas';
+import { statusExpiracaoLicenca, JANELA_EXPIRACAO_LICENCA_DIAS } from '@/lib/licenca';
 import type { License } from '@/types';
-
-const JANELA_EXPIRACAO_DIAS = 30;
-const MS_DIA = 1000 * 60 * 60 * 24;
 
 interface ScanState {
   isScanning: boolean;
@@ -30,28 +28,13 @@ interface LicencaOcorrenciaDetectada {
   motivo: 'expirando' | 'expirada';
 }
 
-function toDate(value: unknown): Date | null {
-  const v = value as { toDate?: () => Date; seconds?: number } | null;
-  if (!v) return null;
-  if (v.toDate) return v.toDate();
-  if (v.seconds) return new Date(v.seconds * 1000);
-  return null;
-}
-
 function detectarOcorrenciasDaLicenca(companyId: string, licencas: License[]): LicencaOcorrenciaDetectada[] {
   const agora = new Date();
   const detectadas: LicencaOcorrenciaDetectada[] = [];
 
   licencas.forEach((license) => {
-    if (license.status !== 'active' || !license.expiresAt) return;
-    const exp = toDate(license.expiresAt);
-    if (!exp) return;
-    const diasRestantes = (exp.getTime() - agora.getTime()) / MS_DIA;
-    if (diasRestantes < 0) {
-      detectadas.push({ companyId, license, motivo: 'expirada' });
-    } else if (diasRestantes <= JANELA_EXPIRACAO_DIAS) {
-      detectadas.push({ companyId, license, motivo: 'expirando' });
-    }
+    const status = statusExpiracaoLicenca(license, agora);
+    if (status) detectadas.push({ companyId, license, motivo: status });
   });
 
   return detectadas;
@@ -64,7 +47,7 @@ async function registrarOcorrenciaLicenca(detectada: LicencaOcorrenciaDetectada)
 
   const descricao = detectada.motivo === 'expirada'
     ? 'A licença expirou e precisa ser renovada.'
-    : `A licença expira em até ${JANELA_EXPIRACAO_DIAS} dias.`;
+    : `A licença expira em até ${JANELA_EXPIRACAO_LICENCA_DIAS} dias.`;
 
   const ref = doc(db, 'ocorrencias', `${detectada.license.id}_licenca`);
   const snap = await getDoc(ref);

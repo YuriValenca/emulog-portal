@@ -4,6 +4,7 @@ import { useMemo } from 'react';
 import { useProjetosPeriodo } from './useProjetosPeriodo';
 import { useLicencas } from './useLicencas';
 import { densidadeMediaDoProjeto, projetoForaDaFaixa, FAIXA_DENSIDADE_PADRAO, type FaixaDensidade } from '@/lib/densidade';
+import { statusExpiracaoLicenca } from '@/lib/licenca';
 import type { PeriodoDias } from '@/lib/periodo';
 import { parseFloatPTBR } from '@/helpers/parseNumbers';
 import type { License, Projeto } from '@/types';
@@ -53,7 +54,6 @@ export interface DashboardStats {
 }
 
 const MS_DIA = 1000 * 60 * 60 * 24;
-const JANELA_EXPIRACAO_LICENCA_DIAS = 30;
 const DIAS_LIMITE_AGRUPAMENTO_DIARIO = 31;
 const LIMITE_RANKING = 5;
 
@@ -198,11 +198,7 @@ function calcularLicencas(licencas: License[], agora: Date) {
   licencas.forEach((data) => {
     if (data.status === 'active') {
       licencasAtivas += 1;
-      if (data.expiresAt) {
-        const exp = toDate(data.expiresAt);
-        const diasRestantes = (exp.getTime() - agora.getTime()) / MS_DIA;
-        if (diasRestantes >= 0 && diasRestantes <= JANELA_EXPIRACAO_LICENCA_DIAS) licencasExpirando += 1;
-      }
+      if (statusExpiracaoLicenca(data, agora) === 'expirando') licencasExpirando += 1;
     }
     if (data.status === 'available') licencasDisponiveis += 1;
   });
