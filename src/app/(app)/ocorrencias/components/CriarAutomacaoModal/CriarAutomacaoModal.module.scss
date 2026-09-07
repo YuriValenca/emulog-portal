@@ -1,0 +1,48 @@
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-default);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-tiny);
+}
+
+.label {
+  font-size: var(--font-size-small);
+  color: var(--text-muted);
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--spacing-xsmall);
+}
+
+.formError {
+  font-size: 13px;
+  color: var(--crit);
+  background: var(--crit-soft);
+  border-radius: var(--radius-sm);
+  padding: var(--spacing-xsmall) var(--spacing-small);
+}
+
+.footerContent {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-default);
+  width: 100%;
+
+  button {
+    flex-shrink: 0;
+  }
+}
+
+.contatoNota {
+  font-size: 11px;
+  color: var(--text-muted);
+  line-height: 1.4;
+}

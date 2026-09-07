@@ -1,0 +1,34 @@
+.lista {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xsmall);
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--surface-2);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-small);
+}
+
+.metrica {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.condicao {
+  display: block;
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+.empty {
+  color: var(--text-muted);
+  text-align: center;
+  padding: var(--spacing-large) 0;
+}
