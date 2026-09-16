@@ -10,7 +10,7 @@ import { useOperadores } from '@/hooks/cadastro/useOperadores';
 import { useProdutos } from '@/hooks/cadastro/useProdutos';
 import { Button } from '@/components/ui/Button/Button';
 import { Pagination } from '@/components/ui/Pagination/Pagination';
-import ConfirmModal from './components/ConfirmModal/ConfirmModal';
+import ConfirmModal from '@/components/layout/ConfirmModal/ConfirmModal';
 import FiltrosFogos from './components/FiltrosFogos/FiltrosFogos';
 import FogosTable from './components/FogosTable/FogosTable';
 import FogoDetailModal from './components/FogoDetailModal/FogoDetailModa';
