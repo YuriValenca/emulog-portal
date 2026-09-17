@@ -2,10 +2,12 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
-  addDoc, collection, deleteDoc, doc, getDocs,
+  addDoc, collection, doc, getDocs,
   query, Timestamp, where, writeBatch,
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase/client';
+import { chunk } from '@/lib/chunk';
+import { useOcorrenciaRescan } from '@/hooks/ocorrencias/useOcorrenciasAutoScan';
 import { regraDeteccaoSchema, type RegraDeteccao, type RegraOperador } from '@/schemas/regraDeteccao';
 
 interface CriarRegraInput {
@@ -25,6 +27,19 @@ async function fetchRegras(companyId: string): Promise<RegraDeteccao[]> {
   return snap.docs.map((d) => regraDeteccaoSchema.parse({ id: d.id, ...d.data() }));
 }
 
+async function resetarVerificacaoDeFogos(companyId: string) {
+  const snap = await getDocs(query(collection(db, 'projetos'), where('companyId', '==', companyId)));
+  const refsParaResetar = snap.docs.filter((d) => d.data().ocorrenciasVerificadas === true).map((d) => d.ref);
+  const lotes = chunk(refsParaResetar, 400);
+  await Promise.all(
+    lotes.map(async (lote) => {
+      const batch = writeBatch(db);
+      lote.forEach((ref) => batch.update(ref, { ocorrenciasVerificadas: false }));
+      await batch.commit();
+    })
+  );
+}
+
 async function criarRegra(input: CriarRegraInput) {
   await addDoc(collection(db, 'regras_deteccao'), {
     companyId: input.companyId,
@@ -34,6 +49,7 @@ async function criarRegra(input: CriarRegraInput) {
     valor2: input.valor2,
     criadoEm: Timestamp.now(),
   });
+  await resetarVerificacaoDeFogos(input.companyId);
 }
 
 async function buscarOcorrenciasDaRegra(companyId: string) {
@@ -74,7 +90,13 @@ export function useRegrasDeteccao(companyId: string | null) {
     queryClient.invalidateQueries({ queryKey: ['ocorrencias'] });
   };
 
-  const criarMutation = useMutation({ mutationFn: criarRegra, onSuccess: invalidar });
+  const criarMutation = useMutation({
+    mutationFn: criarRegra,
+    onSuccess: (_, variables) => {
+      invalidar();
+      useOcorrenciaRescan.getState().requestRescan();
+    },
+  });
   const excluirMutation = useMutation({ mutationFn: excluirRegraComOcorrencias, onSuccess: invalidar });
 
   return {

@@ -5,7 +5,7 @@ import { collection, doc, getDoc, getDocs, query, where } from 'firebase/firesto
 import { db } from '@/lib/firebase/client';
 import { companySchema } from '@/schemas/company';
 
-async function fetchCompanyGroup(companyId: string): Promise<string[]> {
+export async function fetchCompanyGroup(companyId: string): Promise<string[]> {
   const snap = await getDoc(doc(db, 'companies', companyId));
   if (!snap.exists()) return [companyId];
   const company = companySchema.parse({ id: snap.id, ...snap.data() });

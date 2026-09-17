@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { zTimestamp } from './common';
+import { zTimestamp, zTimestampOrNull } from './common';
 
 export const ocorrenciaTipoSchema = z.enum([
   'densidade_fora_da_faixa',
@@ -28,6 +28,7 @@ export const ocorrenciaSchema = z.object({
   responsavelUid: z.string().nullable(),
   criadoEm: zTimestamp,
   motivo: ocorrenciaMotivoLicencaSchema.optional(),
+  encerradoEm: zTimestampOrNull.optional(),
 });
 
 export type OcorrenciaTipo = z.infer<typeof ocorrenciaTipoSchema>;

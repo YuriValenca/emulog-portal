@@ -44,11 +44,15 @@ async function criarOcorrenciaManual(input: CriarOcorrenciaManualInput) {
     valorReferencia: input.valorReferencia,
     responsavelUid: input.responsavelUid,
     criadoEm: Timestamp.now(),
+    encerradoEm: null,
   });
 }
 
 async function atualizarStatus(input: AtualizarStatusInput) {
-  await updateDoc(doc(db, 'ocorrencias', input.id), { status: input.status });
+  await updateDoc(doc(db, 'ocorrencias', input.id), {
+    status: input.status,
+    encerradoEm: input.status === 'encerrada' ? Timestamp.now() : null,
+  });
 }
 
 async function excluirOcorrencia(id: string) {
@@ -79,5 +83,6 @@ export function useOcorrencias(companyIds: string[]) {
     isCriando: criarMutation.isPending,
     atualizarStatus: atualizarStatusMutation.mutateAsync,
     excluirOcorrencia: excluirMutation.mutateAsync,
+    isExcluindo: excluirMutation.isPending,
   };
 }

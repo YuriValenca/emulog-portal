@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { Plus, Settings } from 'lucide-react';
+import { Plus, Settings, Trash2 } from 'lucide-react';
 import { useAppAuth } from '@/hooks/useAppAuth';
 import { useCompanyGroup } from '@/hooks/fogos/useCompanyGroup';
 import { useOcorrencias } from '@/hooks/ocorrencias/useOcorrencias';
@@ -14,10 +14,12 @@ import { Input } from '@/components/ui/Input/Input';
 import { Textarea } from '@/components/ui/Textarea/Textarea';
 import { Spinner } from '@/components/ui/Spinner/Spinner';
 import { StatusPill } from '@/components/ui/StatusPill/StatusPill';
+import { ActionsMenu } from '@/components/ui/ActionsMenu/ActionsMenu';
 import CriarAutomacaoModal, { type CriarAutomacaoValues } from './components/CriarAutomacaoModal/CriarAutomacaoModal';
 import ConfigurarAutomacoesModal from './components/ConfigurarAutomacoesModal/ConfigurarAutomacoesModal';
 import ConfirmarRemocaoAutomacaoModal from './components/ConfirmarRemocaoAutomacaoModal/ConfirmarRemocaoAutomacaoModal';
 import ConfirmarRemocaoFinalModal from './components/ConfirmarRemocaoFinalModal/ConfirmarRemocaoFinalModal';
+import ConfirmModal from '@/components/layout/ConfirmModal/ConfirmModal';
 import type { Ocorrencia, OcorrenciaStatus, OcorrenciaTipo } from '@/types';
 import type { RegraDeteccao } from '@/schemas/regraDeteccao';
 import styles from './page.module.scss';
@@ -72,10 +74,10 @@ type EtapaExclusao = 'aviso' | 'confirmacao' | null;
 export default function OcorrenciasPage() {
   const { companyId, appUser, isSuperadmin } = useAppAuth();
   const { companyIds } = useCompanyGroup(companyId);
-  const { ocorrencias, isLoading, isError, criarOcorrencia, isCriando, atualizarStatus } = useOcorrencias(companyIds);
+  const { ocorrencias, isLoading, isError, criarOcorrencia, isCriando, atualizarStatus, excluirOcorrencia, isExcluindo } = useOcorrencias(companyIds);
   const {
     regras, criarRegra, isCriando: isCriandoRegra,
-    contarOcorrenciasDaRegra, excluirRegra, isExcluindo,
+    contarOcorrenciasDaRegra, excluirRegra, isExcluindo: isExcluindoRegra,
   } = useRegrasDeteccao(companyId);
 
   const [filtroStatus, setFiltroStatus] = useState('');
@@ -94,6 +96,8 @@ export default function OcorrenciasPage() {
   const [etapaExclusao, setEtapaExclusao] = useState<EtapaExclusao>(null);
   const [quantidadeOcorrencias, setQuantidadeOcorrencias] = useState<number | null>(null);
   const [carregandoQuantidade, setCarregandoQuantidade] = useState(false);
+
+  const [ocorrenciaParaExcluir, setOcorrenciaParaExcluir] = useState<Ocorrencia | null>(null);
 
   const ocorrenciasFiltradas = useMemo(() => {
     return ocorrencias.filter((o) => {
@@ -175,6 +179,24 @@ export default function OcorrenciasPage() {
     resetarFluxoExclusao();
   };
 
+  const handleSolicitarExclusaoOcorrencia = (ocorrencia: Ocorrencia) => {
+    setOcorrenciaParaExcluir(ocorrencia);
+  };
+
+  const cancelarExclusaoOcorrencia = () => {
+    setOcorrenciaParaExcluir(null);
+  };
+
+  const confirmarExclusaoOcorrencia = async () => {
+    if (!ocorrenciaParaExcluir) return;
+    try {
+      await excluirOcorrencia(ocorrenciaParaExcluir.id);
+      setOcorrenciaParaExcluir(null);
+    } catch {
+      window.alert('Não foi possível apagar a ocorrência. Tente novamente.');
+    }
+  };
+
   if (isSuperadmin && !companyId) {
     return (
       <div className={styles.container}>
@@ -228,7 +250,7 @@ export default function OcorrenciasPage() {
         </div>
       ) : (
         <>
-          <Table columns={['110px', '200px', '100px', '1fr', '140px', '190px']}>
+          <Table columns={['110px', '200px', '100px', '1fr', '140px', '190px', '56px']}>
             <thead>
               <tr>
                 <th>Categoria</th>
@@ -237,6 +259,7 @@ export default function OcorrenciasPage() {
                 <th>Descrição</th>
                 <th>Aberta em</th>
                 <th>Status</th>
+                <th />
               </tr>
             </thead>
             <tbody>
@@ -257,6 +280,20 @@ export default function OcorrenciasPage() {
                       onValueChange={(value) => atualizarStatus({ id: o.id, status: value as OcorrenciaStatus })}
                       options={STATUS_OPTIONS}
                       size="sm"
+                    />
+                  </td>
+                  <td>
+                    <ActionsMenu
+                      ariaLabel={`Ações para ${tipoLabel(o)}`}
+                      items={[
+                        {
+                          key: 'apagar',
+                          label: 'Apagar',
+                          icon: <Trash2 size={14} />,
+                          variant: 'danger',
+                          onClick: () => handleSolicitarExclusaoOcorrencia(o),
+                        },
+                      ]}
                     />
                   </td>
                 </tr>
@@ -335,7 +372,23 @@ export default function OcorrenciasPage() {
           if (!open) resetarFluxoExclusao();
         }}
         onConfirmar={handleConfirmarExclusaoFinal}
-        confirmando={isExcluindo}
+        confirmando={isExcluindoRegra}
+      />
+
+      <ConfirmModal
+        open={ocorrenciaParaExcluir !== null}
+        title="Apagar ocorrência?"
+        description={
+          ocorrenciaParaExcluir
+            ? `Essa ação não pode ser desfeita. "${tipoLabel(ocorrenciaParaExcluir)}" será apagada para sempre.`
+            : undefined
+        }
+        confirmLabel="Apagar"
+        cancelLabel="Cancelar"
+        tone="danger"
+        isConfirming={isExcluindo}
+        onConfirm={confirmarExclusaoOcorrencia}
+        onCancel={cancelarExclusaoOcorrencia}
       />
     </div>
   );

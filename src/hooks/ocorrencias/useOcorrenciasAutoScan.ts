@@ -1,20 +1,35 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { create } from 'zustand';
 import { useQueryClient } from '@tanstack/react-query';
 import {
-  doc, setDoc, getDoc, updateDoc, Timestamp,
+  collection, doc, setDoc, getDoc, getDocs, updateDoc, deleteDoc,
+  query, where, Timestamp,
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase/client';
-import { useProjetosPeriodo } from '@/hooks/useProjetosPeriodo';
-import { useProdutos } from '@/hooks/cadastro/useProdutos';
-import { useRegrasDeteccao } from '@/hooks/ocorrencias/useRegrasDeteccao';
-import { useCompanyGroup } from '@/hooks/fogos/useCompanyGroup';
+import { chunk } from '@/lib/chunk';
+import { fetchCompanyGroup } from '@/hooks/fogos/useCompanyGroup';
+import { produtoSchema, type Produto } from '@/schemas/produto';
+import { regraDeteccaoSchema, type RegraDeteccao } from '@/schemas/regraDeteccao';
 import { useToast } from '@/components/ui/Toast/Toast';
-import { detectarOcorrenciasDoProjeto } from '@/lib/deteccaoOcorrencia';
+import { detectarOcorrenciasDoProjeto, type OcorrenciaDetectada } from '@/lib/deteccaoOcorrencia';
 import { fetchLicencas } from '@/hooks/useLicencas';
 import { statusExpiracaoLicenca, JANELA_EXPIRACAO_LICENCA_DIAS } from '@/lib/licenca';
-import type { License } from '@/types';
+import type { License, Projeto } from '@/types';
+
+ const RETENCAO_OCORRENCIA_ENCERRADA_MS = 60 * 1000;
+// produção: usar 3 * 24 * 60 * 60 * 1000
+
+interface OcorrenciaRescanState {
+  nonce: number;
+  requestRescan: () => void;
+}
+
+export const useOcorrenciaRescan = create<OcorrenciaRescanState>((set) => ({
+  nonce: 0,
+  requestRescan: () => set((state) => ({ nonce: state.nonce + 1 })),
+}));
 
 interface ScanState {
   isScanning: boolean;
@@ -26,6 +41,21 @@ interface LicencaOcorrenciaDetectada {
   companyId: string;
   license: License;
   motivo: 'expirando' | 'expirada';
+}
+
+async function fetchProjetosDireto(companyId: string): Promise<Projeto[]> {
+  const snap = await getDocs(query(collection(db, 'projetos'), where('companyId', '==', companyId)));
+  return snap.docs.map((docSnap) => ({ id: docSnap.id, ...docSnap.data() }) as Projeto);
+}
+
+async function fetchProdutosDireto(companyId: string): Promise<Produto[]> {
+  const snap = await getDocs(query(collection(db, 'produtos'), where('companyId', '==', companyId)));
+  return snap.docs.map((d) => produtoSchema.parse({ id: d.id, ...d.data() }));
+}
+
+async function fetchRegrasDireto(companyId: string): Promise<RegraDeteccao[]> {
+  const snap = await getDocs(query(collection(db, 'regras_deteccao'), where('companyId', '==', companyId)));
+  return snap.docs.map((d) => regraDeteccaoSchema.parse({ id: d.id, ...d.data() }));
 }
 
 function detectarOcorrenciasDaLicenca(companyId: string, licencas: License[]): LicencaOcorrenciaDetectada[] {
@@ -41,6 +71,19 @@ function detectarOcorrenciasDaLicenca(companyId: string, licencas: License[]): L
 }
 
 async function registrarOcorrenciaLicenca(detectada: LicencaOcorrenciaDetectada) {
+  const ref = doc(db, 'ocorrencias', `${detectada.license.id}_licenca`);
+
+  let existe = false;
+  let motivoAnterior: string | undefined;
+  try {
+    const snap = await getDoc(ref);
+    existe = snap.exists();
+    motivoAnterior = snap.data()?.motivo;
+  } catch (erro) {
+    console.error('[autoScan] falha ao checar existência da ocorrência de licença', { refPath: ref.path, erro });
+    return;
+  }
+
   const titulo = detectada.motivo === 'expirada'
     ? `Licença expirada — ${detectada.license.key}`
     : `Licença expirando — ${detectada.license.key}`;
@@ -48,9 +91,6 @@ async function registrarOcorrenciaLicenca(detectada: LicencaOcorrenciaDetectada)
   const descricao = detectada.motivo === 'expirada'
     ? 'A licença expirou e precisa ser renovada.'
     : `A licença expira em até ${JANELA_EXPIRACAO_LICENCA_DIAS} dias.`;
-
-  const ref = doc(db, 'ocorrencias', `${detectada.license.id}_licenca`);
-  const snap = await getDoc(ref);
 
   const payload: Record<string, unknown> = {
     companyId: detectada.companyId,
@@ -65,51 +105,135 @@ async function registrarOcorrenciaLicenca(detectada: LicencaOcorrenciaDetectada)
     motivo: detectada.motivo,
   };
 
-  if (!snap.exists()) {
+  if (!existe) {
     payload.status = 'aberta';
     payload.criadoEm = Timestamp.now();
-  } else {
-    const motivoAnterior = snap.data()?.motivo;
-    if (motivoAnterior === 'expirando' && detectada.motivo === 'expirada') {
-      payload.status = 'aberta';
-    }
+    payload.encerradoEm = null;
+  } else if (motivoAnterior === 'expirando' && detectada.motivo === 'expirada') {
+    payload.status = 'aberta';
+    payload.encerradoEm = null;
   }
 
-  await setDoc(ref, payload, { merge: true });
+  try {
+    await setDoc(ref, payload, { merge: true });
+  } catch (erro) {
+    console.error('[autoScan] falha ao gravar ocorrência de licença', { refPath: ref.path, existiaAntes: existe, payload, erro });
+  }
+}
+
+async function registrarOcorrenciaFogo(companyId: string, projetoId: string, detectada: OcorrenciaDetectada) {
+  const ref = doc(db, 'ocorrencias', `${projetoId}_${detectada.tipo}`);
+
+  let existe = false;
+  try {
+    const snap = await getDoc(ref);
+    existe = snap.exists();
+  } catch (erro) {
+    console.error('[autoScan] falha ao checar existência da ocorrência de fogo', { refPath: ref.path, erro });
+    return;
+  }
+
+  const payload: Record<string, unknown> = {
+    companyId,
+    projetoId,
+    tipo: detectada.tipo,
+    origem: 'automatica',
+    descricao: detectada.descricao,
+    valorReferencia: detectada.valorReferencia,
+    responsavelUid: null,
+  };
+
+  if (!existe) {
+    payload.status = 'aberta';
+    payload.criadoEm = Timestamp.now();
+    payload.encerradoEm = null;
+  }
+
+  try {
+    await setDoc(ref, payload, { merge: true });
+  } catch (erro) {
+    console.error('[autoScan] falha ao gravar ocorrência de fogo', { refPath: ref.path, existiaAntes: existe, payload, erro });
+  }
+}
+
+async function buscarOcorrenciasEncerradasExpiradas(companyIds: string[]) {
+  const idChunks = chunk(companyIds, 30);
+  const docs = (
+    await Promise.all(
+      idChunks.map(async (ids) => {
+        const q = query(
+          collection(db, 'ocorrencias'),
+          where('companyId', 'in', ids),
+          where('status', '==', 'encerrada')
+        );
+        const snap = await getDocs(q);
+        return snap.docs;
+      })
+    )
+  ).flat();
+
+  const agora = Date.now();
+  return docs.filter((docSnap) => {
+    const encerradoEm = docSnap.data().encerradoEm;
+    if (!encerradoEm?.toMillis) return false;
+    return agora - encerradoEm.toMillis() >= RETENCAO_OCORRENCIA_ENCERRADA_MS;
+  });
 }
 
 export function useOcorrenciasAutoScan(companyId: string | null) {
   const queryClient = useQueryClient();
   const { toast } = useToast();
-  const { data: projetos } = useProjetosPeriodo(companyId);
-  const { produtos } = useProdutos(companyId);
-  const { regras } = useRegrasDeteccao(companyId);
-  const { companyIds } = useCompanyGroup(companyId);
+  const rescanNonce = useOcorrenciaRescan((state) => state.nonce);
 
   const [scanState, setScanState] = useState<ScanState>({ isScanning: false, total: 0, processados: 0 });
-  const jaRodouRef = useRef(false);
+  const jaRodouRef = useRef<string | null>(null);
 
   useEffect(() => {
-    jaRodouRef.current = false;
+    if (!companyId) return;
+
+    const chaveExecucao = `${companyId}:${rescanNonce}`;
+    if (jaRodouRef.current === chaveExecucao) return;
+    jaRodouRef.current = chaveExecucao;
+
     setScanState({ isScanning: false, total: 0, processados: 0 });
-  }, [companyId]);
-
-  useEffect(() => {
-    if (!companyId || !projetos || jaRodouRef.current) return;
-
-    jaRodouRef.current = true;
-    const pendentesFogos = projetos.filter((p) => !p.ocorrenciasVerificadas);
-    const produtosById = new Map(produtos.map((p) => [p.id, p]));
 
     const rodarScan = async () => {
-      const licencasPorEmpresa = await Promise.all(
-        companyIds.map(async (id) => ({ companyId: id, licencas: await fetchLicencas(id) }))
-      );
-      const licencasDetectadas = licencasPorEmpresa.flatMap(({ companyId: id, licencas }) =>
-        detectarOcorrenciasDaLicenca(id, licencas)
-      );
+      let companyIds: string[] = [companyId];
+      try {
+        companyIds = await fetchCompanyGroup(companyId);
+      } catch (erro) {
+        console.error('[autoScan] falha ao buscar grupo de empresas', { companyId, erro });
+      }
 
-      const totalGeral = pendentesFogos.length + licencasDetectadas.length;
+      const [projetos, produtos, regras] = await Promise.all([
+        fetchProjetosDireto(companyId),
+        fetchProdutosDireto(companyId),
+        fetchRegrasDireto(companyId),
+      ]);
+
+      const produtosById = new Map(produtos.map((p) => [p.id, p]));
+      const pendentesFogos = projetos.filter((p) => !p.ocorrenciasVerificadas);
+
+      let licencasDetectadas: LicencaOcorrenciaDetectada[] = [];
+      try {
+        const licencasPorEmpresa = await Promise.all(
+          companyIds.map(async (id) => ({ companyId: id, licencas: await fetchLicencas(id) }))
+        );
+        licencasDetectadas = licencasPorEmpresa.flatMap(({ companyId: id, licencas }) =>
+          detectarOcorrenciasDaLicenca(id, licencas)
+        );
+      } catch (erro) {
+        console.error('[autoScan] falha ao buscar licenças do grupo', { companyIds, erro });
+      }
+
+      let ocorrenciasParaApagar: Awaited<ReturnType<typeof buscarOcorrenciasEncerradasExpiradas>> = [];
+      try {
+        ocorrenciasParaApagar = await buscarOcorrenciasEncerradasExpiradas(companyIds);
+      } catch (erro) {
+        console.error('[autoScan] falha ao buscar ocorrências encerradas expiradas', { companyIds, erro });
+      }
+
+      const totalGeral = pendentesFogos.length + licencasDetectadas.length + ocorrenciasParaApagar.length;
       if (totalGeral === 0) return;
 
       setScanState({ isScanning: true, total: totalGeral, processados: 0 });
@@ -121,22 +245,15 @@ export function useOcorrenciasAutoScan(companyId: string | null) {
         const detectadas = detectarOcorrenciasDoProjeto(projeto, produtosById, regras);
 
         await Promise.all(
-          detectadas.map((d) =>
-            setDoc(doc(db, 'ocorrencias', `${projeto.id}_${d.tipo}`), {
-              companyId,
-              projetoId: projeto.id,
-              tipo: d.tipo,
-              origem: 'automatica',
-              status: 'aberta',
-              descricao: d.descricao,
-              valorReferencia: d.valorReferencia,
-              responsavelUid: null,
-              criadoEm: Timestamp.now(),
-            })
-          )
+          detectadas.map((d) => registrarOcorrenciaFogo(companyId, projeto.id, d))
         );
 
-        await updateDoc(doc(db, 'projetos', projeto.id), { ocorrenciasVerificadas: true });
+        try {
+          await updateDoc(doc(db, 'projetos', projeto.id), { ocorrenciasVerificadas: true });
+        } catch (erro) {
+          console.error('[autoScan] falha ao marcar projeto como verificado', { projetoId: projeto.id, erro });
+        }
+
         processados += 1;
         setScanState({ isScanning: true, total: totalGeral, processados });
       }
@@ -147,14 +264,23 @@ export function useOcorrenciasAutoScan(companyId: string | null) {
         setScanState({ isScanning: true, total: totalGeral, processados });
       }
 
+      for (const docSnap of ocorrenciasParaApagar) {
+        try {
+          await deleteDoc(docSnap.ref);
+        } catch (erro) {
+          console.error('[autoScan] falha ao apagar ocorrência encerrada expirada', { refPath: docSnap.ref.path, erro });
+        }
+        processados += 1;
+        setScanState({ isScanning: true, total: totalGeral, processados });
+      }
+
       setScanState({ isScanning: false, total: totalGeral, processados: totalGeral });
       queryClient.invalidateQueries({ queryKey: ['ocorrencias'] });
-      queryClient.invalidateQueries({ queryKey: ['projetosPeriodo', companyId] });
       toast({ title: 'Verificação concluída', description: 'As ocorrências detectadas já estão disponíveis.' });
     };
 
     rodarScan();
-  }, [companyId, projetos, produtos, regras, companyIds, queryClient, toast]);
+  }, [companyId, rescanNonce, queryClient, toast]);
 
   return scanState;
 }
