@@ -21,3 +21,10 @@ export type {
   OcorrenciaOrigem,
   OcorrenciaStatus,
 } from '@/schemas/ocorrencia';
+export type {
+  Vencimento,
+  VencimentoTipo,
+  VencimentoStatus,
+  AlertaVencimento,
+  AlertaVencimentoPorTipo,
+} from '@/schemas/vencimento';

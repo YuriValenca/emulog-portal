@@ -31,7 +31,7 @@ const operationLinks: NavLink[] = [
   { icon: <Flame size={16} />, label: 'Gestão de fogos', href: '/fogos' },
   { icon: <FilePlus size={16} />, label: 'Relatórios', href: '/relatorios', disabled: true },
   { icon: <TriangleAlert size={16} />, label: 'Ocorrências', href: '/ocorrencias' },
-  { icon: <CalendarX size={16} />, label: 'Vencimentos', href: '/vencimentos', disabled: true },
+  { icon: <CalendarX size={16} />, label: 'Vencimentos', href: '/vencimentos' },
 ];
 
 export default function Sidebar({ company, appUser, role, temOcorrenciasNaoVistas }: SidebarProps) {

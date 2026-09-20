@@ -1,0 +1,34 @@
+.container {
+  padding: var(--spacing-large);
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--spacing-small);
+  margin-bottom: var(--spacing-default);
+}
+
+.buttonsHolder {
+  display: flex;
+  gap: var(--spacing-small);
+}
+
+.loadingRow {
+  display: flex;
+  justify-content: center;
+  padding: var(--spacing-xlarge) 0;
+}
+
+.empty {
+  color: var(--text-muted);
+  padding: var(--spacing-xlarge) 0;
+  text-align: center;
+}
+
+.error {
+  color: var(--crit);
+  padding: var(--spacing-xlarge) 0;
+  text-align: center;
+}

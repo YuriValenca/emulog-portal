@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { zTimestamp, zTimestampOrNull } from './common';
+import { alertaVencimentoPorTipoSchema } from './vencimento';
 
 export const companyModulesSchema = z.object({
   mobile: z.boolean(),
@@ -20,6 +21,7 @@ export const companySchema = z.object({
   bluetoothScaleEnabled: z.boolean().optional(),
   createdAt: zTimestamp,
   modules: companyModulesSchema.optional(),
+  alertaVencimento: alertaVencimentoPorTipoSchema.optional(),
 });
 
 export const licenseStatusSchema = z.enum(['available', 'active', 'revoked', 'expired']);
