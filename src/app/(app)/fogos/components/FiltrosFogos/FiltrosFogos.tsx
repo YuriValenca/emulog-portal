@@ -1,6 +1,6 @@
 'use client';
 
-import { Input } from '@/components/ui/Input/Input';
+import { Input, DATA_MINIMA } from '@/components/ui/Input/Input';
 import { Select } from '@/components/ui/Select/Select';
 import { MultiSelect } from '@/components/ui/Multiselect/Multiselect';
 import { Search } from 'lucide-react';
@@ -39,7 +39,7 @@ export default function FiltrosFogos({ filtros, onChange, produtos, caminhoes }:
 
   const updateDataFim = (value: string) => {
     const patch: Partial<FiltrosState> = { dataFim: value };
-    if (filtros.dataInicio && value < filtros.dataInicio) {
+    if (value >= DATA_MINIMA && filtros.dataInicio && value < filtros.dataInicio) {
       patch.dataInicio = value;
     }
     update(patch);

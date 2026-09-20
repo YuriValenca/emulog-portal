@@ -6,6 +6,9 @@ import styles from './Input.module.scss';
 
 type InputSize = 'sm' | 'md' | 'lg';
 
+export const DATA_MINIMA = '1900-01-01';
+const DATA_MAXIMA = '9999-12-31';
+
 interface InputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'size'> {
   icon?: ReactNode;
   rightIcon?: ReactNode;
@@ -31,10 +34,14 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
       showCharCount,
       maxLength,
       value,
+      type,
+      min,
+      max,
       ...props
     },
     ref
   ) => {
+    const isDate = type === 'date';
     const hasError = error || Boolean(errorMessage);
     const charCount = showCharCount && maxLength !== undefined ? String(value ?? '').length : null;
     const showFooter = Boolean(errorMessage) || charCount !== null;
@@ -59,9 +66,12 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
           <input
             ref={ref}
             id={id}
+            type={type}
             disabled={disabled}
             className={styles.input}
             maxLength={maxLength}
+            min={isDate ? min ?? DATA_MINIMA : min}
+            max={isDate ? max ?? DATA_MAXIMA : max}
             value={value}
             {...props}
           />
