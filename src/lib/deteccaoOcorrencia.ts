@@ -12,6 +12,9 @@ export interface OcorrenciaDetectada {
   regraId: string | null;
 }
 
+// TODO: detectar rascunho parado há X dias, via `regras_deteccao` com uma métrica nova.
+// Exige ler `projetos_rascunho`, que hoje nenhum fluxo do portal toca.
+
 export function detectarOcorrenciasDoProjeto(
   projeto: Projeto,
   produtosById: Map<string, Produto>,
