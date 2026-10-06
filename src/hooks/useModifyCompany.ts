@@ -19,14 +19,19 @@ export interface EmpresaFormValues {
 
 export function useModifyCompany() {
   const queryClient = useQueryClient();
-  const invalidate = () => queryClient.invalidateQueries({ queryKey: ['companies'] });
+  // Duas queries distintas: `['companies']` é a listagem do superadmin e
+  // `['company']` casa por prefixo com o `['company', id]` que alimenta o shell.
+  const invalidate = () => {
+    queryClient.invalidateQueries({ queryKey: ['companies'] });
+    queryClient.invalidateQueries({ queryKey: ['company'] });
+  };
 
   const createEmpresa = useMutation({
     mutationFn: async (values: EmpresaFormValues) => {
       await addDoc(collection(db, 'companies'), {
         name: values.name.trim(),
         cnpj: values.cnpj.trim() || null,
-        logo: null,
+        logo: values.logo,
         primaryColor: values.primaryColor,
         founding: false,
         parentCompanyId: values.parentCompanyId,

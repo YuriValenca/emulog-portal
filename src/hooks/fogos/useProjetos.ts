@@ -8,6 +8,7 @@ import {
 import { db } from '@/lib/firebase/client';
 import { projetoSchema, projetoMetaSchema, type Projeto, type ProjetoMeta } from '@/schemas/projeto';
 import { chunk } from '@/lib/chunk';
+import { useOcorrenciaRescan } from '@/hooks/ocorrencias/useOcorrenciasAutoScan';
 
 export const PAGE_SIZE_OPTIONS = [15, 25, 50] as const;
 export const DEFAULT_PAGE_SIZE = 25;
@@ -219,6 +220,17 @@ export function useCreateProjeto() {
           ),
         };
       });
+
+      // Uma escrita, três consumidores em lugares diferentes: `projetosMeta` já foi
+      // atualizado acima; `projetosPeriodo` alimenta o dashboard e costuma estar inativo,
+      // daí `refetchType: 'all'`; e o scan de ocorrências roda na montagem do
+      // `(app)/layout`, que não remonta em navegação client-side — sem o rescan o fogo
+      // novo não é analisado até o próximo reload.
+      queryClient.invalidateQueries({
+        queryKey: ['projetosPeriodo'],
+        refetchType: 'all',
+      });
+      useOcorrenciaRescan.getState().requestRescan();
     },
   });
 
@@ -228,11 +240,34 @@ export function useCreateProjeto() {
   };
 }
 
-async function deletarProjeto(id: string): Promise<string> {
+interface DeletarProjetoInput {
+  id: string;
+  companyId: string;
+}
+
+/**
+ * Atômico de propósito: um fogo apagado pela metade, sem documento mas com ocorrências
+ * apontando pra ele, é pior que a exclusão falhar inteira. Estourar o limite de 500
+ * escritas do batch falha com erro visível em vez de deixar estado parcial.
+ *
+ * `companyId` entra na query porque a rule de leitura de ocorrência é escopada por
+ * empresa — sem ele a consulta inteira é negada.
+ */
+async function deletarProjeto({ id, companyId }: DeletarProjetoInput): Promise<string> {
+  const ocorrenciasSnap = await getDocs(
+    query(
+      collection(db, 'ocorrencias'),
+      where('companyId', '==', companyId),
+      where('projetoId', '==', id)
+    )
+  );
+
   const batch = writeBatch(db);
   batch.delete(doc(db, 'projetos', id));
   batch.delete(doc(db, 'projetos_meta', id));
+  ocorrenciasSnap.docs.forEach((docSnap) => batch.delete(docSnap.ref));
   await batch.commit();
+
   return id;
 }
 
@@ -246,6 +281,12 @@ export function useDeleteProjeto() {
         if (!old) return old;
         return { ...old, items: old.items.filter((item) => item.id !== idRemovido) };
       });
+
+      queryClient.invalidateQueries({
+        queryKey: ['projetosPeriodo'],
+        refetchType: 'all',
+      });
+      queryClient.invalidateQueries({ queryKey: ['ocorrencias'], refetchType: 'all' });
     },
   });
 

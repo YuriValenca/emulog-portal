@@ -14,6 +14,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
             staleTime: 5 * 60 * 1000,
             gcTime: 30 * 60 * 1000,
             refetchOnWindowFocus: false,
+            // Leitura do Firestore é custo direto no plano Spark, então montar um
+            // componente não refaz busca. Mutation que precisa de refetch imediato
+            // passa `refetchType: 'all'` no próprio invalidate, não mexe neste flag.
             refetchOnMount: false,
           },
         },

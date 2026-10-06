@@ -2,6 +2,7 @@
 
 import { Modal } from '@/components/ui/Modal/Modal';
 import { diffPercent, densidadeInicialFinalMedia, densidadesAmostra } from '@/lib/fogoUtils';
+import { isAmostraGrupo, valorVazio } from '@/lib/amostras';
 import type { Projeto } from '@/types';
 import styles from './FogoDetailModal.module.scss';
 import { Table } from '@/components/ui/Table/Table';
@@ -66,14 +67,14 @@ export default function FogoDetailModal({ projeto, onClose }: FogoDetailModalPro
       <div className={styles.section}>
         <span className={styles.sectionTitle}>Amostras — {projeto.quantidadeAmostras}</span>
         {projeto.amostras.map((amostra, index) => {
-          const amostraId = 'amostraId' in amostra ? amostra.amostraId : index;
-          const isLegado = 'pesagens' in amostra && Array.isArray(amostra.pesagens) && amostra.pesagens.length > 0;
+          const amostraId = 'amostraId' in amostra && typeof amostra.amostraId === 'number' ? amostra.amostraId : index;
+          const temPesagens = isAmostraGrupo(amostra) && amostra.pesagens.length > 0;
 
-          if (isLegado) {
-            const pesagens = amostra.pesagens!.filter((p) => p.peso !== '');
+          if (temPesagens) {
+            const pesagens = amostra.pesagens.filter((p) => !valorVazio(p.peso));
             return (
               <div key={index} className={styles.amostraBox}>
-                <span className={styles.amostraTitulo}>Amostra {(amostraId ? amostraId + 1 : '')}</span>
+                <span className={styles.amostraTitulo}>Amostra {amostraId + 1}</span>
                 <div className={styles.pesagensTable}>
                   <Table columns={['10%', '30%', '30%', '30%']}>
                     <thead>
@@ -103,7 +104,7 @@ export default function FogoDetailModal({ projeto, onClose }: FogoDetailModalPro
           const { inicial: amostraInicial, final: amostraFinal } = densidadesAmostra(amostra);
           return (
             <div key={index} className={styles.amostraBox}>
-              <span className={styles.amostraTitulo}>Amostra {(amostraId ? amostraId + 1 : '')}</span>
+              <span className={styles.amostraTitulo}>Amostra {amostraId + 1}</span>
               <div className={styles.densidadeRow}>
                 <span className={styles.densidadeLabel}>Inicial</span>
                 <span className={styles.densidadeValue}>{amostraInicial !== null ? `${amostraInicial.toFixed(2)} g/cm³` : '—'}</span>

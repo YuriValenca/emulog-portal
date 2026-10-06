@@ -10,16 +10,18 @@ import { useOperadores } from '@/hooks/cadastro/useOperadores';
 import { useProdutos } from '@/hooks/cadastro/useProdutos';
 import { Button } from '@/components/ui/Button/Button';
 import { Pagination } from '@/components/ui/Pagination/Pagination';
+import { useToast } from '@/components/ui/Toast/Toast';
 import ConfirmModal from '@/components/layout/ConfirmModal/ConfirmModal';
 import FiltrosFogos from './components/FiltrosFogos/FiltrosFogos';
 import FogosTable from './components/FogosTable/FogosTable';
-import FogoDetailModal from './components/FogoDetailModal/FogoDetailModa';
+import FogoDetailModal from './components/FogoDetailModal/FogoDetailModal';
 import CriarFogoModal from './components/CriarFogoModal/CriarFogoModal';
 import type { Projeto } from '@/types';
 import styles from './page.module.scss';
 
 export default function FogosPage() {
   const { companyId, appUser, isSuperadmin } = useAppAuth();
+  const { toast } = useToast();
 
   const { companyIds } = useCompanyGroup(companyId);
   const { caminhoes } = useCaminhoes(companyId);
@@ -46,11 +48,14 @@ export default function FogosPage() {
   const confirmarExclusao = async () => {
     if (!projetoParaExcluir) return;
     try {
-      await deletarProjeto(projetoParaExcluir.id);
+      await deletarProjeto({ id: projetoParaExcluir.id, companyId: projetoParaExcluir.companyId });
       cancelarExclusao();
     } catch (err) {
       console.error('[FogosPage] falha ao apagar projeto:', err);
-      window.alert('Não foi possível apagar o fogo. Tente novamente.');
+      toast({
+        title: 'Não foi possível apagar',
+        description: 'O fogo continua na lista. Tente novamente.',
+      });
     }
   };
 
@@ -132,7 +137,7 @@ export default function FogosPage() {
         title="Apagar permanentemente?"
         description={
           projetoParaExcluir
-            ? `Essa ação não pode ser desfeita. "${projetoParaExcluir.nomeProjeto}" será apagado para sempre.`
+            ? `Essa ação não pode ser desfeita. "${projetoParaExcluir.nomeProjeto}" e as ocorrências geradas a partir dele serão apagados para sempre.`
             : undefined
         }
         confirmLabel="Apagar"
@@ -143,7 +148,7 @@ export default function FogosPage() {
         onCancel={cancelarExclusao}
       />
 
-      {companyId && appUser && (
+      {companyId && appUser && modalCriarAberto && (
         <CriarFogoModal
           open={modalCriarAberto}
           onClose={() => setModalCriarAberto(false)}
