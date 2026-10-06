@@ -1,0 +1,48 @@
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--spacing-default);
+  margin-bottom: var(--spacing-default);
+}
+
+.resumo {
+  font-size: var(--font-size-small);
+  color: var(--text-muted);
+}
+
+.loading {
+  color: var(--text-muted);
+  padding: var(--spacing-xlarge) 0;
+  text-align: center;
+}
+
+.empty {
+  color: var(--text-muted);
+  padding: var(--spacing-xlarge) 0;
+  text-align: center;
+}
+
+.error {
+  color: var(--crit);
+  padding: var(--spacing-xlarge) 0;
+  text-align: center;
+}
+
+.dono {
+  color: var(--text-muted);
+}
+
+.desdeAtualizacao {
+  display: block;
+  font-size: var(--font-size-small);
+  color: var(--text-muted);
+}
+
+.debug {
+  display: block;
+  margin-top: var(--spacing-xsmall);
+  font-family: var(--font-mono);
+  font-size: var(--font-size-small);
+  color: var(--text-muted);
+}

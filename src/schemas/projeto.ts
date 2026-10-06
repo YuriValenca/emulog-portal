@@ -69,6 +69,7 @@ export const projetoSchema = z.object({
   nomeProjeto: z.string(),
   cliente: clienteRefSchema.nullable().optional(),
   dataCriacao: zTimestamp,
+  dataConclusao: zTimestamp.optional(),
   uidUsuario: z.string(),
   companyId: z.string(),
   quantidadeAmostras: z.number(),
@@ -94,4 +95,15 @@ export type AmostraManual = z.infer<typeof amostraManualSchema>;
 export type ProjetoCalibragem = z.infer<typeof projetoCalibragemSchema>;
 export type InformacoesOperacao = z.infer<typeof informacoesOperacaoSchema>;
 export type Projeto = z.infer<typeof projetoSchema>;
+
+/** O que a tabela e o modal de detalhe realmente leem — satisfeito por Projeto e por rascunho. */
+export type FogoDetalhavel = {
+  id: string;
+  nomeProjeto?: string;
+  dataCriacao: z.infer<typeof zTimestamp>;
+  dataConclusao?: z.infer<typeof zTimestamp>;
+  quantidadeAmostras?: number;
+  amostras?: AmostraItem[];
+  informacoesOperacao?: Partial<InformacoesOperacao>;
+};
 export type ProjetoMeta = z.infer<typeof projetoMetaSchema>;

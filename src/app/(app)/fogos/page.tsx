@@ -1,85 +1,41 @@
 'use client';
 
-import { useMemo, useState } from 'react';
-import { Plus } from 'lucide-react';
+import { useState } from 'react';
 import { useAppAuth } from '@/hooks/useAppAuth';
-import { useCompanyGroup } from '@/hooks/fogos/useCompanyGroup';
-import { useProjetosList, useDeleteProjeto, DEFAULT_PAGE_SIZE } from '@/hooks/fogos/useProjetos';
 import { useCaminhoes } from '@/hooks/cadastro/useCaminhoes';
-import { useOperadores } from '@/hooks/cadastro/useOperadores';
 import { useProdutos } from '@/hooks/cadastro/useProdutos';
-import { Button } from '@/components/ui/Button/Button';
-import { Pagination } from '@/components/ui/Pagination/Pagination';
-import { useToast } from '@/components/ui/Toast/Toast';
-import ConfirmModal from '@/components/layout/ConfirmModal/ConfirmModal';
-import FiltrosFogos from './components/FiltrosFogos/FiltrosFogos';
-import FogosTable from './components/FogosTable/FogosTable';
-import FogoDetailModal from './components/FogoDetailModal/FogoDetailModal';
-import CriarFogoModal from './components/CriarFogoModal/CriarFogoModal';
-import type { Projeto } from '@/types';
+import { DEFAULT_PAGE_SIZE } from '@/hooks/fogos/useProjetos';
+import { Tabs } from '@/components/ui/Tabs/Tabs';
+import FiltrosFogos, { type FiltrosState } from './components/FiltrosFogos/FiltrosFogos';
+import ConcluidosTab from './components/Tabs/ConcluidosTab';
+import RascunhosTab from './components/Tabs/RascunhosTab';
 import styles from './page.module.scss';
 
+const FILTROS_INICIAIS: FiltrosState = {
+  busca: '',
+  dataInicio: '',
+  dataFim: '',
+  produtoIds: [],
+  caminhaoIds: [],
+  pageSize: DEFAULT_PAGE_SIZE,
+};
+
 export default function FogosPage() {
-  const { companyId, appUser, isSuperadmin } = useAppAuth();
-  const { toast } = useToast();
-
-  const { companyIds } = useCompanyGroup(companyId);
-  const { caminhoes } = useCaminhoes(companyId);
-  const { operadores } = useOperadores(companyId);
+  const { companyId, isSuperadmin } = useAppAuth();
   const { produtos } = useProdutos(companyId);
-  const { deletarProjeto, isDeletando } = useDeleteProjeto();
-  const [projetoParaExcluir, setProjetoParaExcluir] = useState<Projeto | null>(null);
-  const [etapaExclusao, setEtapaExclusao] = useState<'confirmar' | 'final' | null>(null);
+  const { caminhoes } = useCaminhoes(companyId);
 
-  const handleDelete = (projeto: Projeto) => {
-    setProjetoParaExcluir(projeto);
-    setEtapaExclusao('confirmar');
-  };
-
-  const avancarParaConfirmacaoFinal = () => {
-    setEtapaExclusao('final');
-  };
-
-  const cancelarExclusao = () => {
-    setEtapaExclusao(null);
-    setProjetoParaExcluir(null);
-  };
-
-  const confirmarExclusao = async () => {
-    if (!projetoParaExcluir) return;
-    try {
-      await deletarProjeto({ id: projetoParaExcluir.id, companyId: projetoParaExcluir.companyId });
-      cancelarExclusao();
-    } catch (err) {
-      console.error('[FogosPage] falha ao apagar projeto:', err);
-      toast({
-        title: 'Não foi possível apagar',
-        description: 'O fogo continua na lista. Tente novamente.',
-      });
-    }
-  };
-
-  const [filtros, setFiltros] = useState({
-    busca: '', dataInicio: '', dataFim: '', produtoIds: [] as string[], caminhaoIds: [] as string[], pageSize: DEFAULT_PAGE_SIZE,
-  });
+  const [aba, setAba] = useState('concluidos');
+  const [filtros, setFiltros] = useState<FiltrosState>(FILTROS_INICIAIS);
   const [page, setPage] = useState(1);
-  const [selecionado, setSelecionado] = useState<Projeto | null>(null);
-  const [modalCriarAberto, setModalCriarAberto] = useState(false);
 
-  const produtosById = useMemo(() => new Map(produtos.map((p) => [p.id, p])), [produtos]);
-
-  const { projetos, totalFiltrado, totalPaginas, isLoadingMeta, isLoadingPagina, isError, error } = useProjetosList(companyIds, {
-    busca: filtros.busca,
-    dataInicio: filtros.dataInicio ? new Date(filtros.dataInicio) : undefined,
-    dataFim: filtros.dataFim ? new Date(filtros.dataFim) : undefined,
-    produtoIds: filtros.produtoIds,
-    caminhaoIds: filtros.caminhaoIds,
-    page,
-    pageSize: filtros.pageSize,
-  });
-
-  const handleFiltrosChange = (novo: typeof filtros) => {
+  const handleFiltrosChange = (novo: FiltrosState) => {
     setFiltros(novo);
+    setPage(1);
+  };
+
+  const handleAbaChange = (nova: string) => {
+    setAba(nova);
     setPage(1);
   };
 
@@ -93,72 +49,43 @@ export default function FogosPage() {
 
   return (
     <div className={styles.container}>
-      <div className={styles.header}>
-        <Button variant="accent" icon={<Plus size={16} />} onClick={() => setModalCriarAberto(true)}>
-          Novo fogo
-        </Button>
-      </div>
-
-      <FiltrosFogos filtros={filtros} onChange={handleFiltrosChange} produtos={produtos} caminhoes={caminhoes} />
-
-      <span className={styles.resumo}>
-        {totalFiltrado} fogo{totalFiltrado !== 1 ? 's' : ''} encontrado{totalFiltrado !== 1 ? 's' : ''}
-      </span>
-
-      {isError ? (
-        <div className={styles.error}>{String(error)}</div>
-      ) : isLoadingMeta || isLoadingPagina ? (
-        <div className={styles.loading}>Carregando fogos...</div>
-      ) : (
-        <FogosTable projetos={projetos} produtosById={produtosById} onSelect={setSelecionado} onDelete={handleDelete} />
-      )}
-
-      <Pagination page={page} totalPages={totalPaginas} onPageChange={setPage} />
-
-      <FogoDetailModal projeto={selecionado} onClose={() => setSelecionado(null)} />
-
-      <ConfirmModal
-        open={etapaExclusao === 'confirmar'}
-        title="Tem certeza?"
-        description={
-          projetoParaExcluir
-            ? `Você está prestes a apagar o fogo "${projetoParaExcluir.nomeProjeto}".`
-            : undefined
-        }
-        confirmLabel="Continuar"
-        cancelLabel="Cancelar"
-        tone="default"
-        onConfirm={avancarParaConfirmacaoFinal}
-        onCancel={cancelarExclusao}
+      <FiltrosFogos
+        filtros={filtros}
+        onChange={handleFiltrosChange}
+        produtos={produtos}
+        caminhoes={caminhoes}
       />
 
-      <ConfirmModal
-        open={etapaExclusao === 'final'}
-        title="Apagar permanentemente?"
-        description={
-          projetoParaExcluir
-            ? `Essa ação não pode ser desfeita. "${projetoParaExcluir.nomeProjeto}" e as ocorrências geradas a partir dele serão apagados para sempre.`
-            : undefined
-        }
-        confirmLabel="Apagar"
-        cancelLabel="Cancelar"
-        tone="danger"
-        isConfirming={isDeletando}
-        onConfirm={confirmarExclusao}
-        onCancel={cancelarExclusao}
+      <Tabs
+        value={aba}
+        onValueChange={handleAbaChange}
+        items={[
+          {
+            value: 'concluidos',
+            label: 'Concluídos',
+            content: (
+              <ConcluidosTab
+                companyId={companyId}
+                filtros={filtros}
+                page={page}
+                onPageChange={setPage}
+              />
+            ),
+          },
+          {
+            value: 'rascunhos',
+            label: 'Em andamento',
+            content: (
+              <RascunhosTab
+                companyId={companyId}
+                filtros={filtros}
+                page={page}
+                onPageChange={setPage}
+              />
+            ),
+          },
+        ]}
       />
-
-      {companyId && appUser && modalCriarAberto && (
-        <CriarFogoModal
-          open={modalCriarAberto}
-          onClose={() => setModalCriarAberto(false)}
-          companyId={companyId}
-          uidUsuario={appUser.uid}
-          produtos={produtos}
-          caminhoes={caminhoes}
-          operadores={operadores}
-        />
-      )}
     </div>
   );
 }

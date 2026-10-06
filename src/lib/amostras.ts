@@ -24,6 +24,14 @@ export function numeroOuNull(valor: ValorBruto): number | null {
   return isNaN(numero) ? null : numero;
 }
 
+/** Devolve o texto original quando não dá para interpretar: dado legado fica visível em vez de virar traço. */
+export function horaDaPesagem(timestamp: string | undefined): string {
+  if (!timestamp) return '—';
+  const data = new Date(timestamp);
+  if (isNaN(data.getTime())) return timestamp;
+  return data.toLocaleTimeString('pt-BR');
+}
+
 export function isAmostraGrupo(item: AmostraItem): item is AmostraGrupo {
   return 'pesagens' in item && Array.isArray(item.pesagens);
 }

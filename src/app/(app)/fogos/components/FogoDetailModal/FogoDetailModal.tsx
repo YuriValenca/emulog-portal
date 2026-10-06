@@ -1,29 +1,36 @@
 'use client';
 
 import { Modal } from '@/components/ui/Modal/Modal';
-import { diffPercent, densidadeInicialFinalMedia, densidadesAmostra } from '@/lib/fogoUtils';
-import { isAmostraGrupo, valorVazio } from '@/lib/amostras';
-import type { Projeto } from '@/types';
+import { diffPercent, densidadeInicialFinalMedia, densidadesAmostra, conclusaoEmOutroDia } from '@/lib/fogoUtils';
+import { isAmostraGrupo, valorVazio, horaDaPesagem } from '@/lib/amostras';
+import type { FogoDetalhavel } from '@/schemas/projeto';
 import styles from './FogoDetailModal.module.scss';
 import { Table } from '@/components/ui/Table/Table';
 
 interface FogoDetailModalProps {
-  projeto: Projeto | null;
+  projeto: FogoDetalhavel | null;
   onClose: () => void;
 }
 
 export default function FogoDetailModal({ projeto, onClose }: FogoDetailModalProps) {
   if (!projeto) return null;
   const info = projeto.informacoesOperacao;
-  const dif = info ? diffPercent(info.kgPrevisto, info.kgAplicado) : null;
+  const dif = info ? diffPercent(info.kgPrevisto ?? '', info.kgAplicado ?? '') : null;
   const { inicial, final } = densidadeInicialFinalMedia(projeto);
+  const amostras = projeto.amostras ?? [];
+
+  const criacao = projeto.dataCriacao.toDate().toLocaleDateString('pt-BR');
+  const conclusao = conclusaoEmOutroDia(projeto);
+  const descricaoData = conclusao
+    ? `${criacao} — concluído ${conclusao.toLocaleDateString('pt-BR')}`
+    : criacao;
 
   return (
     <Modal
       open={!!projeto}
       onOpenChange={(open) => !open && onClose()}
-      title={projeto.nomeProjeto}
-      description={projeto.dataCriacao.toDate().toLocaleDateString('pt-BR')}
+      title={projeto.nomeProjeto || 'Sem nome'}
+      description={descricaoData}
       width={450}
     >
       <div className={styles.grid}>
@@ -65,8 +72,8 @@ export default function FogoDetailModal({ projeto, onClose }: FogoDetailModalPro
       )}
 
       <div className={styles.section}>
-        <span className={styles.sectionTitle}>Amostras — {projeto.quantidadeAmostras}</span>
-        {projeto.amostras.map((amostra, index) => {
+        <span className={styles.sectionTitle}>Amostras — {projeto.quantidadeAmostras ?? amostras.length}</span>
+        {amostras.map((amostra, index) => {
           const amostraId = 'amostraId' in amostra && typeof amostra.amostraId === 'number' ? amostra.amostraId : index;
           const temPesagens = isAmostraGrupo(amostra) && amostra.pesagens.length > 0;
 
@@ -91,7 +98,7 @@ export default function FogoDetailModal({ projeto, onClose }: FogoDetailModalPro
                           <td>{i + 1}</td>
                           <td>{p.peso} g</td>
                           <td>{p.densidade ? `${p.densidade} g/cm³` : '—'}</td>
-                          <td>{p.timestamp}</td>
+                          <td>{horaDaPesagem(p.timestamp)}</td>
                         </tr>
                       ))}
                     </tbody>

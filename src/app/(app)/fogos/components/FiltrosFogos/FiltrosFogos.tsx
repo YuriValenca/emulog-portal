@@ -8,7 +8,7 @@ import { PAGE_SIZE_OPTIONS } from '@/hooks/fogos/useProjetos';
 import type { Produto, Caminhao } from '@/types';
 import styles from './FiltrosFogos.module.scss';
 
-interface FiltrosState {
+export interface FiltrosState {
   busca: string;
   dataInicio: string;
   dataFim: string;

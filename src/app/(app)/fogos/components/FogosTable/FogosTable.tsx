@@ -3,7 +3,7 @@
 import { Eye, Trash2 } from 'lucide-react';
 import { StatusPill } from '@/components/ui/StatusPill/StatusPill';
 import { ActionsMenu } from '@/components/ui/ActionsMenu/ActionsMenu';
-import { diffPercent, densidadeInicialFinalMedia, statusConformidade } from '@/lib/fogoUtils';
+import { diffPercent, densidadeInicialFinalMedia, statusConformidade, conclusaoEmOutroDia } from '@/lib/fogoUtils';
 import type { Projeto, Produto } from '@/types';
 import styles from './FogosTable.module.scss';
 
@@ -39,11 +39,19 @@ export default function FogosTable({ projetos, produtosById, onSelect, onDelete 
           const { inicial, final } = densidadeInicialFinalMedia(projeto);
           const status = statusConformidade(projeto, produtosById);
           const statusLabel = status === 'ok' ? 'Conforme' : status === 'crit' ? 'Alerta' : '—';
+          const conclusao = conclusaoEmOutroDia(projeto);
 
           return (
             <tr key={projeto.id} className={styles.row} onClick={() => onSelect(projeto)}>
               <td>{projeto.nomeProjeto}</td>
-              <td>{projeto.dataCriacao.toDate().toLocaleDateString('pt-BR')}</td>
+              <td>
+                {projeto.dataCriacao.toDate().toLocaleDateString('pt-BR')}
+                {conclusao && (
+                  <span className={styles.dataConclusao}>
+                    concluído {conclusao.toLocaleDateString('pt-BR')}
+                  </span>
+                )}
+              </td>
               <td>{info?.produto?.nome ?? '—'}</td>
               <td>{info?.caminhao?.placa ?? '—'}</td>
               <td>{info?.kgPrevisto || '—'}</td>

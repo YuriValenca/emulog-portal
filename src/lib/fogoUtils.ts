@@ -1,4 +1,4 @@
-import type { AmostraItem, Projeto, Produto } from '@/types';
+import type { AmostraItem, Projeto, Produto, ProdutoRef } from '@/types';
 import {
   isAmostraGrupo,
   isAmostraManual,
@@ -11,6 +11,12 @@ interface DensidadeAmostra {
   inicial: number | null;
   final: number | null;
 }
+
+type FogoComAmostras = { amostras?: AmostraItem[] };
+
+type FogoComProduto = FogoComAmostras & {
+  informacoesOperacao?: { produto?: ProdutoRef | null };
+};
 
 export function densidadesAmostra(amostra: AmostraItem): DensidadeAmostra {
   if (isAmostraManual(amostra)) {
@@ -27,7 +33,7 @@ export function densidadesAmostra(amostra: AmostraItem): DensidadeAmostra {
   return { inicial: valores[0], final: valores[valores.length - 1] };
 }
 
-export function densidadeInicialFinalMedia(projeto: Projeto): DensidadeAmostra {
+export function densidadeInicialFinalMedia(projeto: FogoComAmostras): DensidadeAmostra {
   const iniciais: number[] = [];
   const finais: number[] = [];
 
@@ -44,6 +50,22 @@ export function densidadeInicialFinalMedia(projeto: Projeto): DensidadeAmostra {
   return { inicial: media(iniciais), final: media(finais) };
 }
 
+function mesmoDia(a: Date, b: Date): boolean {
+  return a.getFullYear() === b.getFullYear()
+    && a.getMonth() === b.getMonth()
+    && a.getDate() === b.getDate();
+}
+
+/**
+ * Data de conclusão só quando ela cai em outro dia: fogo rascunhado e concluído no
+ * mesmo dia não ganha uma segunda data na tela, que seria ruído repetido.
+ */
+export function conclusaoEmOutroDia(projeto: Pick<Projeto, 'dataCriacao' | 'dataConclusao'>): Date | null {
+  if (!projeto.dataConclusao) return null;
+  const conclusao = projeto.dataConclusao.toDate();
+  return mesmoDia(projeto.dataCriacao.toDate(), conclusao) ? null : conclusao;
+}
+
 export function diffPercent(kgPrevisto: string, kgAplicado: string): number | null {
   const prev = parseFloat(kgPrevisto);
   const apl = parseFloat(kgAplicado);
@@ -51,7 +73,7 @@ export function diffPercent(kgPrevisto: string, kgAplicado: string): number | nu
   return (Math.abs(apl - prev) / prev) * 100;
 }
 
-export function densidadeMedia(projeto: Projeto): number | null {
+export function densidadeMedia(projeto: FogoComAmostras): number | null {
   const { inicial, final } = densidadeInicialFinalMedia(projeto);
   const valores = [inicial, final].filter((v): v is number => v !== null);
   if (valores.length === 0) return null;
@@ -59,7 +81,7 @@ export function densidadeMedia(projeto: Projeto): number | null {
 }
 
 export function statusConformidade(
-  projeto: Projeto,
+  projeto: FogoComProduto,
   produtosById: Map<string, Produto>
 ): 'ok' | 'crit' | 'neutral' {
   const produtoId = projeto.informacoesOperacao?.produto?.id;
