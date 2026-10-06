@@ -54,3 +54,10 @@
     max-width: 175px;
   }
 }
+
+.hint {
+  margin: 0;
+  font-size: var(--font-size-small);
+  color: var(--text-muted);
+  line-height: 1.5;
+}

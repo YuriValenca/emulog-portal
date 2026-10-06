@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react';
 import { Check, Plus, RefreshCcw, RotateCcw, Settings, Trash2 } from 'lucide-react';
 import { useAppAuth } from '@/hooks/useAppAuth';
 import { useCompanyGroup } from '@/hooks/fogos/useCompanyGroup';
+import { useAgora } from '@/hooks/useAgora';
 import { useVencimentos } from '@/hooks/vencimentos/useVencimentos';
 import { useCaminhoes } from '@/hooks/cadastro/useCaminhoes';
 import { useOperadores } from '@/hooks/cadastro/useOperadores';
@@ -15,6 +16,7 @@ import { Spinner } from '@/components/ui/Spinner/Spinner';
 import { StatusPill } from '@/components/ui/StatusPill/StatusPill';
 import { ActionsMenu } from '@/components/ui/ActionsMenu/ActionsMenu';
 import { Tabs } from '@/components/ui/Tabs/Tabs';
+import ConfirmModal from '@/components/layout/ConfirmModal/ConfirmModal';
 import CriarVencimentoModal from './components/CriarVencimentoModal/CriarVencimentoModal';
 import RenovarVencimentoModal from './components/RenovarVencimentoModal/RenovarVencimentoModal';
 import ConfigurarAlertaModal from './components/ConfigurarAlertaModal/ConfigurarAlertaModal';
@@ -38,6 +40,7 @@ function itemLabel(v: Vencimento): string {
 
 export default function VencimentosPage() {
   const { companyId, appUser, company, isSuperadmin, isCompanyAdmin } = useAppAuth();
+  const agora = useAgora();
   const { companyIds } = useCompanyGroup(companyId);
   const { caminhoes } = useCaminhoes(companyId);
   const { operadores } = useOperadores(companyId);
@@ -52,6 +55,8 @@ export default function VencimentosPage() {
   const [modalConfigAberto, setModalConfigAberto] = useState(false);
   const [vencimentoParaRenovar, setVencimentoParaRenovar] = useState<Vencimento | null>(null);
   const [renovando, setRenovando] = useState(false);
+  const [vencimentoParaExcluir, setVencimentoParaExcluir] = useState<Vencimento | null>(null);
+  const [excluindo, setExcluindo] = useState(false);
 
   const vencimentosFiltrados = useMemo(() => {
     return vencimentos
@@ -67,6 +72,17 @@ export default function VencimentosPage() {
       setVencimentoParaRenovar(null);
     } finally {
       setRenovando(false);
+    }
+  };
+
+  const confirmarExclusao = async () => {
+    if (!vencimentoParaExcluir) return;
+    setExcluindo(true);
+    try {
+      await excluirVencimento(vencimentoParaExcluir.id);
+      setVencimentoParaExcluir(null);
+    } finally {
+      setExcluindo(false);
     }
   };
 
@@ -132,8 +148,8 @@ export default function VencimentosPage() {
               {vencimentosFiltrados.map((v) => {
                 const alerta = alertaParaTipo(company?.alertaVencimento, v.tipo);
                 const dataVencimento = v.dataVencimento.toDate();
-                const urgencia = urgenciaVencimento(dataVencimento, alerta);
-                const horasRestantes = (dataVencimento.getTime() - Date.now()) / 36e5;
+                const urgencia = urgenciaVencimento(dataVencimento, alerta, agora);
+                const horasRestantes = (dataVencimento.getTime() - agora.getTime()) / 36e5;
                 const tone = urgencia === 'critico' ? 'crit' : urgencia === 'alerta' ? 'warn' : 'ok';
 
                 return (
@@ -160,13 +176,13 @@ export default function VencimentosPage() {
                                 { key: 'renovar', label: 'Renovar', icon: <RefreshCcw size={14} />, onClick: () => setVencimentoParaRenovar(v) },
                                 { key: 'resolver', label: 'Marcar resolvido', icon: <Check size={14} />, onClick: () => marcarResolvido(v.id) },
                                 ...(isSuperadmin
-                                  ? [{ key: 'excluir', label: 'Excluir', icon: <Trash2 size={14} />, variant: 'danger' as const, onClick: () => excluirVencimento(v.id) }]
+                                  ? [{ key: 'excluir', label: 'Excluir', icon: <Trash2 size={14} />, variant: 'danger' as const, onClick: () => setVencimentoParaExcluir(v) }]
                                   : []),
                               ]
                             : [
                                 { key: 'reabrir', label: 'Reabrir', icon: <RotateCcw size={14} />, onClick: () => reabrirVencimento(v.id) },
                                 ...(isSuperadmin
-                                  ? [{ key: 'excluir', label: 'Excluir', icon: <Trash2 size={14} />, variant: 'danger' as const, onClick: () => excluirVencimento(v.id) }]
+                                  ? [{ key: 'excluir', label: 'Excluir', icon: <Trash2 size={14} />, variant: 'danger' as const, onClick: () => setVencimentoParaExcluir(v) }]
                                   : []),
                               ]
                         }
@@ -182,7 +198,7 @@ export default function VencimentosPage() {
         </>
       )}
 
-      {isCompanyAdmin && companyId && appUser && (
+      {isCompanyAdmin && companyId && appUser && modalCriarAberto && (
         <CriarVencimentoModal
           open={modalCriarAberto}
           onClose={() => setModalCriarAberto(false)}
@@ -194,7 +210,7 @@ export default function VencimentosPage() {
         />
       )}
 
-      {companyId && (
+      {companyId && modalConfigAberto && (
         <ConfigurarAlertaModal
           open={modalConfigAberto}
           onClose={() => setModalConfigAberto(false)}
@@ -203,12 +219,30 @@ export default function VencimentosPage() {
         />
       )}
 
-      <RenovarVencimentoModal
-        vencimento={vencimentoParaRenovar}
-        onClose={() => setVencimentoParaRenovar(null)}
-        onSalvar={handleRenovar}
-        saving={renovando}
+      <ConfirmModal
+        open={vencimentoParaExcluir !== null}
+        title="Apagar vencimento?"
+        description={
+          vencimentoParaExcluir
+            ? `"${itemLabel(vencimentoParaExcluir)}" sai da lista para sempre. Essa ação não pode ser desfeita.`
+            : undefined
+        }
+        confirmLabel="Apagar"
+        cancelLabel="Cancelar"
+        tone="danger"
+        isConfirming={excluindo}
+        onConfirm={confirmarExclusao}
+        onCancel={() => !excluindo && setVencimentoParaExcluir(null)}
       />
+
+      {vencimentoParaRenovar && (
+        <RenovarVencimentoModal
+          vencimento={vencimentoParaRenovar}
+          onClose={() => setVencimentoParaRenovar(null)}
+          onSalvar={handleRenovar}
+          saving={renovando}
+        />
+      )}
     </div>
   );
 }

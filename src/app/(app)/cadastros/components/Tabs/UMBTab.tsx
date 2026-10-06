@@ -30,7 +30,7 @@ export function UmbsTab({ companyId }: UmbsTabProps) {
       toFormValues: (c) => ({ placa: c.placa, tag: c.tag ?? '' }),
       validate: (v) => (!v.placa.trim() ? 'Informe a placa da UMB.' : null),
       criar: (v) => criarCaminhao({ placa: v.placa.trim(), tag: v.tag.trim(), companyId: v.companyId }),
-      editar: (v) => editarCaminhao({ id: v.id, placa: v.placa?.trim(), tag: v.tag?.trim() }),
+      editar: (v) => editarCaminhao({ id: v.id, placa: v.placa.trim(), tag: v.tag.trim() }),
       companyId,
       isCriando,
       isEditando,
@@ -53,7 +53,12 @@ export function UmbsTab({ companyId }: UmbsTabProps) {
           <th />
         </>
       }
-      renderRow={(c) => (
+      exclusao={{
+        titulo: 'Apagar UMB?',
+        descricao: (c) => `A UMB ${c.placa} sai da lista. Essa ação não pode ser desfeita.`,
+        onConfirmar: (c) => excluirCaminhao(c.id),
+      }}
+      renderRow={(c, { pedirExclusao }) => (
         <tr key={c.id}>
           <td>{c.placa}</td>
           <td>{c.tag || '—'}</td>
@@ -62,7 +67,7 @@ export function UmbsTab({ companyId }: UmbsTabProps) {
               <Button variant="ghost" onClick={() => abrir(c)}>
                 <Pencil size={14} />
               </Button>
-              <Button variant="cancel" onClick={() => excluirCaminhao(c.id)}>
+              <Button variant="cancel" onClick={() => pedirExclusao(c)}>
                 <Trash2 size={14} />
               </Button>
             </div>

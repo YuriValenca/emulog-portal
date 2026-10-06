@@ -1,5 +1,6 @@
 'use client';
 
+import * as RadixDialog from '@radix-ui/react-dialog';
 import { AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/Button/Button';
 import styles from './ConfirmModal.module.scss';
@@ -27,31 +28,53 @@ export default function ConfirmModal({
   onConfirm,
   onCancel,
 }: ConfirmModalProps) {
-  if (!open) return null;
+  const impedirFechamento = (event: Event) => {
+    if (isConfirming) event.preventDefault();
+  };
 
   return (
-    <div className={styles.overlay} onClick={onCancel}>
-      <div className={styles.card} onClick={(e) => e.stopPropagation()}>
-        {tone === 'danger' && (
-          <div className={styles.iconCircle}>
-            <AlertTriangle size={22} />
+    <RadixDialog.Root
+      open={open}
+      onOpenChange={(proximoAberto) => {
+        if (!proximoAberto && !isConfirming) onCancel();
+      }}
+    >
+      <RadixDialog.Portal>
+        <RadixDialog.Overlay className={styles.overlay} />
+        <RadixDialog.Content
+          className={styles.card}
+          onEscapeKeyDown={impedirFechamento}
+          onPointerDownOutside={impedirFechamento}
+          onInteractOutside={impedirFechamento}
+        >
+          {tone === 'danger' && (
+            <div className={styles.iconCircle} aria-hidden="true">
+              <AlertTriangle size={22} />
+            </div>
+          )}
+
+          <RadixDialog.Title className={styles.title}>{title}</RadixDialog.Title>
+
+          {description ? (
+            <RadixDialog.Description className={styles.description}>{description}</RadixDialog.Description>
+          ) : (
+            <RadixDialog.Description className={styles.srOnly}>{title}</RadixDialog.Description>
+          )}
+
+          <div className={styles.actions}>
+            <Button variant="ghost" onClick={onCancel} disabled={isConfirming}>
+              {cancelLabel}
+            </Button>
+            <Button
+              variant={tone === 'danger' ? 'cancel' : 'accent'}
+              onClick={onConfirm}
+              loading={isConfirming}
+            >
+              {confirmLabel}
+            </Button>
           </div>
-        )}
-        <h2 className={styles.title}>{title}</h2>
-        {description && <p className={styles.description}>{description}</p>}
-        <div className={styles.actions}>
-          <Button variant="ghost" onClick={onCancel} disabled={isConfirming}>
-            {cancelLabel}
-          </Button>
-          <Button
-            variant={tone === 'danger' ? 'cancel' : 'accent'}
-            onClick={onConfirm}
-            loading={isConfirming}
-          >
-            {confirmLabel}
-          </Button>
-        </div>
-      </div>
-    </div>
+        </RadixDialog.Content>
+      </RadixDialog.Portal>
+    </RadixDialog.Root>
   );
 }

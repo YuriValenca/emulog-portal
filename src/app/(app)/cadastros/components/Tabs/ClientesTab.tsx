@@ -77,7 +77,12 @@ export function ClientesTab({ companyId }: ClientesTabProps) {
           <th />
         </>
       }
-      renderRow={(c) => (
+      exclusao={{
+        titulo: 'Apagar cliente?',
+        descricao: (c) => `"${c.nome}" sai da lista de clientes. Essa ação não pode ser desfeita.`,
+        onConfirmar: (c) => excluirCliente(c.id),
+      }}
+      renderRow={(c, { pedirExclusao }) => (
         <tr key={c.id}>
           <td>{c.nome}</td>
           <td>{c.cnpj ? formatCNPJ(c.cnpj) : '—'}</td>
@@ -89,7 +94,7 @@ export function ClientesTab({ companyId }: ClientesTabProps) {
               <Button variant="ghost" onClick={() => abrir(c)}>
                 <Pencil size={14} />
               </Button>
-              <Button variant="cancel" onClick={() => excluirCliente(c.id)}>
+              <Button variant="cancel" onClick={() => pedirExclusao(c)}>
                 <Trash2 size={14} />
               </Button>
             </div>

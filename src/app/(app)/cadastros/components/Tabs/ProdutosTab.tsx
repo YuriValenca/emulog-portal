@@ -54,9 +54,9 @@ export function ProdutosTab({ companyId }: ProdutosTabProps) {
       editar: (v) =>
         editarProduto({
           id: v.id,
-          nome: v.nome?.trim(),
-          densidadeMin: v.densidadeMin !== undefined ? parseDensidade(v.densidadeMin) : undefined,
-          densidadeMax: v.densidadeMax !== undefined ? parseDensidade(v.densidadeMax) : undefined,
+          nome: v.nome.trim(),
+          densidadeMin: parseDensidade(v.densidadeMin),
+          densidadeMax: parseDensidade(v.densidadeMax),
         }),
       companyId,
       isCriando,
@@ -81,7 +81,13 @@ export function ProdutosTab({ companyId }: ProdutosTabProps) {
           <th />
         </>
       }
-      renderRow={(p) => (
+      exclusao={{
+        titulo: 'Apagar produto?',
+        descricao: (p) =>
+          `"${p.nome}" sai da lista. Fogos já registrados com esse produto perdem a referência de faixa de densidade.`,
+        onConfirmar: (p) => excluirProduto(p.id),
+      }}
+      renderRow={(p, { pedirExclusao }) => (
         <tr key={p.id}>
           <td>{p.nome}</td>
           <td>{p.densidadeMin.toFixed(2)}</td>
@@ -91,7 +97,7 @@ export function ProdutosTab({ companyId }: ProdutosTabProps) {
               <Button variant="ghost" onClick={() => abrir(p)}>
                 <Pencil size={14} />
               </Button>
-              <Button variant="cancel" onClick={() => excluirProduto(p.id)}>
+              <Button variant="cancel" onClick={() => pedirExclusao(p)}>
                 <Trash2 size={14} />
               </Button>
             </div>

@@ -53,7 +53,12 @@ export function EquipeTab({ companyId }: EquipeTabProps) {
           <th />
         </>
       }
-      renderRow={(o) => (
+      exclusao={{
+        titulo: 'Apagar membro da equipe?',
+        descricao: (o) => `"${o.nome}" sai da equipe. Essa ação não pode ser desfeita.`,
+        onConfirmar: (o) => excluirOperador(o.id),
+      }}
+      renderRow={(o, { pedirExclusao }) => (
         <tr key={o.id}>
           <td>{o.nome}</td>
           <td>{o.cargo || '—'}</td>
@@ -62,7 +67,7 @@ export function EquipeTab({ companyId }: EquipeTabProps) {
               <Button variant="ghost" onClick={() => abrir(o)}>
                 <Pencil size={14} />
               </Button>
-              <Button variant="cancel" onClick={() => excluirOperador(o.id)}>
+              <Button variant="cancel" onClick={() => pedirExclusao(o)}>
                 <Trash2 size={14} />
               </Button>
             </div>
