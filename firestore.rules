@@ -233,9 +233,17 @@ service cloud.firestore {
 
     match /projetos/{id} {
       allow read: if signedIn() && (isSuperadmin() || resource.data.companyId == companyId());
-      allow create: if signedIn()
-        && request.resource.data.companyId == companyId()
-        && request.resource.data.uidUsuario == uid();
+      allow create: if (
+          signedIn()
+          && request.resource.data.companyId == companyId()
+          && request.resource.data.uidUsuario == uid()
+        )
+        || (
+          isCompanyAdmin()
+          && request.resource.data.companyId == companyId()
+          && exists(/databases/$(database)/documents/projetos_rascunho/$(id))
+          && get(/databases/$(database)/documents/projetos_rascunho/$(id)).data.uidUsuario == request.resource.data.uidUsuario
+        );
       allow update: if isSuperadmin()
         || (
           signedIn()
@@ -254,12 +262,35 @@ service cloud.firestore {
 
     match /projetos_meta/{id} {
       allow read: if signedIn() && (isSuperadmin() || resource.data.companyId == companyId());
-      allow create: if signedIn()
-        && request.resource.data.companyId == companyId()
-        && request.resource.data.uidUsuario == uid();
+      allow create: if (
+          signedIn()
+          && request.resource.data.companyId == companyId()
+          && request.resource.data.uidUsuario == uid()
+        )
+        || (
+          isCompanyAdmin()
+          && request.resource.data.companyId == companyId()
+          && exists(/databases/$(database)/documents/projetos_rascunho/$(id))
+          && get(/databases/$(database)/documents/projetos_rascunho/$(id)).data.uidUsuario == request.resource.data.uidUsuario
+        );
       allow update: if false;
       allow delete: if isSuperadmin()
         || (isCompanyAdmin() && resource.data.companyId == companyId());
+    }
+
+    match /projetos_rascunho/{id} {
+      function donoOuAdminDaEmpresa(dados) {
+        return isSuperadmin()
+          || (sameCompany(dados.companyId) && (dados.uidUsuario == uid() || isCompanyAdmin()));
+      }
+
+      allow read: if donoOuAdminDaEmpresa(resource.data);
+      allow create: if sameCompany(request.resource.data.companyId)
+        && request.resource.data.uidUsuario == uid();
+      allow update: if donoOuAdminDaEmpresa(resource.data)
+        && request.resource.data.companyId == resource.data.companyId
+        && request.resource.data.uidUsuario == resource.data.uidUsuario;
+      allow delete: if resource == null || donoOuAdminDaEmpresa(resource.data);
     }
 
     match /{document=**} {
