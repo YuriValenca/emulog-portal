@@ -20,6 +20,7 @@ interface CriarRegraInput {
 interface ExcluirRegraInput {
   regraId: string;
   companyId: string;
+  incluirSemRegra: boolean;
 }
 
 async function fetchRegras(companyId: string): Promise<RegraDeteccao[]> {
@@ -52,25 +53,48 @@ async function criarRegra(input: CriarRegraInput) {
   await resetarVerificacaoDeFogos(input.companyId);
 }
 
-async function buscarOcorrenciasDaRegra(companyId: string) {
+/**
+ * Ocorrências geradas por UMA regra específica.
+ *
+ * O Firestore não deixa filtrar por `regraId` no servidor sem um índice composto
+ * a mais, então a query traz as automáticas de diferença de Kg da empresa e o
+ * recorte por regra é feito aqui.
+ *
+ * `incluirSemRegra` cobre os documentos gravados antes do campo `regraId` existir:
+ * eles só podem ter vindo de uma regra, mas não dá pra saber de qual. Só entram
+ * na conta quando esta é a última regra da empresa — aí não sobra dona possível.
+ */
+async function buscarOcorrenciasDaRegra(companyId: string, regraId: string, incluirSemRegra: boolean) {
   const q = query(
     collection(db, 'ocorrencias'),
     where('companyId', '==', companyId),
     where('tipo', '==', 'diferenca_kg_excedente'),
     where('origem', '==', 'automatica')
   );
-  return getDocs(q);
+  const snap = await getDocs(q);
+
+  return snap.docs.filter((docSnap) => {
+    const dona = (docSnap.data().regraId ?? null) as string | null;
+    if (dona === regraId) return true;
+    return incluirSemRegra && dona === null;
+  });
 }
 
-async function contarOcorrenciasDaRegra(companyId: string): Promise<number> {
-  const snap = await buscarOcorrenciasDaRegra(companyId);
-  return snap.size;
+interface EscopoRegra {
+  companyId: string;
+  regraId: string;
+  incluirSemRegra: boolean;
+}
+
+async function contarOcorrenciasDaRegra(escopo: EscopoRegra): Promise<number> {
+  const docs = await buscarOcorrenciasDaRegra(escopo.companyId, escopo.regraId, escopo.incluirSemRegra);
+  return docs.length;
 }
 
 async function excluirRegraComOcorrencias(input: ExcluirRegraInput) {
-  const snap = await buscarOcorrenciasDaRegra(input.companyId);
+  const docs = await buscarOcorrenciasDaRegra(input.companyId, input.regraId, input.incluirSemRegra);
   const batch = writeBatch(db);
-  snap.docs.forEach((docSnap) => batch.delete(docSnap.ref));
+  docs.forEach((docSnap) => batch.delete(docSnap.ref));
   batch.delete(doc(db, 'regras_deteccao', input.regraId));
   await batch.commit();
 }
@@ -87,25 +111,33 @@ export function useRegrasDeteccao(companyId: string | null) {
 
   const invalidar = () => {
     queryClient.invalidateQueries({ queryKey });
-    queryClient.invalidateQueries({ queryKey: ['ocorrencias'] });
+    queryClient.invalidateQueries({ queryKey: ['ocorrencias'], refetchType: 'all' });
   };
 
   const criarMutation = useMutation({
     mutationFn: criarRegra,
-    onSuccess: (_, variables) => {
+    onSuccess: () => {
       invalidar();
       useOcorrenciaRescan.getState().requestRescan();
     },
   });
   const excluirMutation = useMutation({ mutationFn: excluirRegraComOcorrencias, onSuccess: invalidar });
 
+  const regras = regrasQuery.data ?? [];
+
+  const escopoDaRegra = (regraId: string): EscopoRegra => ({
+    companyId: companyId!,
+    regraId,
+    incluirSemRegra: regras.length <= 1,
+  });
+
   return {
-    regras: regrasQuery.data ?? [],
+    regras,
     isLoading: regrasQuery.isLoading,
     criarRegra: criarMutation.mutateAsync,
     isCriando: criarMutation.isPending,
-    contarOcorrenciasDaRegra: () => contarOcorrenciasDaRegra(companyId!),
-    excluirRegra: excluirMutation.mutateAsync,
+    contarOcorrenciasDaRegra: (regraId: string) => contarOcorrenciasDaRegra(escopoDaRegra(regraId)),
+    excluirRegra: (regraId: string) => excluirMutation.mutateAsync(escopoDaRegra(regraId)),
     isExcluindo: excluirMutation.isPending,
   };
 }

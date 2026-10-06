@@ -15,6 +15,7 @@ import { Textarea } from '@/components/ui/Textarea/Textarea';
 import { Spinner } from '@/components/ui/Spinner/Spinner';
 import { StatusPill } from '@/components/ui/StatusPill/StatusPill';
 import { ActionsMenu } from '@/components/ui/ActionsMenu/ActionsMenu';
+import { useToast } from '@/components/ui/Toast/Toast';
 import CriarAutomacaoModal, { type CriarAutomacaoValues } from './components/CriarAutomacaoModal/CriarAutomacaoModal';
 import ConfigurarAutomacoesModal from './components/ConfigurarAutomacoesModal/ConfigurarAutomacoesModal';
 import ConfirmarRemocaoAutomacaoModal from './components/ConfirmarRemocaoAutomacaoModal/ConfirmarRemocaoAutomacaoModal';
@@ -73,6 +74,7 @@ type EtapaExclusao = 'aviso' | 'confirmacao' | null;
 
 export default function OcorrenciasPage() {
   const { companyId, appUser, isSuperadmin } = useAppAuth();
+  const { toast } = useToast();
   const { companyIds } = useCompanyGroup(companyId);
   const { ocorrencias, isLoading, isError, criarOcorrencia, isCriando, atualizarStatus, excluirOcorrencia, isExcluindo } = useOcorrencias(companyIds);
   const {
@@ -164,7 +166,7 @@ export default function OcorrenciasPage() {
     setEtapaExclusao('aviso');
     setCarregandoQuantidade(true);
     setQuantidadeOcorrencias(null);
-    const quantidade = await contarOcorrenciasDaRegra();
+    const quantidade = await contarOcorrenciasDaRegra(regra.id);
     setQuantidadeOcorrencias(quantidade);
     setCarregandoQuantidade(false);
   };
@@ -175,7 +177,7 @@ export default function OcorrenciasPage() {
 
   const handleConfirmarExclusaoFinal = async () => {
     if (!regraParaExcluir || !companyId) return;
-    await excluirRegra({ regraId: regraParaExcluir.id, companyId });
+    await excluirRegra(regraParaExcluir.id);
     resetarFluxoExclusao();
   };
 
@@ -193,7 +195,10 @@ export default function OcorrenciasPage() {
       await excluirOcorrencia(ocorrenciaParaExcluir.id);
       setOcorrenciaParaExcluir(null);
     } catch {
-      window.alert('Não foi possível apagar a ocorrência. Tente novamente.');
+      toast({
+        title: 'Não foi possível apagar',
+        description: 'A ocorrência continua na lista. Tente novamente.',
+      });
     }
   };
 
@@ -341,13 +346,15 @@ export default function OcorrenciasPage() {
         </div>
       </Modal>
 
-      <CriarAutomacaoModal
-        open={automacaoModalOpen}
-        onOpenChange={setAutomacaoModalOpen}
-        onSalvar={handleCriarAutomacao}
-        regrasExistentes={regras}
-        saving={isCriandoRegra}
-      />
+      {automacaoModalOpen && (
+        <CriarAutomacaoModal
+          open={automacaoModalOpen}
+          onOpenChange={setAutomacaoModalOpen}
+          onSalvar={handleCriarAutomacao}
+          regrasExistentes={regras}
+          saving={isCriandoRegra}
+        />
+      )}
 
       <ConfigurarAutomacoesModal
         open={configurarModalOpen}

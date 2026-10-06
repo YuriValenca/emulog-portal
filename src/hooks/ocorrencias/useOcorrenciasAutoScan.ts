@@ -4,8 +4,8 @@ import { useEffect, useRef, useState } from 'react';
 import { create } from 'zustand';
 import { useQueryClient } from '@tanstack/react-query';
 import {
-  collection, doc, setDoc, getDoc, getDocs, updateDoc, deleteDoc,
-  query, where, Timestamp,
+  collection, doc, setDoc, getDoc, getDocs, updateDoc, deleteDoc, writeBatch,
+  query, where, Timestamp, type DocumentReference,
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase/client';
 import { chunk } from '@/lib/chunk';
@@ -18,8 +18,19 @@ import { fetchLicencas } from '@/hooks/useLicencas';
 import { statusExpiracaoLicenca, JANELA_EXPIRACAO_LICENCA_DIAS } from '@/lib/licenca';
 import type { License, Projeto } from '@/types';
 
- const RETENCAO_OCORRENCIA_ENCERRADA_MS = 60 * 1000;
-// produção: usar 3 * 24 * 60 * 60 * 1000
+const MS_DIA = 24 * 60 * 60 * 1000;
+
+/**
+ * Por quanto tempo uma ocorrência encerrada continua visível antes de ser apagada.
+ * Não baixe isso pra testar: o scan roda a cada montagem do layout e a exclusão é
+ * definitiva — já houve um `60 * 1000` esquecido aqui apagando histórico em produção.
+ */
+export const RETENCAO_OCORRENCIA_ENCERRADA_DIAS = 3;
+
+const RETENCAO_OCORRENCIA_ENCERRADA_MS = RETENCAO_OCORRENCIA_ENCERRADA_DIAS * MS_DIA;
+
+/** Quantos documentos por `writeBatch` (o limite do Firestore é 500). */
+const TAMANHO_LOTE_ESCRITA = 400;
 
 interface OcorrenciaRescanState {
   nonce: number;
@@ -36,6 +47,8 @@ interface ScanState {
   total: number;
   processados: number;
 }
+
+const SCAN_PARADO: ScanState = { isScanning: false, total: 0, processados: 0 };
 
 interface LicencaOcorrenciaDetectada {
   companyId: string;
@@ -121,8 +134,19 @@ async function registrarOcorrenciaLicenca(detectada: LicencaOcorrenciaDetectada)
   }
 }
 
+/**
+ * Id determinístico da ocorrência de fogo. Detecções vindas de regra incluem o
+ * `regraId` porque duas regras podem apontar o mesmo fogo — sem isso a segunda
+ * sobrescreveria a primeira.
+ */
+function idOcorrenciaFogo(projetoId: string, detectada: OcorrenciaDetectada): string {
+  return detectada.regraId
+    ? `${projetoId}_${detectada.tipo}_${detectada.regraId}`
+    : `${projetoId}_${detectada.tipo}`;
+}
+
 async function registrarOcorrenciaFogo(companyId: string, projetoId: string, detectada: OcorrenciaDetectada) {
-  const ref = doc(db, 'ocorrencias', `${projetoId}_${detectada.tipo}`);
+  const ref = doc(db, 'ocorrencias', idOcorrenciaFogo(projetoId, detectada));
 
   let existe = false;
   try {
@@ -142,6 +166,12 @@ async function registrarOcorrenciaFogo(companyId: string, projetoId: string, det
     valorReferencia: detectada.valorReferencia,
     responsavelUid: null,
   };
+
+  // Só detecção vinda de regra grava `regraId`. As rules restringem o update de
+  // ocorrência automática a ['descricao','valorReferencia','status','encerradoEm'],
+  // então introduzir um campo novo num documento que já existe seria negado —
+  // e ocorrência de densidade, que não tem regra, mantém o mesmo id de sempre.
+  if (detectada.regraId) payload.regraId = detectada.regraId;
 
   if (!existe) {
     payload.status = 'aberta';
@@ -180,12 +210,38 @@ async function buscarOcorrenciasEncerradasExpiradas(companyIds: string[]) {
   });
 }
 
+async function apagarUmAUm(refs: DocumentReference[]) {
+  for (const ref of refs) {
+    try {
+      await deleteDoc(ref);
+    } catch (erro) {
+      console.error('[autoScan] falha ao apagar ocorrência encerrada', { refPath: ref.path, erro });
+    }
+  }
+}
+
+async function apagarEmLotes(refs: DocumentReference[]) {
+  for (const lote of chunk(refs, TAMANHO_LOTE_ESCRITA)) {
+    const batch = writeBatch(db);
+    lote.forEach((ref) => batch.delete(ref));
+    try {
+      await batch.commit();
+    } catch (erro) {
+      // O batch é atômico: basta uma regra negar uma exclusão — ocorrência de
+      // filial que o admin da matriz não pode apagar — para o lote inteiro
+      // falhar. Aí vale insistir uma a uma, pra não perder as permitidas.
+      console.error('[autoScan] lote de exclusão recusado, tentando uma a uma', { quantidade: lote.length, erro });
+      await apagarUmAUm(lote);
+    }
+  }
+}
+
 export function useOcorrenciasAutoScan(companyId: string | null) {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const rescanNonce = useOcorrenciaRescan((state) => state.nonce);
 
-  const [scanState, setScanState] = useState<ScanState>({ isScanning: false, total: 0, processados: 0 });
+  const [scanState, setScanState] = useState<ScanState>(SCAN_PARADO);
   const jaRodouRef = useRef<string | null>(null);
 
   useEffect(() => {
@@ -195,21 +251,30 @@ export function useOcorrenciasAutoScan(companyId: string | null) {
     if (jaRodouRef.current === chaveExecucao) return;
     jaRodouRef.current = chaveExecucao;
 
-    setScanState({ isScanning: false, total: 0, processados: 0 });
+    let cancelado = false;
+    let concluido = false;
+
+    const atualizarProgresso = (estado: ScanState) => {
+      if (!cancelado) setScanState(estado);
+    };
 
     const rodarScan = async () => {
+      atualizarProgresso(SCAN_PARADO);
+
       let companyIds: string[] = [companyId];
       try {
         companyIds = await fetchCompanyGroup(companyId);
       } catch (erro) {
         console.error('[autoScan] falha ao buscar grupo de empresas', { companyId, erro });
       }
+      if (cancelado) return;
 
       const [projetos, produtos, regras] = await Promise.all([
         fetchProjetosDireto(companyId),
         fetchProdutosDireto(companyId),
         fetchRegrasDireto(companyId),
       ]);
+      if (cancelado) return;
 
       const produtosById = new Map(produtos.map((p) => [p.id, p]));
       const pendentesFogos = projetos.filter((p) => !p.ocorrenciasVerificadas);
@@ -225,6 +290,7 @@ export function useOcorrenciasAutoScan(companyId: string | null) {
       } catch (erro) {
         console.error('[autoScan] falha ao buscar licenças do grupo', { companyIds, erro });
       }
+      if (cancelado) return;
 
       let ocorrenciasParaApagar: Awaited<ReturnType<typeof buscarOcorrenciasEncerradasExpiradas>> = [];
       try {
@@ -232,16 +298,19 @@ export function useOcorrenciasAutoScan(companyId: string | null) {
       } catch (erro) {
         console.error('[autoScan] falha ao buscar ocorrências encerradas expiradas', { companyIds, erro });
       }
+      if (cancelado) return;
 
       const totalGeral = pendentesFogos.length + licencasDetectadas.length + ocorrenciasParaApagar.length;
       if (totalGeral === 0) return;
 
-      setScanState({ isScanning: true, total: totalGeral, processados: 0 });
+      atualizarProgresso({ isScanning: true, total: totalGeral, processados: 0 });
       toast({ title: 'Verificando pendências', description: `${totalGeral} item(ns) sendo analisados` });
 
       let processados = 0;
 
       for (const projeto of pendentesFogos) {
+        if (cancelado) return;
+
         const detectadas = detectarOcorrenciasDoProjeto(projeto, produtosById, regras);
 
         await Promise.all(
@@ -255,31 +324,38 @@ export function useOcorrenciasAutoScan(companyId: string | null) {
         }
 
         processados += 1;
-        setScanState({ isScanning: true, total: totalGeral, processados });
+        atualizarProgresso({ isScanning: true, total: totalGeral, processados });
       }
 
       for (const detectada of licencasDetectadas) {
+        if (cancelado) return;
         await registrarOcorrenciaLicenca(detectada);
         processados += 1;
-        setScanState({ isScanning: true, total: totalGeral, processados });
+        atualizarProgresso({ isScanning: true, total: totalGeral, processados });
       }
 
-      for (const docSnap of ocorrenciasParaApagar) {
-        try {
-          await deleteDoc(docSnap.ref);
-        } catch (erro) {
-          console.error('[autoScan] falha ao apagar ocorrência encerrada expirada', { refPath: docSnap.ref.path, erro });
-        }
-        processados += 1;
-        setScanState({ isScanning: true, total: totalGeral, processados });
+      if (ocorrenciasParaApagar.length > 0 && !cancelado) {
+        await apagarEmLotes(ocorrenciasParaApagar.map((docSnap) => docSnap.ref));
+        processados += ocorrenciasParaApagar.length;
+        atualizarProgresso({ isScanning: true, total: totalGeral, processados });
       }
 
-      setScanState({ isScanning: false, total: totalGeral, processados: totalGeral });
-      queryClient.invalidateQueries({ queryKey: ['ocorrencias'] });
+      if (cancelado) return;
+
+      atualizarProgresso({ isScanning: false, total: totalGeral, processados: totalGeral });
+      queryClient.invalidateQueries({ queryKey: ['ocorrencias'], refetchType: 'all' });
       toast({ title: 'Verificação concluída', description: 'As ocorrências detectadas já estão disponíveis.' });
     };
 
-    rodarScan();
+    rodarScan()
+      .catch((erro) => console.error('[autoScan] scan interrompido por erro', { companyId, erro }))
+      .finally(() => { concluido = true; });
+
+    return () => {
+      cancelado = true;
+      // Scan interrompido no meio não conta como executado: a próxima montagem recomeça.
+      if (!concluido) jaRodouRef.current = null;
+    };
   }, [companyId, rescanNonce, queryClient, toast]);
 
   return scanState;

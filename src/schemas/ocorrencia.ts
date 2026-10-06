@@ -19,6 +19,8 @@ export const ocorrenciaSchema = z.object({
   companyId: z.string(),
   projetoId: z.string().nullable(),
   licenseId: z.string().nullable().optional(),
+  /** Regra de detecção que gerou a ocorrência. Ausente em docs criados antes do campo existir. */
+  regraId: z.string().nullable().optional(),
   tipo: ocorrenciaTipoSchema,
   tituloManual: z.string().max(80).nullable().optional(),
   origem: ocorrenciaOrigemSchema,

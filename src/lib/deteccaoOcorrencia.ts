@@ -8,6 +8,8 @@ export interface OcorrenciaDetectada {
   tipo: OcorrenciaTipo;
   descricao: string;
   valorReferencia: number;
+  /** Regra que disparou a detecção. `null` para detecções que não vêm de regra (densidade). */
+  regraId: string | null;
 }
 
 export function detectarOcorrenciasDoProjeto(
@@ -33,6 +35,7 @@ export function detectarOcorrenciasDoProjeto(
         tipo: 'densidade_fora_da_faixa',
         descricao: `Densidade média ${referencia.toFixed(2)} g/cm³ fora da faixa de ${produto.nome} (${produto.densidadeMin.toFixed(2)}–${produto.densidadeMax.toFixed(2)}).`,
         valorReferencia: referencia,
+        regraId: null,
       });
     }
   }
@@ -48,6 +51,7 @@ export function detectarOcorrenciasDoProjeto(
               tipo: 'diferenca_kg_excedente',
               descricao: `Diferença de ${dif.toFixed(1)}% entre Kg previsto e aplicado.`,
               valorReferencia: dif,
+              regraId: regra.id,
             });
           }
         });
