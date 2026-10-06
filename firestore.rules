@@ -1,0 +1,269 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function uid() {
+      return request.auth.uid;
+    }
+
+    function userPath() {
+      return /databases/$(database)/documents/users/$(request.auth.uid);
+    }
+
+    function hasUserDoc() {
+      return signedIn() && exists(userPath());
+    }
+
+    function userDoc() {
+      return get(userPath()).data;
+    }
+
+    function role() {
+      return hasUserDoc() ? userDoc().role : null;
+    }
+
+    function companyId() {
+      return hasUserDoc() ? userDoc().companyId : null;
+    }
+
+    function isSuperadmin() {
+      return signedIn() && role() == 'superadmin';
+    }
+
+    function isCompanyAdmin() {
+      return signedIn() && role() == 'company_admin';
+    }
+
+    function sameCompany(targetCompanyId) {
+      return signedIn() && companyId() == targetCompanyId;
+    }
+
+    function isParentOf(targetCompanyId) {
+      return signedIn()
+        && exists(/databases/$(database)/documents/companies/$(targetCompanyId))
+        && get(/databases/$(database)/documents/companies/$(targetCompanyId)).data.parentCompanyId == companyId();
+    }
+
+    function sameCompanyOrGroup(targetCompanyId) {
+      return sameCompany(targetCompanyId) || isParentOf(targetCompanyId);
+    }
+
+    match /companies/{companyId} {
+      allow read: if signedIn() && (isSuperadmin() || sameCompany(companyId) || resource.data.parentCompanyId == companyId());
+      allow create: if isSuperadmin();
+      allow update: if isSuperadmin()
+        || (
+          isCompanyAdmin()
+          && sameCompany(companyId)
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['alertaVencimento'])
+        );
+      allow delete: if false;
+
+      match /licenses/{licenseId} {
+        allow read: if signedIn() && (isSuperadmin() || sameCompany(companyId));
+        allow create: if isSuperadmin();
+        allow delete: if isSuperadmin();
+        allow update: if isSuperadmin()
+          || (
+            signedIn()
+            && sameCompany(companyId)
+            && resource.data.status == 'available'
+            && request.resource.data.status == 'active'
+            && request.resource.data.key == resource.data.key
+            && request.resource.data.createdAt == resource.data.createdAt
+            && request.resource.data.validityMonths == resource.data.validityMonths
+            && request.resource.data.deviceId is string
+            && (request.resource.data.expiresAt == null || request.resource.data.expiresAt is timestamp)
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['deviceId','status','claimedAt','expiresAt'])
+          )
+          || (
+            signedIn()
+            && sameCompany(companyId)
+            && resource.data.status == 'active'
+            && request.resource.data.status == 'expired'
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status'])
+          );
+      }
+    }
+
+    match /users/{userId} {
+      allow read: if signedIn() && (isSuperadmin() || resource.data.companyId == companyId() || userId == uid());
+
+      allow create: if isSuperadmin()
+        || (
+          isCompanyAdmin()
+          && request.resource.data.companyId == companyId()
+          && request.resource.data.role == 'user'
+          && userId == request.resource.data.uid
+        );
+
+      allow update: if isSuperadmin()
+        || (
+          signedIn()
+          && userId == uid()
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['ultimoLogin'])
+        )
+        || (
+          signedIn()
+          && userId == uid()
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['ultimaVisitaOcorrencias'])
+        )
+        || (
+          isCompanyAdmin()
+          && resource.data.companyId == companyId()
+          && resource.data.role != 'superadmin'
+          && userId != uid()
+          && request.resource.data.companyId == resource.data.companyId
+          && request.resource.data.role != 'superadmin'
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['nome','email','role'])
+        );
+
+      allow delete: if isSuperadmin()
+        || (
+          isCompanyAdmin()
+          && resource.data.companyId == companyId()
+          && resource.data.role != 'superadmin'
+          && userId != uid()
+        );
+    }
+
+    match /caminhoes/{id} {
+      allow read: if signedIn() && (isSuperadmin() || resource.data.companyId == companyId());
+      allow create: if isSuperadmin() || (isCompanyAdmin() && request.resource.data.companyId == companyId());
+      allow update: if isSuperadmin()
+        || (isCompanyAdmin() && resource.data.companyId == companyId() && request.resource.data.companyId == resource.data.companyId);
+      allow delete: if isSuperadmin() || (isCompanyAdmin() && resource.data.companyId == companyId());
+    }
+
+    match /operadores/{id} {
+      allow read: if signedIn() && (isSuperadmin() || resource.data.companyId == companyId());
+      allow create: if isSuperadmin() || (isCompanyAdmin() && request.resource.data.companyId == companyId());
+      allow update: if isSuperadmin()
+        || (isCompanyAdmin() && resource.data.companyId == companyId() && request.resource.data.companyId == resource.data.companyId);
+      allow delete: if isSuperadmin() || (isCompanyAdmin() && resource.data.companyId == companyId());
+    }
+
+    match /produtos/{id} {
+      allow read: if signedIn() && (isSuperadmin() || resource.data.companyId == companyId());
+      allow create: if isSuperadmin() || (isCompanyAdmin() && request.resource.data.companyId == companyId());
+      allow update: if isSuperadmin()
+        || (isCompanyAdmin() && resource.data.companyId == companyId() && request.resource.data.companyId == resource.data.companyId);
+      allow delete: if isSuperadmin() || (isCompanyAdmin() && resource.data.companyId == companyId());
+    }
+
+    match /clientes/{id} {
+      allow read: if signedIn() && (isSuperadmin() || resource.data.companyId == companyId());
+      allow create: if isSuperadmin() || (isCompanyAdmin() && request.resource.data.companyId == companyId());
+      allow update: if isSuperadmin()
+        || (isCompanyAdmin() && resource.data.companyId == companyId() && request.resource.data.companyId == resource.data.companyId);
+      allow delete: if isSuperadmin() || (isCompanyAdmin() && resource.data.companyId == companyId());
+    }
+
+    match /regras_deteccao/{id} {
+      allow read: if signedIn() && (isSuperadmin() || resource.data.companyId == companyId());
+      allow create: if isSuperadmin() || (isCompanyAdmin() && request.resource.data.companyId == companyId());
+      allow delete: if isSuperadmin() || (isCompanyAdmin() && resource.data.companyId == companyId());
+    }
+
+    match /ocorrencias/{id} {
+      allow read: if signedIn() && (isSuperadmin() || resource == null || sameCompanyOrGroup(resource.data.companyId));
+      allow create: if isSuperadmin()
+        || (
+          signedIn()
+          && sameCompanyOrGroup(request.resource.data.companyId)
+          && (
+            (request.resource.data.origem == 'manual' && request.resource.data.responsavelUid == uid())
+            || (request.resource.data.origem == 'automatica' && request.resource.data.responsavelUid == null)
+          )
+        );
+      allow update: if isSuperadmin()
+        || (
+          signedIn()
+          && sameCompanyOrGroup(resource.data.companyId)
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'encerradoEm'])
+        )
+        || (
+          signedIn()
+          && sameCompanyOrGroup(resource.data.companyId)
+          && resource.data.origem == 'automatica'
+          && resource.data.tipo == 'licenca'
+          && request.resource.data.tipo == 'licenca'
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['descricao','tituloManual','motivo','status','encerradoEm'])
+        )
+        || (
+          signedIn()
+          && sameCompanyOrGroup(resource.data.companyId)
+          && resource.data.origem == 'automatica'
+          && resource.data.tipo != 'licenca'
+          && request.resource.data.origem == 'automatica'
+          && request.resource.data.tipo == resource.data.tipo
+          && request.resource.data.companyId == resource.data.companyId
+          && request.resource.data.projetoId == resource.data.projetoId
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['descricao','valorReferencia','status','encerradoEm'])
+        );
+      allow delete: if isSuperadmin()
+        || (isCompanyAdmin() && resource.data.companyId == companyId());
+    }
+
+    match /vencimentos/{id} {
+      allow read: if signedIn() && (isSuperadmin() || sameCompanyOrGroup(resource.data.companyId));
+      allow create: if isCompanyAdmin() && sameCompanyOrGroup(request.resource.data.companyId);
+      allow update: if isSuperadmin()
+        || (
+          isCompanyAdmin()
+          && sameCompanyOrGroup(resource.data.companyId)
+          && request.resource.data.companyId == resource.data.companyId
+        );
+      allow delete: if isSuperadmin();
+    }
+
+    match /calibragens/{id} {
+      allow read: if signedIn() && (isSuperadmin() || resource.data.companyId == companyId());
+      allow create: if signedIn()
+        && request.resource.data.companyId == companyId()
+        && request.resource.data.userId == uid();
+      allow update: if false;
+      allow delete: if isSuperadmin();
+    }
+
+    match /projetos/{id} {
+      allow read: if signedIn() && (isSuperadmin() || resource.data.companyId == companyId());
+      allow create: if signedIn()
+        && request.resource.data.companyId == companyId()
+        && request.resource.data.uidUsuario == uid();
+      allow update: if isSuperadmin()
+        || (
+          signedIn()
+          && resource.data.companyId == companyId()
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['informacoesOperacao'])
+        )
+        || (
+          signedIn()
+          && resource.data.companyId == companyId()
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['ocorrenciasVerificadas'])
+          && request.resource.data.ocorrenciasVerificadas is bool
+        );
+      allow delete: if isSuperadmin()
+        || (isCompanyAdmin() && resource.data.companyId == companyId());
+    }
+
+    match /projetos_meta/{id} {
+      allow read: if signedIn() && (isSuperadmin() || resource.data.companyId == companyId());
+      allow create: if signedIn()
+        && request.resource.data.companyId == companyId()
+        && request.resource.data.uidUsuario == uid();
+      allow update: if false;
+      allow delete: if isSuperadmin()
+        || (isCompanyAdmin() && resource.data.companyId == companyId());
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
