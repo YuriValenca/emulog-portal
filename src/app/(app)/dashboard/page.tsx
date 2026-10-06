@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { Flame, Weight, ShieldCheck, Timer, Gauge } from 'lucide-react';
+import { useState } from 'react';
+import { Flame, Weight, Gauge } from 'lucide-react';
 import { FAIXA_DENSIDADE_PADRAO } from '@/lib/densidade';
 import { opcoesPeriodoDisponiveis, labelPeriodo, type PeriodoDias } from '@/lib/periodo';
 import { useAppAuth } from '@/hooks/useAppAuth';
@@ -22,6 +22,20 @@ const OPCOES_SELECT_PERIODO = opcoesPeriodoDisponiveis().map((dias) => ({
 
 export default function DashboardPage() {
   const { companyId, isSuperadmin } = useAppAuth();
+
+  if (isSuperadmin && !companyId) {
+    return (
+      <div className={styles.container}>
+        <p className={styles.empty}>Selecione uma empresa no topo da página para ver o painel operacional.</p>
+      </div>
+    );
+  }
+
+  // A `key` é load-bearing: remontar ao trocar de empresa é o que zera os filtros.
+  return <PainelOperacional key={companyId ?? 'sem-empresa'} companyId={companyId} />;
+}
+
+function PainelOperacional({ companyId }: { companyId: string | null }) {
   const [diasPeriodo, setDiasPeriodo] = useState<PeriodoDias>(30);
   const [caminhaoId, setCaminhaoId] = useState<string[]>([]);
   const [operadorIds, setOperadorIds] = useState<string[]>([]);
@@ -35,21 +49,8 @@ export default function DashboardPage() {
     operadorIds
   );
 
-  useEffect(() => {
-    setCaminhaoId([]);
-    setOperadorIds([]);
-  }, [companyId]);
-
   const opcoesSelectUmb = (caminhoes ?? []).map((c) => ({ value: c.id, label: c.tag ?? c.placa }));
   const opcoesSelectOperador = (operadores ?? []).map((o) => ({ value: o.id, label: o.nome }));
-
-  if (isSuperadmin && !companyId) {
-    return (
-      <div className={styles.container}>
-        <p className={styles.empty}>Selecione uma empresa no topo da página para ver o painel operacional.</p>
-      </div>
-    );
-  }
 
   const periodoLabel = labelPeriodo(diasPeriodo);
 

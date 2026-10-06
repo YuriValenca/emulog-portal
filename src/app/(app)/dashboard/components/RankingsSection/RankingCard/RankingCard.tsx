@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useRef } from 'react';
+import { useMemo } from 'react';
 import { Bar, BarChart, LabelList, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import type { RankingItem } from '@/hooks/useDashboardStats';
 import styles from '../RankingsSection.module.scss';
@@ -28,11 +28,16 @@ function limitarNomes(label: string, maxNomes: number): string {
   return resultado.join(' ');
 }
 
-function criarContextoMedicao(): CanvasRenderingContext2D | null {
+let contextoMedicao: CanvasRenderingContext2D | null | undefined;
+
+function obterContextoMedicao(): CanvasRenderingContext2D | null {
   if (typeof document === 'undefined') return null;
-  const contexto = document.createElement('canvas').getContext('2d');
-  if (contexto) contexto.font = FONTE_MEDICAO;
-  return contexto;
+  if (contextoMedicao === undefined) {
+    const contexto = document.createElement('canvas').getContext('2d');
+    if (contexto) contexto.font = FONTE_MEDICAO;
+    contextoMedicao = contexto;
+  }
+  return contextoMedicao;
 }
 
 function medirLargura(contexto: CanvasRenderingContext2D | null, texto: string): number {
@@ -64,13 +69,9 @@ interface DadosPreparados {
 }
 
 function usePreparoDados(items: RankingItem[]): DadosPreparados {
-  const contextoRef = useRef<CanvasRenderingContext2D | null | undefined>(undefined);
-  if (contextoRef.current === undefined) {
-    contextoRef.current = criarContextoMedicao();
-  }
-  const contexto = contextoRef.current;
-
   return useMemo(() => {
+    const contexto = obterContextoMedicao();
+
     const dados = items.map((item) => {
       const nomesLimitados = limitarNomes(item.label, MAX_NOMES_LABEL);
       const labelEixo = truncarComElipse(contexto, nomesLimitados, LARGURA_EIXO_MAXIMA - PADDING_EIXO);
@@ -81,7 +82,7 @@ function usePreparoDados(items: RankingItem[]): DadosPreparados {
     const larguraEixo = calcularLarguraEixo(dados.map((item) => medirLargura(contexto, item.labelEixo)));
 
     return { dados, altura, larguraEixo };
-  }, [items, contexto]);
+  }, [items]);
 }
 
 interface TickEixoProps {

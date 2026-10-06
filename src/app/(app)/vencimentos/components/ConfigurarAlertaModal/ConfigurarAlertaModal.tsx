@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Modal } from '@/components/ui/Modal/Modal';
 import { Input } from '@/components/ui/Input/Input';
 import { Select } from '@/components/ui/Select/Select';
@@ -66,13 +66,6 @@ export default function ConfigurarAlertaModal({ open, onClose, companyId, alerta
   const { salvarAlertaVencimento, isSalvando } = useConfigurarAlertaVencimento();
   const [linhas, setLinhas] = useState<Record<VencimentoTipo, LinhaState>>(estadoInicial(alertaVencimentoAtual));
   const [erro, setErro] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (open) {
-      setLinhas(estadoInicial(alertaVencimentoAtual));
-      setErro(null);
-    }
-  }, [open, alertaVencimentoAtual]);
 
   const atualizarLinha = (tipo: VencimentoTipo, patch: Partial<LinhaState>) => {
     setLinhas((prev) => ({ ...prev, [tipo]: { ...prev[tipo], ...patch } }));

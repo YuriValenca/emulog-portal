@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Modal } from '@/components/ui/Modal/Modal';
 import { Input } from '@/components/ui/Input/Input';
 import { Button } from '@/components/ui/Button/Button';
@@ -15,10 +15,6 @@ interface RenovarVencimentoModalProps {
 
 export default function RenovarVencimentoModal({ vencimento, onClose, onSalvar, saving = false }: RenovarVencimentoModalProps) {
   const [dataVencimento, setDataVencimento] = useState('');
-
-  useEffect(() => {
-    if (vencimento) setDataVencimento('');
-  }, [vencimento]);
 
   const handleSalvar = async () => {
     if (!dataVencimento) return;

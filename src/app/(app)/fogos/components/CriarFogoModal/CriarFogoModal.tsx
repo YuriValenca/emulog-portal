@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import {
   useForm, useFieldArray, useWatch,
 } from 'react-hook-form';
@@ -118,17 +118,8 @@ export default function CriarFogoModal({
   const nomeProjeto = useWatch({ control, name: 'nomeProjeto' });
   const dataValue = useWatch({ control, name: 'data' });
   const amostrasValues = useWatch({ control, name: 'amostras' });
-
-  useEffect(() => {
-    if (open) {
-      reset(defaultFormValues);
-      setEquipeIds([]);
-      setCollapsedIds(new Set());
-      setConfirmClearOpen(false);
-      setRawInputs({});
-      setPendingConfirmation(null);
-    }
-  }, [open, reset]);
+  const caminhaoIdValue = useWatch({ control, name: 'caminhaoId' });
+  const produtoIdValue = useWatch({ control, name: 'produtoId' });
 
   const maxDate = new Date().toISOString().split('T')[0];
 
@@ -283,11 +274,13 @@ export default function CriarFogoModal({
 
           <div className={styles.row}>
             <Select
+              value={caminhaoIdValue ?? ''}
               placeholder="UMB"
               onValueChange={(value) => setValue('caminhaoId', value)}
               options={caminhoes.map((c) => ({ value: c.id, label: c.tag ?? c.placa }))}
             />
             <Select
+              value={produtoIdValue ?? ''}
               placeholder="Produto"
               onValueChange={(value) => setValue('produtoId', value)}
               options={produtos.map((p) => ({ value: p.id, label: p.nome }))}

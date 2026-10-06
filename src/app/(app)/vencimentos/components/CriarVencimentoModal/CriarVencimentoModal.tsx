@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Modal } from '@/components/ui/Modal/Modal';
 import { Select } from '@/components/ui/Select/Select';
 import { Input } from '@/components/ui/Input/Input';
@@ -39,17 +39,6 @@ export default function CriarVencimentoModal({
   const [descricao, setDescricao] = useState('');
   const [dataVencimento, setDataVencimento] = useState('');
   const [erro, setErro] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!open) return;
-    setTipo('documento_umb');
-    setCaminhaoId('');
-    setOperadorId('');
-    setTituloManual('');
-    setDescricao('');
-    setDataVencimento('');
-    setErro(null);
-  }, [open]);
 
   const precisaCaminhao = tipo === 'documento_umb';
   const precisaOperador = tipo === 'certificacao_operador';

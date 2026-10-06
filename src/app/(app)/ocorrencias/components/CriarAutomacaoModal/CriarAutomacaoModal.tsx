@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Modal } from '@/components/ui/Modal/Modal';
 import { Select } from '@/components/ui/Select/Select';
 import { Input } from '@/components/ui/Input/Input';
@@ -36,14 +36,6 @@ export default function CriarAutomacaoModal({ open, onOpenChange, onSalvar, regr
   const [valor1, setValor1] = useState('');
   const [valor2, setValor2] = useState('');
   const [erro, setErro] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!open) return;
-    setOperador('maior');
-    setValor1('');
-    setValor2('');
-    setErro(null);
-  }, [open]);
 
   const parseValor = (raw: string) => {
     const numero = parseFloat(raw.replace(',', '.'));
