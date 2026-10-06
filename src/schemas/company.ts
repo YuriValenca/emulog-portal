@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { zTimestamp, zTimestampOrNull } from './common';
 import { alertaVencimentoPorTipoSchema } from './vencimento';
+import { normalizarCnpj } from '@/helpers/formatCNPJ';
 
 export const companyModulesSchema = z.object({
   mobile: z.boolean(),
@@ -10,7 +11,8 @@ export const companyModulesSchema = z.object({
 export const companySchema = z.object({
   id: z.string(),
   name: z.string(),
-  cnpj: z.string().nullable(),
+  // TODO: Fase B — docs antigos têm CNPJ mascarado ou `''`; depois da migração sai o preprocess.
+  cnpj: z.preprocess(normalizarCnpj, z.string().nullable()),
   logo: z.string().nullable(),
   primaryColor: z.string().nullable(),
   founding: z.boolean(),
@@ -32,9 +34,9 @@ export const licenseValidityMonthsSchema = z.union([
   z.literal('vitalicia'),
 ]);
 
+// Sem `companyId`: a licença vive em `companies/{id}/licenses` e a empresa só existe no caminho.
 export const licenseSchema = z.object({
   id: z.string(),
-  companyId: z.string(),
   companyName: z.string().optional(),
   key: z.string(),
   deviceId: z.string().nullable(),

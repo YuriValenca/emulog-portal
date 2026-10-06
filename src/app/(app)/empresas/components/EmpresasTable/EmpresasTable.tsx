@@ -6,6 +6,7 @@ import { Switch } from '@/components/ui/Switch/Switch';
 import { StatusPill } from '@/components/ui/StatusPill/StatusPill';
 import { useModifyCompany } from '@/hooks/useModifyCompany';
 import { getCompanyModules } from '@/lib/companyModules';
+import { formatCNPJ } from '@/helpers/formatCNPJ';
 import type { Company } from '@/types';
 import styles from './EmpresasTable.module.scss';
 
@@ -32,7 +33,10 @@ export default function EmpresasTable({ empresas, onEditar }: EmpresasTableProps
     }),
     columnHelper.accessor('cnpj', {
       header: 'CNPJ',
-      cell: (info) => info.getValue() || '—',
+      cell: (info) => {
+        const cnpj = info.getValue();
+        return cnpj ? formatCNPJ(cnpj) : '—';
+      },
     }),
     columnHelper.display({
       id: 'tipo',

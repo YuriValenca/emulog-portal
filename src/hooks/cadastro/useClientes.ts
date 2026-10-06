@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { collection, addDoc, updateDoc, deleteDoc, doc, getDocs, query, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase/client';
 import { clienteSchema, type Cliente } from '@/schemas/cliente';
+import { normalizarCnpj } from '@/helpers/formatCNPJ';
 
 interface CriarClienteInput {
   nome: string;
@@ -20,17 +21,11 @@ interface EditarClienteInput {
   ativo?: boolean;
 }
 
-function normalizeCnpj(cnpj: unknown): string | null {
-  if (typeof cnpj !== 'string') return null;
-  const limpo = cnpj.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
-  return limpo || null;
-}
-
 async function fetchClientes(companyId: string): Promise<Cliente[]> {
   const snap = await getDocs(query(collection(db, 'clientes'), where('companyId', '==', companyId)));
   const resultados: Cliente[] = [];
   for (const d of snap.docs) {
-    const raw = { id: d.id, ...d.data(), cnpj: normalizeCnpj(d.data().cnpj) };
+    const raw = { id: d.id, ...d.data(), cnpj: normalizarCnpj(d.data().cnpj) };
     const parsed = clienteSchema.safeParse(raw);
     if (!parsed.success) {
       console.error(`Documento clientes/${d.id} inválido:`, parsed.error.flatten(), raw);
@@ -55,7 +50,7 @@ export function useClientes(companyId: string | null) {
     mutationFn: async (input: CriarClienteInput) => {
       await addDoc(collection(db, 'clientes'), {
         nome: input.nome,
-        cnpj: normalizeCnpj(input.cnpj),
+        cnpj: normalizarCnpj(input.cnpj),
         endereco: input.endereco,
         ativo: true,
         companyId: input.companyId,
@@ -69,7 +64,7 @@ export function useClientes(companyId: string | null) {
   const editarMutation = useMutation({
     mutationFn: async (input: EditarClienteInput) => {
       const { id, cnpj, ...rest } = input;
-      await updateDoc(doc(db, 'clientes', id), { ...rest, cnpj: normalizeCnpj(cnpj) });
+      await updateDoc(doc(db, 'clientes', id), { ...rest, cnpj: normalizarCnpj(cnpj) });
     },
     onError: (err) => console.error('Erro ao editar cliente:', err),
     onSuccess: () => queryClient.invalidateQueries({ queryKey }),

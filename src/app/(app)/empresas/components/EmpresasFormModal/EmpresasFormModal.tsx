@@ -97,7 +97,7 @@ export default function EmpresaFormModal({ visible, onClose, empresaEditando, em
       const modules = getCompanyModules(empresaEditando);
       reset({
         name: empresaEditando.name,
-        cnpj: empresaEditando.cnpj ?? '',
+        cnpj: formatCNPJ(empresaEditando.cnpj ?? ''),
         logo: empresaEditando.logo ?? null,
         primaryColor: empresaEditando.primaryColor ?? '#1F6452',
         parentCompanyId: empresaEditando.parentCompanyId ?? NENHUMA_MATRIZ,

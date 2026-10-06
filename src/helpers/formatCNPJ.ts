@@ -15,6 +15,11 @@ export function unmaskCNPJ(value: string): string {
   return value.toUpperCase().replace(/[^A-Z0-9]/g, '');
 }
 
+export function normalizarCnpj(cnpj: unknown): string | null {
+  if (typeof cnpj !== 'string') return null;
+  return unmaskCNPJ(cnpj) || null;
+}
+
 function charValue(char: string): number {
   return char.charCodeAt(0) - 48;
 }

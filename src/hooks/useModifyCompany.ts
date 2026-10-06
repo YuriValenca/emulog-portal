@@ -4,6 +4,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { addDoc, collection, doc, Timestamp, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase/client';
 import { getCompanyModules } from '@/lib/companyModules';
+import { normalizarCnpj } from '@/helpers/formatCNPJ';
 import type { Company, CompanyModules } from '@/schemas/company';
 
 export interface EmpresaFormValues {
@@ -30,7 +31,7 @@ export function useModifyCompany() {
     mutationFn: async (values: EmpresaFormValues) => {
       await addDoc(collection(db, 'companies'), {
         name: values.name.trim(),
-        cnpj: values.cnpj.trim() || null,
+        cnpj: normalizarCnpj(values.cnpj),
         logo: values.logo,
         primaryColor: values.primaryColor,
         founding: false,
@@ -50,7 +51,7 @@ export function useModifyCompany() {
     mutationFn: async ({ id, values }: { id: string; values: EmpresaFormValues }) => {
       await updateDoc(doc(db, 'companies', id), {
         name: values.name.trim(),
-        cnpj: values.cnpj.trim() || null,
+        cnpj: normalizarCnpj(values.cnpj),
         logo: values.logo,
         primaryColor: values.primaryColor,
         parentCompanyId: values.parentCompanyId,
