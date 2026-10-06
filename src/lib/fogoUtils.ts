@@ -1,22 +1,27 @@
-import type { Projeto } from '@/types';
-import type { Produto } from '@/types';
+import type { AmostraItem, Projeto, Produto } from '@/types';
+import {
+  isAmostraGrupo,
+  isAmostraManual,
+  densidadesDaAmostraManual,
+  numeroOuNull,
+  type ValorBruto,
+} from './amostras';
 
 interface DensidadeAmostra {
   inicial: number | null;
   final: number | null;
 }
 
-export function densidadesAmostra(amostra: Projeto['amostras'][number]): DensidadeAmostra {
-  if ('densidadeInicial' in amostra || 'densidadeFinal' in amostra) {
-    const inicial = typeof amostra.densidadeInicial === 'number' ? amostra.densidadeInicial : null;
-    const final = typeof amostra.densidadeFinal === 'number' ? amostra.densidadeFinal : null;
-    return { inicial, final };
+export function densidadesAmostra(amostra: AmostraItem): DensidadeAmostra {
+  if (isAmostraManual(amostra)) {
+    return densidadesDaAmostraManual(amostra);
   }
 
-  const pesagens = 'pesagens' in amostra && amostra.pesagens ? amostra.pesagens : [amostra];
+  const pesagens: { densidade: ValorBruto }[] = isAmostraGrupo(amostra) ? amostra.pesagens : [amostra];
+
   const valores = pesagens
-    .map((p) => parseFloat(String((p as { densidade: unknown }).densidade)))
-    .filter((d) => !isNaN(d) && d > 0);
+    .map((p) => numeroOuNull(p.densidade))
+    .filter((d): d is number => d !== null && d > 0);
 
   if (valores.length === 0) return { inicial: null, final: null };
   return { inicial: valores[0], final: valores[valores.length - 1] };
@@ -26,7 +31,9 @@ export function densidadeInicialFinalMedia(projeto: Projeto): DensidadeAmostra {
   const iniciais: number[] = [];
   const finais: number[] = [];
 
-  for (const amostra of projeto.amostras) {
+  // `amostras` pode vir ausente: `useProjetosPeriodo` e o auto-scan montam o
+  // Projeto com `as Projeto`, sem passar pelo Zod.
+  for (const amostra of projeto.amostras ?? []) {
     const { inicial, final } = densidadesAmostra(amostra);
     if (inicial !== null) iniciais.push(inicial);
     if (final !== null) finais.push(final);

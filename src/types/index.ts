@@ -5,6 +5,7 @@ export type {
   AmostraGrupo,
   LegacyPesagemFlat,
   AmostraItem,
+  AmostraManual,
   ProjetoCalibragem,
   InformacoesOperacao,
   Projeto,

@@ -1,5 +1,12 @@
-import type { AmostraItem, AmostraGrupo, LegacyPesagemFlat } from '@/types';
-import { parseFloatAuto, paraNumero } from '@/helpers/parseNumbers';
+import type { AmostraItem, LegacyPesagemFlat } from '@/types';
+import {
+  isAmostraGrupo,
+  isAmostraManual,
+  isLegacyPesagemFlat,
+  densidadesDaAmostraManual,
+  numeroOuNull,
+  valorVazio,
+} from './amostras';
 
 export interface FaixaDensidade {
   min: number;
@@ -8,24 +15,30 @@ export interface FaixaDensidade {
 
 export const FAIXA_DENSIDADE_PADRAO: FaixaDensidade = { min: 1.0, max: 1.1 };
 
-function isAmostraGrupo(item: AmostraItem): item is AmostraGrupo {
-  return 'pesagens' in item;
-}
-
 export function ultimasDensidadesDoProjeto(amostras: AmostraItem[]): number[] {
   const gruposLegado = new Map<number, LegacyPesagemFlat[]>();
   const densidades: number[] = [];
 
   amostras.forEach((item) => {
     if (isAmostraGrupo(item)) {
-      const validas = item.pesagens.filter((p) => p.peso !== '');
+      const validas = item.pesagens.filter((p) => !valorVazio(p.peso));
       const ultima = validas[validas.length - 1];
       if (ultima) {
-        const valor = parseFloatAuto(ultima.densidade);
-        if (!isNaN(valor)) densidades.push(valor);
+        const valor = numeroOuNull(ultima.densidade);
+        if (valor !== null) densidades.push(valor);
       }
       return;
     }
+
+    if (isAmostraManual(item)) {
+      const { inicial, final } = densidadesDaAmostraManual(item);
+      const ultima = final ?? inicial;
+      if (ultima !== null) densidades.push(ultima);
+      return;
+    }
+
+    if (!isLegacyPesagemFlat(item)) return;
+
     const grupoId = item.grupoId ?? 0;
     const lista = gruposLegado.get(grupoId) ?? [];
     lista.push(item);
@@ -34,12 +47,12 @@ export function ultimasDensidadesDoProjeto(amostras: AmostraItem[]): number[] {
 
   gruposLegado.forEach((lista) => {
     const validas = lista
-      .filter((p) => String(p.peso) !== '')
+      .filter((p) => !valorVazio(p.peso))
       .sort((a, b) => (a.amostraId ?? 0) - (b.amostraId ?? 0));
     const ultima = validas[validas.length - 1];
     if (ultima) {
-      const valor = paraNumero(ultima.densidade);
-      if (!isNaN(valor)) densidades.push(valor);
+      const valor = numeroOuNull(ultima.densidade);
+      if (valor !== null) densidades.push(valor);
     }
   });
 
