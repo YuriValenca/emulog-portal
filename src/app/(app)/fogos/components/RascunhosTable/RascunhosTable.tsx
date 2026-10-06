@@ -3,7 +3,7 @@
 import { Eye } from 'lucide-react';
 import { StatusPill } from '@/components/ui/StatusPill/StatusPill';
 import { ActionsMenu } from '@/components/ui/ActionsMenu/ActionsMenu';
-import { diffPercent, densidadeInicialFinalMedia, statusConformidade } from '@/lib/fogoUtils';
+import { diffPercent, densidadeInicialFinalMedia, statusConformidade, formatarKg } from '@/lib/fogoUtils';
 import type { ProjetoRascunho } from '@/schemas/projetoRascunho';
 import type { Produto } from '@/types';
 import styles from './RascunhosTable.module.scss';
@@ -48,7 +48,7 @@ export default function RascunhosTable({ rascunhos, produtosById, nomePorUid, ag
       <tbody>
         {rascunhos.map((rascunho) => {
           const info = rascunho.informacoesOperacao;
-          const dif = diffPercent(info?.kgPrevisto ?? '', info?.kgAplicado ?? '');
+          const dif = diffPercent(info?.kgPrevisto, info?.kgAplicado);
           const { inicial, final } = densidadeInicialFinalMedia(rascunho);
           const status = statusConformidade(rascunho, produtosById);
           const statusLabel = status === 'ok' ? 'Conforme' : status === 'crit' ? 'Alerta' : '—';
@@ -65,8 +65,8 @@ export default function RascunhosTable({ rascunhos, produtosById, nomePorUid, ag
               </td>
               <td>{info?.produto?.nome ?? '—'}</td>
               <td>{info?.caminhao?.placa ?? '—'}</td>
-              <td>{info?.kgPrevisto || '—'}</td>
-              <td>{info?.kgAplicado || '—'}</td>
+              <td>{formatarKg(info?.kgPrevisto)}</td>
+              <td>{formatarKg(info?.kgAplicado)}</td>
               <td>{dif !== null ? `${dif.toFixed(1)}%` : '—'}</td>
               <td>{inicial !== null ? inicial.toFixed(2) : '—'}</td>
               <td>{final !== null ? final.toFixed(2) : '—'}</td>

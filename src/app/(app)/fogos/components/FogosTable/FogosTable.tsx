@@ -3,7 +3,7 @@
 import { Eye, Trash2 } from 'lucide-react';
 import { StatusPill } from '@/components/ui/StatusPill/StatusPill';
 import { ActionsMenu } from '@/components/ui/ActionsMenu/ActionsMenu';
-import { diffPercent, densidadeInicialFinalMedia, statusConformidade, conclusaoEmOutroDia } from '@/lib/fogoUtils';
+import { diffPercent, densidadeInicialFinalMedia, statusConformidade, conclusaoEmOutroDia, formatarKg } from '@/lib/fogoUtils';
 import type { Projeto, Produto } from '@/types';
 import styles from './FogosTable.module.scss';
 
@@ -54,8 +54,8 @@ export default function FogosTable({ projetos, produtosById, onSelect, onDelete 
               </td>
               <td>{info?.produto?.nome ?? '—'}</td>
               <td>{info?.caminhao?.placa ?? '—'}</td>
-              <td>{info?.kgPrevisto || '—'}</td>
-              <td>{info?.kgAplicado || '—'}</td>
+              <td>{formatarKg(info?.kgPrevisto)}</td>
+              <td>{formatarKg(info?.kgAplicado)}</td>
               <td>{dif !== null ? `${dif.toFixed(1)}%` : '—'}</td>
               <td>{inicial !== null ? inicial.toFixed(2) : '—'}</td>
               <td>{final !== null ? final.toFixed(2) : '—'}</td>

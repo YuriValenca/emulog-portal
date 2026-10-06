@@ -16,6 +16,7 @@ import { Select } from '@/components/ui/Select/Select';
 import { MultiSelect } from '@/components/ui/Multiselect/Multiselect';
 import { Button } from '@/components/ui/Button/Button';
 import { useCreateProjeto } from '@/hooks/fogos/useProjetos';
+import { paraKg } from '@/helpers/parseNumbers';
 import type { Produto, Caminhao, Operador } from '@/types';
 import styles from './CriarFogoModal.module.scss';
 
@@ -39,13 +40,18 @@ const amostraSchema = z.object({
   }
 });
 
+const kgDigitadoSchema = z.string().optional().refine(
+  (valor) => !valor?.trim() || paraKg(valor) !== null,
+  'Informe um número, ex.: 1.500,5',
+);
+
 const formSchema = z.object({
   nomeProjeto: z.string().min(1, 'Nome obrigatório'),
   data: z.string().min(1, 'Data obrigatória'),
   amostras: z.array(amostraSchema).min(1),
   numeroNF: z.string().optional(),
-  kgPrevisto: z.string().optional(),
-  kgAplicado: z.string().optional(),
+  kgPrevisto: kgDigitadoSchema,
+  kgAplicado: kgDigitadoSchema,
   caminhaoId: z.string().optional(),
   produtoId: z.string().optional(),
   informacoesGerais: z.string().optional(),
@@ -209,8 +215,8 @@ export default function CriarFogoModal({
       data: values.data,
       amostras,
       numeroNF: values.numeroNF,
-      kgPrevisto: values.kgPrevisto,
-      kgAplicado: values.kgAplicado,
+      kgPrevisto: paraKg(values.kgPrevisto),
+      kgAplicado: paraKg(values.kgAplicado),
       caminhao: caminhao ? { id: caminhao.id, placa: caminhao.placa } : null,
       produto: produto ? { id: produto.id, nome: produto.nome } : null,
       equipe,
@@ -268,8 +274,8 @@ export default function CriarFogoModal({
           </div>
 
           <div className={styles.row}>
-            <Input label="Kg previsto" {...register('kgPrevisto')} />
-            <Input label="Kg aplicado" {...register('kgAplicado')} />
+            <Input label="Kg previsto" {...register('kgPrevisto')} errorMessage={errors.kgPrevisto?.message} />
+            <Input label="Kg aplicado" {...register('kgAplicado')} errorMessage={errors.kgAplicado?.message} />
           </div>
 
           <div className={styles.row}>

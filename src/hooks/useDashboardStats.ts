@@ -6,7 +6,7 @@ import { useLicencas } from './useLicencas';
 import { densidadeMediaDoProjeto, projetoForaDaFaixa, FAIXA_DENSIDADE_PADRAO, type FaixaDensidade } from '@/lib/densidade';
 import { statusExpiracaoLicenca } from '@/lib/licenca';
 import type { PeriodoDias } from '@/lib/periodo';
-import { parseFloatPTBR } from '@/helpers/parseNumbers';
+import { paraKg } from '@/helpers/parseNumbers';
 import type { License, Projeto } from '@/types';
 
 export type GranularidadeGrafico = 'diaria' | 'semanal';
@@ -95,8 +95,7 @@ function calcularTotais(projetos: Projeto[]) {
   let kgAplicadoPeriodo = 0;
   projetos.forEach((data) => {
     totalFogosPeriodo += 1;
-    const kgAplicado = parseFloatPTBR(data.informacoesOperacao?.kgAplicado);
-    if (!isNaN(kgAplicado)) kgAplicadoPeriodo += kgAplicado;
+    kgAplicadoPeriodo += paraKg(data.informacoesOperacao?.kgAplicado) ?? 0;
   });
   return { totalFogosPeriodo, kgAplicadoPeriodo };
 }
@@ -148,11 +147,10 @@ function calcularAgrupamentos(projetos: Projeto[], granularidade: GranularidadeG
 
   projetos.forEach((data) => {
     const dataCriacao = toDate(data.dataCriacao);
-    const kgAplicado = parseFloatPTBR(data.informacoesOperacao?.kgAplicado);
     const chave = chaveAgrupamento(dataCriacao, granularidade);
     const atual = agrupamentos.get(chave) ?? { totalFogos: 0, kgAplicado: 0 };
     atual.totalFogos += 1;
-    if (!isNaN(kgAplicado)) atual.kgAplicado += kgAplicado;
+    atual.kgAplicado += paraKg(data.informacoesOperacao?.kgAplicado) ?? 0;
     agrupamentos.set(chave, atual);
   });
 

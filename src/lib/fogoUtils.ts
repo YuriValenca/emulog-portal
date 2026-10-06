@@ -6,6 +6,7 @@ import {
   numeroOuNull,
   type ValorBruto,
 } from './amostras';
+import { paraKg, type ValorKg } from '@/helpers/parseNumbers';
 
 interface DensidadeAmostra {
   inicial: number | null;
@@ -66,11 +67,18 @@ export function conclusaoEmOutroDia(projeto: Pick<Projeto, 'dataCriacao' | 'data
   return mesmoDia(projeto.dataCriacao.toDate(), conclusao) ? null : conclusao;
 }
 
-export function diffPercent(kgPrevisto: string, kgAplicado: string): number | null {
-  const prev = parseFloat(kgPrevisto);
-  const apl = parseFloat(kgAplicado);
-  if (!prev || isNaN(apl)) return null;
+export function diffPercent(kgPrevisto: ValorKg, kgAplicado: ValorKg): number | null {
+  const prev = paraKg(kgPrevisto);
+  const apl = paraKg(kgAplicado);
+  if (!prev || apl === null) return null;
   return (Math.abs(apl - prev) / prev) * 100;
+}
+
+/** Texto que não dá pra interpretar aparece como veio, em vez de virar traço. */
+export function formatarKg(valor: ValorKg): string {
+  const kg = paraKg(valor);
+  if (kg !== null) return kg.toLocaleString('pt-BR', { maximumFractionDigits: 2 });
+  return typeof valor === 'string' && valor.trim() ? valor : '—';
 }
 
 export function densidadeMedia(projeto: FogoComAmostras): number | null {

@@ -1,7 +1,7 @@
 'use client';
 
 import { Modal } from '@/components/ui/Modal/Modal';
-import { diffPercent, densidadeInicialFinalMedia, densidadesAmostra, conclusaoEmOutroDia } from '@/lib/fogoUtils';
+import { diffPercent, densidadeInicialFinalMedia, densidadesAmostra, conclusaoEmOutroDia, formatarKg } from '@/lib/fogoUtils';
 import { isAmostraGrupo, valorVazio, horaDaPesagem } from '@/lib/amostras';
 import type { FogoDetalhavel } from '@/schemas/projeto';
 import styles from './FogoDetailModal.module.scss';
@@ -15,7 +15,7 @@ interface FogoDetailModalProps {
 export default function FogoDetailModal({ projeto, onClose }: FogoDetailModalProps) {
   if (!projeto) return null;
   const info = projeto.informacoesOperacao;
-  const dif = info ? diffPercent(info.kgPrevisto ?? '', info.kgAplicado ?? '') : null;
+  const dif = info ? diffPercent(info.kgPrevisto, info.kgAplicado) : null;
   const { inicial, final } = densidadeInicialFinalMedia(projeto);
   const amostras = projeto.amostras ?? [];
 
@@ -36,7 +36,7 @@ export default function FogoDetailModal({ projeto, onClose }: FogoDetailModalPro
       <div className={styles.grid}>
         <div className={styles.box}>
           <span className={styles.label}>Kg previsto / aplicado</span>
-          <span className={styles.mono}>{info?.kgPrevisto || '—'} / {info?.kgAplicado || '—'} kg</span>
+          <span className={styles.mono}>{formatarKg(info?.kgPrevisto)} / {formatarKg(info?.kgAplicado)} kg</span>
         </div>
         <div className={styles.box}>
           <span className={styles.label}>Diferença</span>

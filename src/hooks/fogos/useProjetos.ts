@@ -146,8 +146,8 @@ interface CreateProjetoInput {
   data: string;
   amostras: AmostraManualInput[];
   numeroNF?: string;
-  kgPrevisto?: string;
-  kgAplicado?: string;
+  kgPrevisto: number | null;
+  kgAplicado: number | null;
   caminhao?: { id: string; placa: string } | null;
   equipe?: { id: string; nome: string }[];
   produto?: { id: string; nome: string } | null;
@@ -184,8 +184,8 @@ async function criarProjetoManual(input: CreateProjetoInput): Promise<ProjetoMet
     calibragem,
     informacoesOperacao: {
       numeroNF: input.numeroNF ?? '',
-      kgPrevisto: input.kgPrevisto ?? '',
-      kgAplicado: input.kgAplicado ?? '',
+      kgPrevisto: input.kgPrevisto,
+      kgAplicado: input.kgAplicado,
       caminhao: input.caminhao ?? null,
       equipe: input.equipe ?? [],
       produto: input.produto ?? null,

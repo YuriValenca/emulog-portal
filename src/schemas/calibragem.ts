@@ -5,9 +5,10 @@ export const calibragemSchema = z.object({
   id: z.string(),
   companyId: z.string(),
   userId: z.string(),
-  pesoVazio: z.string(),
-  pesoCheio: z.string(),
-  tara: z.string(),
+  // TODO: Fase B — tudo `z.number()` depois da migração.
+  pesoVazio: z.union([z.string(), z.number()]),
+  pesoCheio: z.union([z.string(), z.number()]),
+  tara: z.union([z.string(), z.number()]),
   timestamp: zTimestamp,
 });
 

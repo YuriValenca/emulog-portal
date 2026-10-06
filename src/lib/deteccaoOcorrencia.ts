@@ -43,22 +43,20 @@ export function detectarOcorrenciasDoProjeto(
     }
   }
 
-  if (info?.kgPrevisto && info?.kgAplicado) {
-    const dif = diffPercent(info.kgPrevisto, info.kgAplicado);
-    if (dif !== null) {
-      regras
-        .filter((regra) => regra.metrica === 'diferenca_kg')
-        .forEach((regra) => {
-          if (avaliarRegra(regra, dif)) {
-            detectadas.push({
-              tipo: 'diferenca_kg_excedente',
-              descricao: `Diferença de ${dif.toFixed(1)}% entre Kg previsto e aplicado.`,
-              valorReferencia: dif,
-              regraId: regra.id,
-            });
-          }
-        });
-    }
+  const dif = info ? diffPercent(info.kgPrevisto, info.kgAplicado) : null;
+  if (dif !== null) {
+    regras
+      .filter((regra) => regra.metrica === 'diferenca_kg')
+      .forEach((regra) => {
+        if (avaliarRegra(regra, dif)) {
+          detectadas.push({
+            tipo: 'diferenca_kg_excedente',
+            descricao: `Diferença de ${dif.toFixed(1)}% entre Kg previsto e aplicado.`,
+            valorReferencia: dif,
+            regraId: regra.id,
+          });
+        }
+      });
   }
 
   return detectadas;

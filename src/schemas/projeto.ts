@@ -36,12 +36,14 @@ export const amostraItemSchema = z.union([
   amostraManualSchema,
 ]);
 
+// TODO: Fase B — tara e pesoCheio viram `number`, e saem `densidade` e `necessitaCalibragem`.
 export const projetoCalibragemSchema = z.object({
   tara: z.union([z.string(), z.number()]),
   pesoCheio: z.union([z.string(), z.number()]),
+  pesoVazio: z.number().optional(),
   densidade: z.union([z.string(), z.number()]).optional(),
   timestamp: zTimestamp,
-  necessitaCalibragem: z.boolean(),
+  necessitaCalibragem: z.boolean().optional(),
 });
 
 export const caminhaoRefSchema = z.object({
@@ -56,8 +58,9 @@ export const operadorRefSchema = z.object({
 
 export const informacoesOperacaoSchema = z.object({
   numeroNF: z.string(),
-  kgPrevisto: z.string(),
-  kgAplicado: z.string(),
+  // TODO: Fase B — vira `z.number().nullable()` depois da migração; hoje convive com o texto antigo do app.
+  kgPrevisto: z.union([z.string(), z.number()]).nullable(),
+  kgAplicado: z.union([z.string(), z.number()]).nullable(),
   caminhao: caminhaoRefSchema.nullable(),
   equipe: z.array(operadorRefSchema),
   produto: produtoRefSchema.nullable().optional(),
