@@ -1,13 +1,15 @@
 'use client';
 
 import { useState } from 'react';
-import { Flame, Weight, Gauge } from 'lucide-react';
+import { Flame, Weight, Gauge, AlertTriangle } from 'lucide-react';
 import { FAIXA_DENSIDADE_PADRAO } from '@/lib/densidade';
 import { OPCOES_PERIODO, labelPeriodo, periodoDoValor, type Periodo } from '@/lib/periodo';
 import { useAppAuth } from '@/hooks/useAppAuth';
 import { useDashboardStats } from '@/hooks/useDashboardStats';
 import { useCaminhoes } from '@/hooks/cadastro/useCaminhoes';
 import { useOperadores } from '@/hooks/cadastro/useOperadores';
+import { useCompanyGroup } from '@/hooks/fogos/useCompanyGroup';
+import { useOcorrencias } from '@/hooks/ocorrencias/useOcorrencias';
 import { Select } from '@/components/ui/Select/Select';
 import { MultiSelect } from '@/components/ui/Multiselect/Multiselect';
 import { Spinner } from '@/components/ui/Spinner/Spinner';
@@ -43,6 +45,8 @@ function PainelOperacional({ companyId }: { companyId: string | null }) {
 
   const { caminhoes } = useCaminhoes(companyId);
   const { operadores } = useOperadores(companyId);
+  const { companyIds } = useCompanyGroup(companyId);
+  const { ocorrencias, isLoading: isLoadingOcorrencias } = useOcorrencias(companyIds);
   const { data, isLoading, isError, isAtualizando } = useDashboardStats(
     companyId,
     periodo,
@@ -54,12 +58,13 @@ function PainelOperacional({ companyId }: { companyId: string | null }) {
   const opcoesSelectOperador = (operadores ?? []).map((o) => ({ value: o.id, label: o.nome }));
 
   const periodoLabel = labelPeriodo(periodo);
+  const ocorrenciasAbertas = ocorrencias.filter((o) => o.status !== 'encerrada').length;
 
   if (isLoading) {
     return (
       <div className={styles.container}>
         <div className={styles.grid}>
-          {Array.from({ length: 5 }).map((_, i) => (
+          {Array.from({ length: 4 }).map((_, i) => (
             <div key={i} className={styles.skeletonCard} />
           ))}
         </div>
@@ -91,6 +96,12 @@ function PainelOperacional({ companyId }: { companyId: string | null }) {
           value={data.densidadeMediaPeriodo !== null ? data.densidadeMediaPeriodo.toFixed(2) : '—'}
           sub={data.densidadeMediaPeriodo !== null ? 'g/cm³' : undefined}
           color={densidadeDentroDaFaixa ? 'var(--ok)' : 'var(--crit)'}
+        />
+        <StatCard
+          icon={<AlertTriangle size={22} />}
+          label="Ocorrências abertas"
+          value={isLoadingOcorrencias ? '—' : ocorrenciasAbertas}
+          color={ocorrenciasAbertas > 0 ? 'var(--crit)' : 'var(--ok)'}
         />
       </div>
       <div className={styles.filtros}>
