@@ -5,7 +5,7 @@ import { Modal } from '@/components/ui/Modal/Modal';
 import { Select } from '@/components/ui/Select/Select';
 import { Input } from '@/components/ui/Input/Input';
 import { Button } from '@/components/ui/Button/Button';
-import type { RegraDeteccao, RegraOperador } from '@/schemas/regraDeteccao';
+import type { RegraDeteccao, RegraMetrica, RegraOperador } from '@/schemas/regraDeteccao';
 import styles from './CriarAutomacaoModal.module.scss';
 
 const OPERADOR_OPTIONS: { value: RegraOperador; label: string }[] = [
@@ -15,7 +15,40 @@ const OPERADOR_OPTIONS: { value: RegraOperador; label: string }[] = [
   { value: 'igual', label: 'Igual a' },
 ];
 
+interface MetricaConfig {
+  descricao: string;
+  labelValor: string;
+  labelDe?: string;
+  labelAte?: string;
+  operadorFixo?: RegraOperador;
+  somenteInteiro?: boolean;
+  avisoJaExiste: string;
+}
+
+const METRICA_CONFIG: Record<RegraMetrica, MetricaConfig> = {
+  diferenca_kg: {
+    descricao: 'Gera ocorrência quando a diferença entre Kg previsto e aplicado de um fogo bate a condição.',
+    labelValor: 'Valor (%)',
+    labelDe: 'De (%)',
+    labelAte: 'Até (%)',
+    avisoJaExiste: 'Já existe uma automação de diferença de Kg. Remova-a antes de criar outra.',
+  },
+  rascunho_parado: {
+    descricao: 'Gera ocorrência quando um fogo em andamento fica mais de X dias sem atualização.',
+    labelValor: 'Dias sem atualização',
+    operadorFixo: 'maior',
+    somenteInteiro: true,
+    avisoJaExiste: 'Já existe uma automação de rascunho parado. Remova-a antes de criar outra.',
+  },
+};
+
+const METRICA_OPTIONS: { value: RegraMetrica; label: string }[] = [
+  { value: 'diferenca_kg', label: 'Diferença de Kg previsto/aplicado' },
+  { value: 'rascunho_parado', label: 'Rascunho parado' },
+];
+
 export interface CriarAutomacaoValues {
+  metrica: RegraMetrica;
   operador: RegraOperador;
   valor1: number;
   valor2: number | null;
@@ -30,9 +63,12 @@ interface CriarAutomacaoModalProps {
 }
 
 export default function CriarAutomacaoModal({ open, onOpenChange, onSalvar, regrasExistentes, saving = false }: CriarAutomacaoModalProps) {
-  const jaExisteRegra = regrasExistentes.length > 0;
+  const [metrica, setMetrica] = useState<RegraMetrica>('diferenca_kg');
+  const config = METRICA_CONFIG[metrica];
+  const jaExisteRegra = regrasExistentes.some((regra) => regra.metrica === metrica);
 
-  const [operador, setOperador] = useState<RegraOperador>('maior');
+  const [operadorEscolhido, setOperador] = useState<RegraOperador>('maior');
+  const operador = config.operadorFixo ?? operadorEscolhido;
   const [valor1, setValor1] = useState('');
   const [valor2, setValor2] = useState('');
   const [erro, setErro] = useState<string | null>(null);
@@ -46,6 +82,10 @@ export default function CriarAutomacaoModal({ open, onOpenChange, onSalvar, regr
     const v1 = parseValor(valor1);
     if (v1 === null) {
       setErro('Informe um valor numérico válido.');
+      return;
+    }
+    if (config.somenteInteiro && (!Number.isInteger(v1) || v1 < 1)) {
+      setErro('Informe um número inteiro de dias, a partir de 1.');
       return;
     }
 
@@ -64,11 +104,18 @@ export default function CriarAutomacaoModal({ open, onOpenChange, onSalvar, regr
 
     setErro(null);
     try {
-      await onSalvar({ operador, valor1: v1, valor2: v2 });
+      await onSalvar({ metrica, operador, valor1: v1, valor2: v2 });
       onOpenChange(false);
     } catch {
       setErro('Não foi possível salvar a automação. Tente novamente.');
     }
+  };
+
+  const mudarMetrica = (valor: string) => {
+    setMetrica(valor as RegraMetrica);
+    setValor1('');
+    setValor2('');
+    setErro(null);
   };
 
   const footerContent = (
@@ -87,27 +134,34 @@ export default function CriarAutomacaoModal({ open, onOpenChange, onSalvar, regr
       open={open}
       onOpenChange={onOpenChange}
       title="Nova automação"
-      description="Configure a condição de diferença Kg previsto/aplicado para gerar ocorrências automaticamente"
+      description={config.descricao}
       width={420}
       footer={footerContent}
     >
       <div className={styles.form}>
+        <div className={styles.field}>
+          <span className={styles.label}>Tipo de automação</span>
+          <Select value={metrica} onValueChange={mudarMetrica} options={METRICA_OPTIONS} disabled={saving} />
+        </div>
+
         {jaExisteRegra ? (
-          <p className={styles.formError}>Já existe uma automação de diferença Kg configurada. Remova-a antes de criar outra.</p>
+          <p className={styles.formError}>{config.avisoJaExiste}</p>
         ) : (
           <>
-            <div className={styles.field}>
-              <span className={styles.label}>Condição</span>
-              <Select value={operador} onValueChange={(v) => setOperador(v as RegraOperador)} options={OPERADOR_OPTIONS} disabled={saving} />
-            </div>
+            {!config.operadorFixo && (
+              <div className={styles.field}>
+                <span className={styles.label}>Condição</span>
+                <Select value={operador} onValueChange={(v) => setOperador(v as RegraOperador)} options={OPERADOR_OPTIONS} disabled={saving} />
+              </div>
+            )}
 
             {operador === 'entre' ? (
               <div className={styles.row}>
-                <Input id="automacao-valor1" label="De" value={valor1} onChange={(e) => setValor1(e.target.value)} disabled={saving} />
-                <Input id="automacao-valor2" label="Até" value={valor2} onChange={(e) => setValor2(e.target.value)} disabled={saving} />
+                <Input id="automacao-valor1" label={config.labelDe} value={valor1} onChange={(e) => setValor1(e.target.value)} disabled={saving} />
+                <Input id="automacao-valor2" label={config.labelAte} value={valor2} onChange={(e) => setValor2(e.target.value)} disabled={saving} />
               </div>
             ) : (
-              <Input id="automacao-valor1" label="Valor (%)" value={valor1} onChange={(e) => setValor1(e.target.value)} disabled={saving} />
+              <Input id="automacao-valor1" label={config.labelValor} value={valor1} onChange={(e) => setValor1(e.target.value)} disabled={saving} />
             )}
           </>
         )}

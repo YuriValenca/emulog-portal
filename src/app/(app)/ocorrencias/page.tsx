@@ -30,6 +30,7 @@ import styles from './page.module.scss';
 const TIPO_OPTIONS: { value: OcorrenciaTipo; label: string }[] = [
   { value: 'densidade_fora_da_faixa', label: 'Densidade fora da faixa' },
   { value: 'diferenca_kg_excedente', label: 'Diferença de Kg excedente' },
+  { value: 'rascunho_parado', label: 'Rascunho parado' },
   { value: 'documentacao_pendente', label: 'Documentação pendente' },
   { value: 'equipamento', label: 'Equipamento' },
   { value: 'licenca', label: 'Licença' },
@@ -45,6 +46,7 @@ const STATUS_OPTIONS: { value: OcorrenciaStatus; label: string }[] = [
 const TIPO_TONE_MAP: Partial<Record<OcorrenciaTipo, 'ok' | 'warn' | 'crit' | 'data' | 'neutral'>> = {
   densidade_fora_da_faixa: 'crit',
   diferenca_kg_excedente: 'crit',
+  rascunho_parado: 'warn',
   documentacao_pendente: 'warn',
   equipamento: 'warn',
   manual: 'neutral',
@@ -179,7 +181,7 @@ export default function OcorrenciasPage() {
 
   const handleCriarAutomacao = async (values: CriarAutomacaoValues) => {
     if (!companyId) return;
-    await criarRegra({ companyId, operador: values.operador, valor1: values.valor1, valor2: values.valor2 });
+    await criarRegra({ companyId, ...values });
   };
 
   const resetarFluxoExclusao = () => {
@@ -195,7 +197,7 @@ export default function OcorrenciasPage() {
     setEtapaExclusao('aviso');
     setCarregandoQuantidade(true);
     setQuantidadeOcorrencias(null);
-    const quantidade = await contarOcorrenciasDaRegra(regra.id);
+    const quantidade = await contarOcorrenciasDaRegra(regra);
     setQuantidadeOcorrencias(quantidade);
     setCarregandoQuantidade(false);
   };
@@ -206,7 +208,7 @@ export default function OcorrenciasPage() {
 
   const handleConfirmarExclusaoFinal = async () => {
     if (!regraParaExcluir || !companyId) return;
-    await excluirRegra(regraParaExcluir.id);
+    await excluirRegra(regraParaExcluir);
     resetarFluxoExclusao();
   };
 

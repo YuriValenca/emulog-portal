@@ -1,4 +1,5 @@
 import type { Projeto } from '@/types';
+import type { ProjetoRascunho } from '@/schemas/projetoRascunho';
 import type { RegraDeteccao } from '@/schemas/regraDeteccao';
 import type { OcorrenciaTipo } from '@/schemas/ocorrencia';
 import { diffPercent } from './fogoUtils';
@@ -13,10 +14,9 @@ export interface OcorrenciaDetectada {
   regraId: string | null;
 }
 
-// TODO: detectar rascunho parado há X dias, via `regras_deteccao` com uma métrica nova.
-// Exige ler `projetos_rascunho`, que hoje nenhum fluxo do portal toca.
+const MS_DIA = 24 * 60 * 60 * 1000;
 
-const nomeDoFogo = (projeto: Projeto) => projeto.nomeProjeto?.trim() || 'Sem nome';
+const nomeDoFogo = (fogo: { nomeProjeto?: string }) => fogo.nomeProjeto?.trim() || 'Sem nome';
 
 function detectarDensidadeForaDaFaixa(projeto: Projeto, contexto: ContextoFaixa): OcorrenciaDetectada | null {
   const faixa = faixaDoProjeto(projeto, contexto);
@@ -61,4 +61,24 @@ export function detectarOcorrenciasDoProjeto(
   }
 
   return detectadas;
+}
+
+export function diasSemAtualizacao(rascunho: Pick<ProjetoRascunho, 'dataAtualizacao'>, agora: Date): number {
+  return Math.floor((agora.getTime() - rascunho.dataAtualizacao.toDate().getTime()) / MS_DIA);
+}
+
+export function detectarOcorrenciasDoRascunho(
+  rascunho: ProjetoRascunho,
+  regras: RegraDeteccao[],
+  agora: Date
+): OcorrenciaDetectada[] {
+  const dias = diasSemAtualizacao(rascunho, agora);
+  return regras
+    .filter((regra) => regra.metrica === 'rascunho_parado' && avaliarRegra(regra, dias))
+    .map((regra) => ({
+      tipo: 'rascunho_parado',
+      descricao: `Fogo "${nomeDoFogo(rascunho)}" em andamento sem atualização há ${dias} dias.`,
+      valorReferencia: dias,
+      regraId: regra.id,
+    }));
 }

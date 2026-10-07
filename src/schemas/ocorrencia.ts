@@ -4,6 +4,7 @@ import { zTimestamp, zTimestampOrNull } from './common';
 export const ocorrenciaTipoSchema = z.enum([
   'densidade_fora_da_faixa',
   'diferenca_kg_excedente',
+  'rascunho_parado',
   'documentacao_pendente',
   'equipamento',
   'licenca',

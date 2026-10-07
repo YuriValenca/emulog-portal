@@ -3,7 +3,7 @@
 import { Trash2 } from 'lucide-react';
 import { Modal } from '@/components/ui/Modal/Modal';
 import { Button } from '@/components/ui/Button/Button';
-import type { RegraDeteccao, RegraOperador } from '@/schemas/regraDeteccao';
+import type { RegraDeteccao, RegraMetrica, RegraOperador } from '@/schemas/regraDeteccao';
 import styles from './ConfigurarAutomacoesModal.module.scss';
 
 const OPERADOR_LABEL: Record<RegraOperador, string> = {
@@ -13,9 +13,20 @@ const OPERADOR_LABEL: Record<RegraOperador, string> = {
   igual: 'igual a',
 };
 
+const METRICA_LABEL: Record<RegraMetrica, string> = {
+  diferenca_kg: 'Diferença Kg previsto/aplicado',
+  rascunho_parado: 'Rascunho parado',
+};
+
+const METRICA_UNIDADE: Record<RegraMetrica, string> = {
+  diferenca_kg: '%',
+  rascunho_parado: ' dias',
+};
+
 function condicaoLabel(regra: RegraDeteccao) {
-  if (regra.operador === 'entre') return `entre ${regra.valor1}% e ${regra.valor2}%`;
-  return `${OPERADOR_LABEL[regra.operador]} ${regra.valor1}%`;
+  const unidade = METRICA_UNIDADE[regra.metrica];
+  if (regra.operador === 'entre') return `entre ${regra.valor1}${unidade} e ${regra.valor2}${unidade}`;
+  return `${OPERADOR_LABEL[regra.operador]} ${regra.valor1}${unidade}`;
 }
 
 interface ConfigurarAutomacoesModalProps {
@@ -32,7 +43,7 @@ export default function ConfigurarAutomacoesModal({ open, onOpenChange, regras, 
         {regras.map((regra) => (
           <div key={regra.id} className={styles.item}>
             <div>
-              <span className={styles.metrica}>Diferença Kg previsto/aplicado</span>
+              <span className={styles.metrica}>{METRICA_LABEL[regra.metrica]}</span>
               <span className={styles.condicao}>{condicaoLabel(regra)}</span>
             </div>
             <Button variant="cancel" onClick={() => onSolicitarExclusao(regra)}>

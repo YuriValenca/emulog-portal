@@ -13,7 +13,8 @@ import { fetchCompanyGroup } from '@/hooks/fogos/useCompanyGroup';
 import { produtoSchema, type Produto } from '@/schemas/produto';
 import { regraDeteccaoSchema, type RegraDeteccao } from '@/schemas/regraDeteccao';
 import { useToast } from '@/components/ui/Toast/Toast';
-import { detectarOcorrenciasDoProjeto, type OcorrenciaDetectada } from '@/lib/deteccaoOcorrencia';
+import { detectarOcorrenciasDoProjeto, detectarOcorrenciasDoRascunho, type OcorrenciaDetectada } from '@/lib/deteccaoOcorrencia';
+import { projetoRascunhoSchema, type ProjetoRascunho } from '@/schemas/projetoRascunho';
 import { criarContextoFaixa, faixaDaEmpresa, type FaixaDensidade } from '@/lib/densidade';
 import { faixaDensidadeSchema } from '@/schemas/company';
 import { fetchLicencas } from '@/hooks/useLicencas';
@@ -66,6 +67,14 @@ async function fetchProjetosDireto(companyId: string): Promise<Projeto[]> {
 async function fetchProdutosDireto(companyId: string): Promise<Produto[]> {
   const snap = await getDocs(query(collection(db, 'produtos'), where('companyId', '==', companyId)));
   return snap.docs.map((d) => produtoSchema.parse({ id: d.id, ...d.data() }));
+}
+
+async function fetchRascunhosDireto(companyId: string): Promise<ProjetoRascunho[]> {
+  const snap = await getDocs(query(collection(db, 'projetos_rascunho'), where('companyId', '==', companyId)));
+  return snap.docs.flatMap((d) => {
+    const parsed = projetoRascunhoSchema.safeParse({ id: d.id, ...d.data() });
+    return parsed.success ? [parsed.data] : [];
+  });
 }
 
 async function fetchFaixaEmpresaDireto(companyId: string): Promise<FaixaDensidade> {
@@ -288,6 +297,15 @@ export function useOcorrenciasAutoScan(companyId: string | null) {
       const contextoFaixa = criarContextoFaixa(produtos, faixaEmpresa);
       const pendentesFogos = projetos.filter((p) => !p.ocorrenciasVerificadas);
 
+      // Rascunho não tem "verificado": ele envelhece, então é reavaliado em todo scan.
+      const temRegraDeRascunho = regras.some((regra) => regra.metrica === 'rascunho_parado');
+      const rascunhos = temRegraDeRascunho ? await fetchRascunhosDireto(companyId) : [];
+      if (cancelado) return;
+      const agora = new Date();
+      const rascunhosDetectados = rascunhos.flatMap((rascunho) =>
+        detectarOcorrenciasDoRascunho(rascunho, regras, agora).map((detectada) => ({ rascunhoId: rascunho.id, detectada }))
+      );
+
       let licencasDetectadas: LicencaOcorrenciaDetectada[] = [];
       try {
         const licencasPorEmpresa = await Promise.all(
@@ -309,7 +327,8 @@ export function useOcorrenciasAutoScan(companyId: string | null) {
       }
       if (cancelado) return;
 
-      const totalGeral = pendentesFogos.length + licencasDetectadas.length + ocorrenciasParaApagar.length;
+      const totalGeral =
+        pendentesFogos.length + rascunhosDetectados.length + licencasDetectadas.length + ocorrenciasParaApagar.length;
       if (totalGeral === 0) return;
 
       atualizarProgresso({ isScanning: true, total: totalGeral, processados: 0 });
@@ -332,6 +351,13 @@ export function useOcorrenciasAutoScan(companyId: string | null) {
           console.error('[autoScan] falha ao marcar projeto como verificado', { projetoId: projeto.id, erro });
         }
 
+        processados += 1;
+        atualizarProgresso({ isScanning: true, total: totalGeral, processados });
+      }
+
+      for (const { rascunhoId, detectada } of rascunhosDetectados) {
+        if (cancelado) return;
+        await registrarOcorrenciaFogo(companyId, rascunhoId, detectada);
         processados += 1;
         atualizarProgresso({ isScanning: true, total: totalGeral, processados });
       }
