@@ -53,6 +53,15 @@ service cloud.firestore {
       return sameCompany(targetCompanyId) || isParentOf(targetCompanyId);
     }
 
+    function faixaDensidadeValida(faixa) {
+      return faixa is map
+        && faixa.keys().hasOnly(['min', 'max'])
+        && faixa.min is number
+        && faixa.max is number
+        && faixa.min > 0
+        && faixa.min <= faixa.max;
+    }
+
     match /companies/{companyId} {
       allow read: if signedIn() && (isSuperadmin() || sameCompany(companyId) || resource.data.parentCompanyId == companyId());
       allow create: if isSuperadmin();
@@ -60,7 +69,8 @@ service cloud.firestore {
         || (
           isCompanyAdmin()
           && sameCompany(companyId)
-          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['alertaVencimento'])
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['alertaVencimento', 'faixaDensidade'])
+          && (!('faixaDensidade' in request.resource.data) || faixaDensidadeValida(request.resource.data.faixaDensidade))
         );
       allow delete: if false;
 

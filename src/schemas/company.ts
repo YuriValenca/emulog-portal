@@ -8,6 +8,11 @@ export const companyModulesSchema = z.object({
   portal: z.boolean(),
 }).partial();
 
+export const faixaDensidadeSchema = z.object({
+  min: z.number(),
+  max: z.number(),
+});
+
 export const companySchema = z.object({
   id: z.string(),
   name: z.string(),
@@ -24,6 +29,7 @@ export const companySchema = z.object({
   createdAt: zTimestamp,
   modules: companyModulesSchema.optional(),
   alertaVencimento: alertaVencimentoPorTipoSchema.optional(),
+  faixaDensidade: faixaDensidadeSchema.nullable().optional(),
 });
 
 export const licenseStatusSchema = z.enum(['available', 'active', 'revoked', 'expired']);

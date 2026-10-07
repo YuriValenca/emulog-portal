@@ -3,18 +3,19 @@
 import { Eye, Trash2 } from 'lucide-react';
 import { StatusPill } from '@/components/ui/StatusPill/StatusPill';
 import { ActionsMenu } from '@/components/ui/ActionsMenu/ActionsMenu';
-import { diffPercent, densidadeInicialFinalMedia, statusConformidade, conclusaoEmOutroDia, formatarKg } from '@/lib/fogoUtils';
-import type { Projeto, Produto } from '@/types';
+import { diffPercent, densidadeInicialFinalMedia, conclusaoEmOutroDia, formatarKg } from '@/lib/fogoUtils';
+import { statusConformidade, type ContextoFaixa } from '@/lib/densidade';
+import type { Projeto } from '@/types';
 import styles from './FogosTable.module.scss';
 
 interface FogosTableProps {
   projetos: Projeto[];
-  produtosById: Map<string, Produto>;
+  contextoFaixa: ContextoFaixa;
   onSelect: (projeto: Projeto) => void;
   onDelete: (projeto: Projeto) => void;
 }
 
-export default function FogosTable({ projetos, produtosById, onSelect, onDelete }: FogosTableProps) {
+export default function FogosTable({ projetos, contextoFaixa, onSelect, onDelete }: FogosTableProps) {
   return (
     <table className={styles.table}>
       <thead>
@@ -37,7 +38,7 @@ export default function FogosTable({ projetos, produtosById, onSelect, onDelete 
           const info = projeto.informacoesOperacao;
           const dif = info ? diffPercent(info.kgPrevisto, info.kgAplicado) : null;
           const { inicial, final } = densidadeInicialFinalMedia(projeto);
-          const status = statusConformidade(projeto, produtosById);
+          const status = statusConformidade(projeto, contextoFaixa);
           const statusLabel = status === 'ok' ? 'Conforme' : status === 'crit' ? 'Alerta' : '—';
           const conclusao = conclusaoEmOutroDia(projeto);
 

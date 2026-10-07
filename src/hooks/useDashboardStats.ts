@@ -3,7 +3,7 @@
 import { useMemo } from 'react';
 import { useProjetosPeriodo } from './useProjetosPeriodo';
 import { useLicencas } from './useLicencas';
-import { densidadeMediaDoProjeto, projetoForaDaFaixa, FAIXA_DENSIDADE_PADRAO, type FaixaDensidade } from '@/lib/densidade';
+import { densidadeMediaDoProjeto, statusConformidade, type ContextoFaixa } from '@/lib/densidade';
 import { statusExpiracaoLicenca } from '@/lib/licenca';
 import { inicioDoPeriodo, type Periodo } from '@/lib/periodo';
 import { paraKg } from '@/helpers/parseNumbers';
@@ -123,7 +123,7 @@ function itemNaoConforme(data: Projeto, densidadeMedia: number | null): FogoNaoC
   };
 }
 
-function calcularConformidadeDensidade(projetos: Projeto[], faixaDensidade: FaixaDensidade) {
+function calcularConformidadeDensidade(projetos: Projeto[], contextoFaixa: ContextoFaixa) {
   let somaDensidades = 0;
   let projetosComDensidade = 0;
   let fogosConformesPeriodo = 0;
@@ -136,13 +136,12 @@ function calcularConformidadeDensidade(projetos: Projeto[], faixaDensidade: Faix
       somaDensidades += densidadeDoFogo;
       projetosComDensidade += 1;
     }
-    if (data.amostras?.length) {
-      if (projetoForaDaFaixa(data.amostras, faixaDensidade)) {
-        fogosAlertaPeriodo += 1;
-        naoConformes.push({ data, densidadeMedia: densidadeDoFogo, timestamp: toDate(data.dataCriacao).getTime() });
-      } else {
-        fogosConformesPeriodo += 1;
-      }
+    const status = statusConformidade(data, contextoFaixa);
+    if (status === 'crit') {
+      fogosAlertaPeriodo += 1;
+      naoConformes.push({ data, densidadeMedia: densidadeDoFogo, timestamp: toDate(data.dataCriacao).getTime() });
+    } else if (status === 'ok') {
+      fogosConformesPeriodo += 1;
     }
   });
 
@@ -220,7 +219,7 @@ function calcularStats(
   projetos: Projeto[],
   licencas: License[],
   periodo: Periodo,
-  faixaDensidade: FaixaDensidade,
+  contextoFaixa: ContextoFaixa,
   caminhaoId: string | null,
   operadorIds: string[]
 ): DashboardStats {
@@ -231,7 +230,7 @@ function calcularStats(
   const projetosFiltrados = filtrarProjetosDoPeriodo(projetos, inicioPeriodo, caminhaoId, operadorIds);
 
   const totais = calcularTotais(projetosFiltrados);
-  const conformidade = calcularConformidadeDensidade(projetosFiltrados, faixaDensidade);
+  const conformidade = calcularConformidadeDensidade(projetosFiltrados, contextoFaixa);
   const fogosAgrupados = calcularAgrupamentos(projetosFiltrados, granularidadeGrafico);
   const rankingUmb = calcularRanking(projetosFiltrados, itensCaminhaoDoProjeto);
   const rankingOperadores = calcularRanking(projetosFiltrados, itensOperadoresDoProjeto);
@@ -251,17 +250,17 @@ function calcularStats(
 export function useDashboardStats(
   companyId: string | null,
   periodo: Periodo,
-  caminhaoId: string | null = null,
-  operadorIds: string[] = [],
-  faixaDensidade: FaixaDensidade = FAIXA_DENSIDADE_PADRAO
+  caminhaoId: string | null,
+  operadorIds: string[],
+  contextoFaixa: ContextoFaixa
 ) {
   const projetosQuery = useProjetosPeriodo(companyId, periodo);
   const licencasQuery = useLicencas(companyId);
 
   const data = useMemo(() => {
     if (!projetosQuery.data || !licencasQuery.data) return undefined;
-    return calcularStats(projetosQuery.data, licencasQuery.data, periodo, faixaDensidade, caminhaoId, operadorIds);
-  }, [projetosQuery.data, licencasQuery.data, periodo, faixaDensidade, caminhaoId, operadorIds]);
+    return calcularStats(projetosQuery.data, licencasQuery.data, periodo, contextoFaixa, caminhaoId, operadorIds);
+  }, [projetosQuery.data, licencasQuery.data, periodo, contextoFaixa, caminhaoId, operadorIds]);
 
   return {
     data,

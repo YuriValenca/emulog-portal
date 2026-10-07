@@ -5,7 +5,7 @@ import { Spinner } from '@/components/ui/Spinner/Spinner';
 import { Pagination } from '@/components/ui/Pagination/Pagination';
 import { useRascunhos } from '@/hooks/fogos/useRascunhos';
 import { useUsuarios } from '@/hooks/cadastro/useUsuarios';
-import { useProdutos } from '@/hooks/cadastro/useProdutos';
+import { useContextoFaixa } from '@/hooks/useContextoFaixa';
 import { useAgora } from '@/hooks/useAgora';
 import type { FiltrosState } from '../FiltrosFogos/FiltrosFogos';
 import RascunhosTable from '../RascunhosTable/RascunhosTable';
@@ -39,7 +39,6 @@ function passaFiltros(rascunho: ProjetoRascunho, filtros: FiltrosState): boolean
 export default function RascunhosTab({ companyId, filtros, page, onPageChange }: RascunhosTabProps) {
   const { rascunhos, isLoading, isError, error } = useRascunhos(companyId);
   const { itens: usuarios } = useUsuarios(companyId);
-  const { itens: produtos } = useProdutos(companyId);
   const agora = useAgora();
 
   const [selecionado, setSelecionado] = useState<ProjetoRascunho | null>(null);
@@ -49,7 +48,7 @@ export default function RascunhosTab({ companyId, filtros, page, onPageChange }:
     [rascunhos, filtros]
   );
 
-  const produtosById = useMemo(() => new Map(produtos.map((p) => [p.id, p])), [produtos]);
+  const contextoFaixa = useContextoFaixa(companyId);
 
   const totalPaginas = Math.max(1, Math.ceil(filtrados.length / filtros.pageSize));
   const pagina = filtrados.slice((page - 1) * filtros.pageSize, page * filtros.pageSize);
@@ -89,7 +88,7 @@ export default function RascunhosTab({ companyId, filtros, page, onPageChange }:
 
       <RascunhosTable
         rascunhos={pagina}
-        produtosById={produtosById}
+        contextoFaixa={contextoFaixa}
         nomePorUid={nomePorUid}
         agora={agora}
         onSelect={setSelecionado}

@@ -1,7 +1,8 @@
-import type { Projeto, Produto } from '@/types';
+import type { Projeto } from '@/types';
 import type { RegraDeteccao } from '@/schemas/regraDeteccao';
 import type { OcorrenciaTipo } from '@/schemas/ocorrencia';
-import { densidadeInicialFinalMedia, diffPercent } from './fogoUtils';
+import { diffPercent } from './fogoUtils';
+import { densidadesForaDaFaixa, faixaDoProjeto, type ContextoFaixa, type FaixaResolvida } from './densidade';
 import { avaliarRegra } from './avaliarRegra';
 
 export interface OcorrenciaDetectada {
@@ -15,33 +16,38 @@ export interface OcorrenciaDetectada {
 // TODO: detectar rascunho parado há X dias, via `regras_deteccao` com uma métrica nova.
 // Exige ler `projetos_rascunho`, que hoje nenhum fluxo do portal toca.
 
+const nomeDoFogo = (projeto: Projeto) => projeto.nomeProjeto?.trim() || 'Sem nome';
+
+function distanciaDaFaixa(densidade: number, faixa: FaixaResolvida): number {
+  return densidade < faixa.min ? faixa.min - densidade : densidade - faixa.max;
+}
+
+function detectarDensidadeForaDaFaixa(projeto: Projeto, contexto: ContextoFaixa): OcorrenciaDetectada | null {
+  const faixa = faixaDoProjeto(projeto, contexto);
+  const fora = densidadesForaDaFaixa(projeto.amostras ?? [], faixa);
+  if (fora.length === 0) return null;
+
+  const maisDistante = fora.reduce((pior, d) => (distanciaDaFaixa(d, faixa) > distanciaDaFaixa(pior, faixa) ? d : pior));
+  const amostras = fora.length === 1 ? '1 amostra' : `${fora.length} amostras`;
+
+  return {
+    tipo: 'densidade_fora_da_faixa',
+    descricao: `Fogo "${nomeDoFogo(projeto)}": ${amostras} com densidade final fora da faixa ${faixa.origem} (${faixa.min.toFixed(2)}–${faixa.max.toFixed(2)}). Mais distante: ${maisDistante.toFixed(2)} g/cm³.`,
+    valorReferencia: maisDistante,
+    regraId: null,
+  };
+}
+
 export function detectarOcorrenciasDoProjeto(
   projeto: Projeto,
-  produtosById: Map<string, Produto>,
+  contexto: ContextoFaixa,
   regras: RegraDeteccao[]
 ): OcorrenciaDetectada[] {
   const detectadas: OcorrenciaDetectada[] = [];
   const info = projeto.informacoesOperacao;
 
-  const produtoId = info?.produto?.id;
-  const produto = produtoId ? produtosById.get(produtoId) : undefined;
-
-  if (produto) {
-    const { inicial, final } = densidadeInicialFinalMedia(projeto);
-    const foraDaFaixa =
-      (inicial !== null && (inicial < produto.densidadeMin || inicial > produto.densidadeMax)) ||
-      (final !== null && (final < produto.densidadeMin || final > produto.densidadeMax));
-
-    if (foraDaFaixa) {
-      const referencia = final ?? inicial ?? 0;
-      detectadas.push({
-        tipo: 'densidade_fora_da_faixa',
-        descricao: `Densidade média ${referencia.toFixed(2)} g/cm³ fora da faixa de ${produto.nome} (${produto.densidadeMin.toFixed(2)}–${produto.densidadeMax.toFixed(2)}).`,
-        valorReferencia: referencia,
-        regraId: null,
-      });
-    }
-  }
+  const densidade = detectarDensidadeForaDaFaixa(projeto, contexto);
+  if (densidade) detectadas.push(densidade);
 
   const dif = info ? diffPercent(info.kgPrevisto, info.kgAplicado) : null;
   if (dif !== null) {
@@ -51,7 +57,7 @@ export function detectarOcorrenciasDoProjeto(
         if (avaliarRegra(regra, dif)) {
           detectadas.push({
             tipo: 'diferenca_kg_excedente',
-            descricao: `Diferença de ${dif.toFixed(1)}% entre Kg previsto e aplicado.`,
+            descricao: `Fogo "${nomeDoFogo(projeto)}": diferença de ${dif.toFixed(1)}% entre Kg previsto e aplicado.`,
             valorReferencia: dif,
             regraId: regra.id,
           });

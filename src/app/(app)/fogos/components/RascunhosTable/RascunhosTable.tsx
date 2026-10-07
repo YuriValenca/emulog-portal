@@ -3,16 +3,16 @@
 import { Eye } from 'lucide-react';
 import { StatusPill } from '@/components/ui/StatusPill/StatusPill';
 import { ActionsMenu } from '@/components/ui/ActionsMenu/ActionsMenu';
-import { diffPercent, densidadeInicialFinalMedia, statusConformidade, formatarKg } from '@/lib/fogoUtils';
+import { diffPercent, densidadeInicialFinalMedia, formatarKg } from '@/lib/fogoUtils';
+import { statusConformidade, type ContextoFaixa } from '@/lib/densidade';
 import type { ProjetoRascunho } from '@/schemas/projetoRascunho';
-import type { Produto } from '@/types';
 import styles from './RascunhosTable.module.scss';
 
 const MS_DIA = 24 * 60 * 60 * 1000;
 
 interface RascunhosTableProps {
   rascunhos: ProjetoRascunho[];
-  produtosById: Map<string, Produto>;
+  contextoFaixa: ContextoFaixa;
   nomePorUid: Map<string, string>;
   agora: Date;
   onSelect: (rascunho: ProjetoRascunho) => void;
@@ -25,7 +25,7 @@ function rotuloDias(data: Date, agora: Date): string {
   return `há ${dias} dias`;
 }
 
-export default function RascunhosTable({ rascunhos, produtosById, nomePorUid, agora, onSelect }: RascunhosTableProps) {
+export default function RascunhosTable({ rascunhos, contextoFaixa, nomePorUid, agora, onSelect }: RascunhosTableProps) {
   return (
     <table className={styles.table}>
       <thead>
@@ -50,7 +50,7 @@ export default function RascunhosTable({ rascunhos, produtosById, nomePorUid, ag
           const info = rascunho.informacoesOperacao;
           const dif = diffPercent(info?.kgPrevisto, info?.kgAplicado);
           const { inicial, final } = densidadeInicialFinalMedia(rascunho);
-          const status = statusConformidade(rascunho, produtosById);
+          const status = statusConformidade(rascunho, contextoFaixa);
           const statusLabel = status === 'ok' ? 'Conforme' : status === 'crit' ? 'Alerta' : '—';
           const atualizacao = rascunho.dataAtualizacao.toDate();
 

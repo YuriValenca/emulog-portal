@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { Plus } from 'lucide-react';
 import { useAppAuth } from '@/hooks/useAppAuth';
 import { useCompanyGroup } from '@/hooks/fogos/useCompanyGroup';
@@ -8,6 +8,7 @@ import { useProjetosList, useDeleteProjeto } from '@/hooks/fogos/useProjetos';
 import { useCaminhoes } from '@/hooks/cadastro/useCaminhoes';
 import { useOperadores } from '@/hooks/cadastro/useOperadores';
 import { useProdutos } from '@/hooks/cadastro/useProdutos';
+import { useContextoFaixa } from '@/hooks/useContextoFaixa';
 import { Button } from '@/components/ui/Button/Button';
 import { Pagination } from '@/components/ui/Pagination/Pagination';
 import { useToast } from '@/components/ui/Toast/Toast';
@@ -41,7 +42,7 @@ export default function ConcluidosTab({ companyId, filtros, page, onPageChange }
   const [selecionado, setSelecionado] = useState<Projeto | null>(null);
   const [modalCriarAberto, setModalCriarAberto] = useState(false);
 
-  const produtosById = useMemo(() => new Map(produtos.map((p) => [p.id, p])), [produtos]);
+  const contextoFaixa = useContextoFaixa(companyId);
 
   const { projetos, totalFiltrado, totalPaginas, isLoadingMeta, isLoadingPagina, isError, error } = useProjetosList(companyIds, {
     busca: filtros.busca,
@@ -97,7 +98,7 @@ export default function ConcluidosTab({ companyId, filtros, page, onPageChange }
       ) : isLoadingMeta || isLoadingPagina ? (
         <div className={styles.loading}>Carregando fogos...</div>
       ) : (
-        <FogosTable projetos={projetos} produtosById={produtosById} onSelect={setSelecionado} onDelete={handleDelete} />
+        <FogosTable projetos={projetos} contextoFaixa={contextoFaixa} onSelect={setSelecionado} onDelete={handleDelete} />
       )}
 
       <Pagination page={page} totalPages={totalPaginas} onPageChange={onPageChange} />

@@ -6,6 +6,8 @@ import { Button } from '@/components/ui/Button/Button';
 import { useProdutos } from '@/hooks/cadastro/useProdutos';
 import { useCadastroForm } from '@/hooks/cadastro/useCadastroForm';
 import { CadastroPanel } from '../CadastroPanel/CadastroPanel';
+import { FaixaEmpresa } from '../FaixaEmpresa/FaixaEmpresa';
+import { erroFaixaDigitada, lerDensidadeDigitada } from '@/lib/densidade';
 import type { Produto } from '@/schemas/produto';
 import styles from './CadastrosTab.module.scss';
 
@@ -21,10 +23,6 @@ interface ProdutoFormValues {
 
 const initialValues: ProdutoFormValues = { nome: '', densidadeMin: '', densidadeMax: '' };
 
-function parseDensidade(valor: string) {
-  return parseFloat(valor.replace(',', '.'));
-}
-
 export function ProdutosTab({ companyId }: ProdutosTabProps) {
   const { itens: produtos, isLoading, criar: criarProduto, isCriando, editar: editarProduto, isEditando, excluir: excluirProduto } =
     useProdutos(companyId);
@@ -38,25 +36,22 @@ export function ProdutosTab({ companyId }: ProdutosTabProps) {
         densidadeMax: String(p.densidadeMax),
       }),
       validate: (v) => {
-        const min = parseDensidade(v.densidadeMin);
-        const max = parseDensidade(v.densidadeMax);
-        if (!v.nome.trim() || isNaN(min) || isNaN(max)) return 'Preencha o nome e as densidades mínima e máxima.';
-        if (min > max) return 'A densidade mínima não pode ser maior que a máxima.';
-        return null;
+        if (!v.nome.trim()) return 'Informe o nome do produto.';
+        return erroFaixaDigitada(lerDensidadeDigitada(v.densidadeMin), lerDensidadeDigitada(v.densidadeMax));
       },
       criar: (v) =>
         criarProduto({
           nome: v.nome.trim(),
-          densidadeMin: parseDensidade(v.densidadeMin),
-          densidadeMax: parseDensidade(v.densidadeMax),
+          densidadeMin: lerDensidadeDigitada(v.densidadeMin),
+          densidadeMax: lerDensidadeDigitada(v.densidadeMax),
           companyId: v.companyId,
         }),
       editar: (v) =>
         editarProduto({
           id: v.id,
           nome: v.nome.trim(),
-          densidadeMin: parseDensidade(v.densidadeMin),
-          densidadeMax: parseDensidade(v.densidadeMax),
+          densidadeMin: lerDensidadeDigitada(v.densidadeMin),
+          densidadeMax: lerDensidadeDigitada(v.densidadeMax),
         }),
       companyId,
       isCriando,
@@ -72,6 +67,7 @@ export function ProdutosTab({ companyId }: ProdutosTabProps) {
       isLoading={isLoading}
       items={produtos}
       emptyMessage="Nenhum produto cadastrado."
+      note={<FaixaEmpresa companyId={companyId} />}
       columns={['1fr', '140px', '140px', '96px']}
       headers={
         <>
@@ -84,7 +80,7 @@ export function ProdutosTab({ companyId }: ProdutosTabProps) {
       exclusao={{
         titulo: 'Apagar produto?',
         descricao: (p) =>
-          `"${p.nome}" sai da lista. Fogos já registrados com esse produto perdem a referência de faixa de densidade.`,
+          `"${p.nome}" sai da lista. Fogos já registrados com esse produto passam a ser avaliados pela faixa da empresa.`,
         onConfirmar: (p) => excluirProduto(p.id),
       }}
       renderRow={(p, { pedirExclusao }) => (

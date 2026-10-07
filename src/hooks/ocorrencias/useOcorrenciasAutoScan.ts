@@ -14,6 +14,8 @@ import { produtoSchema, type Produto } from '@/schemas/produto';
 import { regraDeteccaoSchema, type RegraDeteccao } from '@/schemas/regraDeteccao';
 import { useToast } from '@/components/ui/Toast/Toast';
 import { detectarOcorrenciasDoProjeto, type OcorrenciaDetectada } from '@/lib/deteccaoOcorrencia';
+import { criarContextoFaixa, faixaDaEmpresa, type FaixaDensidade } from '@/lib/densidade';
+import { faixaDensidadeSchema } from '@/schemas/company';
 import { fetchLicencas } from '@/hooks/useLicencas';
 import { statusExpiracaoLicenca, JANELA_EXPIRACAO_LICENCA_DIAS } from '@/lib/licenca';
 import type { License, Projeto } from '@/types';
@@ -64,6 +66,12 @@ async function fetchProjetosDireto(companyId: string): Promise<Projeto[]> {
 async function fetchProdutosDireto(companyId: string): Promise<Produto[]> {
   const snap = await getDocs(query(collection(db, 'produtos'), where('companyId', '==', companyId)));
   return snap.docs.map((d) => produtoSchema.parse({ id: d.id, ...d.data() }));
+}
+
+async function fetchFaixaEmpresaDireto(companyId: string): Promise<FaixaDensidade> {
+  const snap = await getDoc(doc(db, 'companies', companyId));
+  const faixa = faixaDensidadeSchema.safeParse(snap.data()?.faixaDensidade);
+  return faixaDaEmpresa({ faixaDensidade: faixa.success ? faixa.data : null });
 }
 
 async function fetchRegrasDireto(companyId: string): Promise<RegraDeteccao[]> {
@@ -269,14 +277,15 @@ export function useOcorrenciasAutoScan(companyId: string | null) {
       }
       if (cancelado) return;
 
-      const [projetos, produtos, regras] = await Promise.all([
+      const [projetos, produtos, regras, faixaEmpresa] = await Promise.all([
         fetchProjetosDireto(companyId),
         fetchProdutosDireto(companyId),
         fetchRegrasDireto(companyId),
+        fetchFaixaEmpresaDireto(companyId),
       ]);
       if (cancelado) return;
 
-      const produtosById = new Map(produtos.map((p) => [p.id, p]));
+      const contextoFaixa = criarContextoFaixa(produtos, faixaEmpresa);
       const pendentesFogos = projetos.filter((p) => !p.ocorrenciasVerificadas);
 
       let licencasDetectadas: LicencaOcorrenciaDetectada[] = [];
@@ -311,7 +320,7 @@ export function useOcorrenciasAutoScan(companyId: string | null) {
       for (const projeto of pendentesFogos) {
         if (cancelado) return;
 
-        const detectadas = detectarOcorrenciasDoProjeto(projeto, produtosById, regras);
+        const detectadas = detectarOcorrenciasDoProjeto(projeto, contextoFaixa, regras);
 
         await Promise.all(
           detectadas.map((d) => registrarOcorrenciaFogo(companyId, projeto.id, d))

@@ -2,10 +2,10 @@
 
 import { useState } from 'react';
 import { Flame, Weight, Gauge, AlertTriangle } from 'lucide-react';
-import { FAIXA_DENSIDADE_PADRAO } from '@/lib/densidade';
 import { OPCOES_PERIODO, labelPeriodo, periodoDoValor, type Periodo } from '@/lib/periodo';
 import { useAppAuth } from '@/hooks/useAppAuth';
 import { useDashboardStats } from '@/hooks/useDashboardStats';
+import { useContextoFaixa } from '@/hooks/useContextoFaixa';
 import { useCaminhoes } from '@/hooks/cadastro/useCaminhoes';
 import { useOperadores } from '@/hooks/cadastro/useOperadores';
 import { useCompanyGroup } from '@/hooks/fogos/useCompanyGroup';
@@ -47,11 +47,13 @@ function PainelOperacional({ companyId }: { companyId: string | null }) {
   const { itens: operadores } = useOperadores(companyId);
   const { companyIds } = useCompanyGroup(companyId);
   const { ocorrencias, isLoading: isLoadingOcorrencias } = useOcorrencias(companyIds);
+  const contextoFaixa = useContextoFaixa(companyId);
   const { data, isLoading, isError, isAtualizando } = useDashboardStats(
     companyId,
     periodo,
     caminhaoId.length === 0 ? null : caminhaoId[0] ?? null,
-    operadorIds
+    operadorIds,
+    contextoFaixa
   );
 
   const opcoesSelectUmb = (caminhoes ?? []).map((c) => ({ value: c.id, label: c.tag ?? c.placa }));
@@ -80,10 +82,11 @@ function PainelOperacional({ companyId }: { companyId: string | null }) {
     );
   }
 
+  const { faixaEmpresa } = contextoFaixa;
   const densidadeDentroDaFaixa =
     data.densidadeMediaPeriodo !== null &&
-    data.densidadeMediaPeriodo >= FAIXA_DENSIDADE_PADRAO.min &&
-    data.densidadeMediaPeriodo <= FAIXA_DENSIDADE_PADRAO.max;
+    data.densidadeMediaPeriodo >= faixaEmpresa.min &&
+    data.densidadeMediaPeriodo <= faixaEmpresa.max;
 
   return (
     <div className={styles.container}>
