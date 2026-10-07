@@ -24,6 +24,12 @@
   gap: var(--spacing-medium);
 }
 
+.atualizando {
+  display: flex;
+  align-items: flex-end;
+  padding-bottom: var(--spacing-small);
+}
+
 .skeletonCard {
   height: 104px;
   border-radius: var(--radius-lg);

@@ -1,6 +1,6 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { collection, getDocs, query, where, Timestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase/client';
 import { inicioDoPeriodo, type Periodo } from '@/lib/periodo';
@@ -20,5 +20,6 @@ export function useProjetosPeriodo(companyId: string | null, periodo: Periodo) {
     queryKey: ['projetosPeriodo', companyId, periodo],
     queryFn: () => fetchProjetosPeriodo(companyId as string, periodo),
     enabled: !!companyId,
+    placeholderData: keepPreviousData,
   });
 }

@@ -10,6 +10,7 @@ import { useCaminhoes } from '@/hooks/cadastro/useCaminhoes';
 import { useOperadores } from '@/hooks/cadastro/useOperadores';
 import { Select } from '@/components/ui/Select/Select';
 import { MultiSelect } from '@/components/ui/Multiselect/Multiselect';
+import { Spinner } from '@/components/ui/Spinner/Spinner';
 import { StatCard } from './components/StatCard/StatCard';
 import { DashboardCharts } from './components/DashboardCharts/DashboardCharts';
 import { RankingsSection } from './components/RankingsSection/RankingsSection';
@@ -42,7 +43,7 @@ function PainelOperacional({ companyId }: { companyId: string | null }) {
 
   const { caminhoes } = useCaminhoes(companyId);
   const { operadores } = useOperadores(companyId);
-  const { data, isLoading, isError } = useDashboardStats(
+  const { data, isLoading, isError, isAtualizando } = useDashboardStats(
     companyId,
     periodo,
     caminhaoId.length === 0 ? null : caminhaoId[0] ?? null,
@@ -119,6 +120,11 @@ function PainelOperacional({ companyId }: { companyId: string | null }) {
           label='Operadores'
           width={320}
         />
+        {isAtualizando && (
+          <span className={styles.atualizando} aria-label="Atualizando período">
+            <Spinner size="sm" />
+          </span>
+        )}
       </div>
 
       <RankingsSection

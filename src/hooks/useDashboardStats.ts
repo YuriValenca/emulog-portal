@@ -267,5 +267,6 @@ export function useDashboardStats(
     data,
     isLoading: projetosQuery.isLoading || licencasQuery.isLoading,
     isError: projetosQuery.isError || licencasQuery.isError,
+    isAtualizando: projetosQuery.isPlaceholderData,
   };
 }
