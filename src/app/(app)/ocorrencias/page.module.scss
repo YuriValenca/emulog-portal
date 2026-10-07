@@ -12,8 +12,16 @@
 
 .filtros {
   display: flex;
+  align-items: center;
   gap: var(--spacing-small);
   margin-bottom: var(--spacing-default);
+}
+
+.resumo {
+  margin-left: auto;
+  font-size: var(--font-size-small);
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
 }
 
 .loadingRow {

@@ -1,6 +1,8 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import { Pagination } from '@/components/ui/Pagination/Pagination';
+import { DEFAULT_PAGE_SIZE, PAGE_SIZE_OPTIONS } from '@/hooks/fogos/useProjetos';
 import { Plus, Settings, Trash2 } from 'lucide-react';
 import { useAppAuth } from '@/hooks/useAppAuth';
 import { useCompanyGroup } from '@/hooks/fogos/useCompanyGroup';
@@ -70,6 +72,8 @@ function CategoriaTag({ categoria }: { categoria: 'fogo' | 'geral' }) {
   );
 }
 
+const OPCOES_POR_PAGINA = PAGE_SIZE_OPTIONS.map((n) => ({ value: String(n), label: `${n} por página` }));
+
 type EtapaExclusao = 'aviso' | 'confirmacao' | null;
 
 export default function OcorrenciasPage() {
@@ -84,6 +88,8 @@ export default function OcorrenciasPage() {
 
   const [filtroStatus, setFiltroStatus] = useState('');
   const [filtroTipo, setFiltroTipo] = useState('');
+  const [pagina, setPagina] = useState(1);
+  const [porPagina, setPorPagina] = useState(DEFAULT_PAGE_SIZE);
 
   const [modalOpen, setModalOpen] = useState(false);
   const [tituloManual, setTituloManual] = useState('');
@@ -108,6 +114,29 @@ export default function OcorrenciasPage() {
       return passaStatus && passaTipo;
     });
   }, [ocorrencias, filtroStatus, filtroTipo]);
+
+  const totalPaginas = Math.max(1, Math.ceil(ocorrenciasFiltradas.length / porPagina));
+  const paginaAtual = Math.min(pagina, totalPaginas);
+  const ocorrenciasDaPagina = ocorrenciasFiltradas.slice(
+    (paginaAtual - 1) * porPagina,
+    paginaAtual * porPagina
+  );
+  const totalEncontradas = ocorrenciasFiltradas.length;
+
+  const mudarFiltroStatus = (valor: string) => {
+    setFiltroStatus(valor);
+    setPagina(1);
+  };
+
+  const mudarFiltroTipo = (valor: string) => {
+    setFiltroTipo(valor);
+    setPagina(1);
+  };
+
+  const mudarPorPagina = (valor: string) => {
+    setPorPagina(Number(valor));
+    setPagina(1);
+  };
 
   const abrirCriacao = () => {
     setTituloManual('');
@@ -229,22 +258,35 @@ export default function OcorrenciasPage() {
       <div className={styles.filtros}>
         <Select
           value={filtroStatus}
-          onValueChange={setFiltroStatus}
+          onValueChange={mudarFiltroStatus}
           options={STATUS_OPTIONS}
           resetOption="Todos os status"
+          label='Status'
           placeholder="Status"
           size="sm"
-          width={200}
+          width={250}
         />
         <Select
           value={filtroTipo}
-          onValueChange={setFiltroTipo}
+          onValueChange={mudarFiltroTipo}
           options={TIPO_OPTIONS}
           resetOption="Todos os tipos"
+          label='Tipos de ocorrência'
           placeholder="Tipo"
           size="sm"
-          width={220}
+          width={250}
         />
+        <Select
+          value={String(porPagina)}
+          onValueChange={mudarPorPagina}
+          label='Ocorrências por página'
+          options={OPCOES_POR_PAGINA}
+          size="sm"
+          width={250}
+        />
+        <span className={styles.resumo}>
+          {totalEncontradas} {totalEncontradas === 1 ? 'ocorrência encontrada' : 'ocorrências encontradas'}
+        </span>
       </div>
 
       {isError ? (
@@ -268,7 +310,7 @@ export default function OcorrenciasPage() {
               </tr>
             </thead>
             <tbody>
-              {ocorrenciasFiltradas.map((o) => (
+              {ocorrenciasDaPagina.map((o) => (
                 <tr key={o.id}>
                   <td>
                     <CategoriaTag categoria={categoriaOcorrencia(o)} />
@@ -306,7 +348,9 @@ export default function OcorrenciasPage() {
             </tbody>
           </Table>
 
-          {ocorrenciasFiltradas.length === 0 && <p className={styles.empty}>Nenhuma ocorrência encontrada.</p>}
+          {totalEncontradas === 0 && <p className={styles.empty}>Nenhuma ocorrência encontrada.</p>}
+
+          <Pagination page={paginaAtual} totalPages={totalPaginas} onPageChange={setPagina} />
         </>
       )}
 
