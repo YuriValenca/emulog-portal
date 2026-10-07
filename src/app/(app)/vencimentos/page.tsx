@@ -42,8 +42,8 @@ export default function VencimentosPage() {
   const { companyId, appUser, company, isSuperadmin, isCompanyAdmin } = useAppAuth();
   const agora = useAgora();
   const { companyIds } = useCompanyGroup(companyId);
-  const { caminhoes } = useCaminhoes(companyId);
-  const { operadores } = useOperadores(companyId);
+  const { itens: caminhoes } = useCaminhoes(companyId);
+  const { itens: operadores } = useOperadores(companyId);
   const {
     vencimentos, isLoading, isError,
     marcarResolvido, reabrirVencimento, editarDataVencimento, excluirVencimento,

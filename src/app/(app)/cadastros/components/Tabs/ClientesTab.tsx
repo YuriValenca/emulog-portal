@@ -24,7 +24,7 @@ interface ClienteFormValues {
 const initialValues: ClienteFormValues = { nome: '', cnpj: '', endereco: '' };
 
 export function ClientesTab({ companyId }: ClientesTabProps) {
-  const { clientes, isLoading, isError, error, criarCliente, isCriando, editarCliente, isEditando, excluirCliente } =
+  const { itens: clientes, isLoading, criar: criarCliente, isCriando, editar: editarCliente, isEditando, excluir: excluirCliente } =
     useClientes(companyId);
 
   const { modalOpen, editando, values, setValues, erro, salvando, abrir, fechar, handleSalvar } =
@@ -55,10 +55,6 @@ export function ClientesTab({ companyId }: ClientesTabProps) {
   const handleToggleAtivo = (c: Cliente) => {
     editarCliente({ id: c.id, nome: c.nome, cnpj: c.cnpj, endereco: c.endereco, ativo: !c.ativo });
   };
-
-  if (isError) {
-    console.error('Falha ao carregar clientes:', error);
-  }
 
   return (
     <CadastroPanel<Cliente>

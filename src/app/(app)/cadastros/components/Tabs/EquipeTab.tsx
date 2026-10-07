@@ -21,7 +21,7 @@ interface EquipeFormValues {
 const initialValues: EquipeFormValues = { nome: '', cargo: '' };
 
 export function EquipeTab({ companyId }: EquipeTabProps) {
-  const { operadores, isLoading, criarOperador, isCriando, editarOperador, isEditando, excluirOperador } =
+  const { itens: operadores, isLoading, criar: criarOperador, isCriando, editar: editarOperador, isEditando, excluir: excluirOperador } =
     useOperadores(companyId);
 
   const { modalOpen, editando, values, setValues, erro, salvando, abrir, fechar, handleSalvar } =

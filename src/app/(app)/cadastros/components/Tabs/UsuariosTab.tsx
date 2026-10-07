@@ -30,7 +30,7 @@ function roleLabel(role: UserRole) {
 
 export function UsuariosTab({ companyId }: UsuariosTabProps) {
   const { appUser } = useAppAuth();
-  const { usuarios, isLoading, criarUsuario, isCriando, editarUsuario, isEditando, excluirUsuario } =
+  const { itens: usuarios, isLoading, criar: criarUsuario, isCriando, editar: editarUsuario, isEditando, excluir: excluirUsuario } =
     useUsuarios(companyId);
 
   const { modalOpen, editando, values, setValues, erro, salvando, abrir, fechar, handleSalvar } =

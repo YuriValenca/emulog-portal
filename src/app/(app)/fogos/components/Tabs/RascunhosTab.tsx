@@ -38,8 +38,8 @@ function passaFiltros(rascunho: ProjetoRascunho, filtros: FiltrosState): boolean
 
 export default function RascunhosTab({ companyId, filtros, page, onPageChange }: RascunhosTabProps) {
   const { rascunhos, isLoading, isError, error } = useRascunhos(companyId);
-  const { usuarios } = useUsuarios(companyId);
-  const { produtos } = useProdutos(companyId);
+  const { itens: usuarios } = useUsuarios(companyId);
+  const { itens: produtos } = useProdutos(companyId);
   const agora = useAgora();
 
   const [selecionado, setSelecionado] = useState<ProjetoRascunho | null>(null);

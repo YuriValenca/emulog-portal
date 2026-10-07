@@ -31,9 +31,9 @@ export default function ConcluidosTab({ companyId, filtros, page, onPageChange }
   const { toast } = useToast();
 
   const { companyIds } = useCompanyGroup(companyId);
-  const { caminhoes } = useCaminhoes(companyId);
-  const { operadores } = useOperadores(companyId);
-  const { produtos } = useProdutos(companyId);
+  const { itens: caminhoes } = useCaminhoes(companyId);
+  const { itens: operadores } = useOperadores(companyId);
+  const { itens: produtos } = useProdutos(companyId);
   const { deletarProjeto, isDeletando } = useDeleteProjeto();
 
   const [projetoParaExcluir, setProjetoParaExcluir] = useState<Projeto | null>(null);

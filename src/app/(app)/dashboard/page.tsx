@@ -43,8 +43,8 @@ function PainelOperacional({ companyId }: { companyId: string | null }) {
   const [caminhaoId, setCaminhaoId] = useState<string[]>([]);
   const [operadorIds, setOperadorIds] = useState<string[]>([]);
 
-  const { caminhoes } = useCaminhoes(companyId);
-  const { operadores } = useOperadores(companyId);
+  const { itens: caminhoes } = useCaminhoes(companyId);
+  const { itens: operadores } = useOperadores(companyId);
   const { companyIds } = useCompanyGroup(companyId);
   const { ocorrencias, isLoading: isLoadingOcorrencias } = useOcorrencias(companyIds);
   const { data, isLoading, isError, isAtualizando } = useDashboardStats(

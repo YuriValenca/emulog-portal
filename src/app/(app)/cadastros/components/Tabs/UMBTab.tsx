@@ -21,7 +21,7 @@ interface UmbFormValues {
 const initialValues: UmbFormValues = { placa: '', tag: '' };
 
 export function UmbsTab({ companyId }: UmbsTabProps) {
-  const { caminhoes, isLoading, criarCaminhao, isCriando, editarCaminhao, isEditando, excluirCaminhao } =
+  const { itens: caminhoes, isLoading, criar: criarCaminhao, isCriando, editar: editarCaminhao, isEditando, excluir: excluirCaminhao } =
     useCaminhoes(companyId);
 
   const { modalOpen, editando, values, setValues, erro, salvando, abrir, fechar, handleSalvar } =

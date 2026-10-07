@@ -22,8 +22,8 @@ const FILTROS_INICIAIS: FiltrosState = {
 
 export default function FogosPage() {
   const { companyId, isSuperadmin } = useAppAuth();
-  const { produtos } = useProdutos(companyId);
-  const { caminhoes } = useCaminhoes(companyId);
+  const { itens: produtos } = useProdutos(companyId);
+  const { itens: caminhoes } = useCaminhoes(companyId);
 
   const [aba, setAba] = useState('concluidos');
   const [filtros, setFiltros] = useState<FiltrosState>(FILTROS_INICIAIS);

@@ -26,7 +26,7 @@ function parseDensidade(valor: string) {
 }
 
 export function ProdutosTab({ companyId }: ProdutosTabProps) {
-  const { produtos, isLoading, criarProduto, isCriando, editarProduto, isEditando, excluirProduto } =
+  const { itens: produtos, isLoading, criar: criarProduto, isCriando, editar: editarProduto, isEditando, excluir: excluirProduto } =
     useProdutos(companyId);
 
   const { modalOpen, editando, values, setValues, erro, salvando, abrir, fechar, handleSalvar } =
