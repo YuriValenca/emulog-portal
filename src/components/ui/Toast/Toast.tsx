@@ -1,7 +1,7 @@
 'use client';
 
 import * as RadixToast from '@radix-ui/react-toast';
-import { createContext, useCallback, useContext, useState, ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useState, ReactNode } from 'react';
 import styles from './Toast.module.scss';
 
 interface ToastInput {
@@ -13,8 +13,14 @@ interface ToastItem extends ToastInput {
   id: number;
 }
 
+interface PilhaToasts {
+  altura: number;
+  crescendo: boolean;
+}
+
 interface ToastContextValue {
   toast: (input: ToastInput) => void;
+  pilha: PilhaToasts;
 }
 
 const ToastContext = createContext<ToastContextValue | null>(null);
@@ -33,8 +39,11 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     setToasts((prev) => prev.filter((t) => t.id !== id));
   };
 
+  const [viewport, setViewport] = useState<HTMLOListElement | null>(null);
+  const pilha = useAlturaDaPilha(viewport);
+
   return (
-    <ToastContext.Provider value={{ toast }}>
+    <ToastContext.Provider value={{ toast, pilha }}>
       <RadixToast.Provider swipeDirection="right" duration={4000}>
         {children}
         {toasts.map((t) => (
@@ -43,10 +52,26 @@ export function ToastProvider({ children }: { children: ReactNode }) {
             {t.description && <RadixToast.Description className={styles.description}>{t.description}</RadixToast.Description>}
           </RadixToast.Root>
         ))}
-        <RadixToast.Viewport className={styles.viewport} />
+        <RadixToast.Viewport ref={setViewport} className={styles.viewport} />
       </RadixToast.Provider>
     </ToastContext.Provider>
   );
+}
+
+function useAlturaDaPilha(viewport: HTMLOListElement | null): PilhaToasts {
+  const [estado, setEstado] = useState<PilhaToasts>({ altura: 0, crescendo: false });
+
+  useEffect(() => {
+    if (!viewport) return;
+    const observer = new ResizeObserver(([entrada]) => {
+      const altura = entrada.borderBoxSize[0]?.blockSize ?? viewport.offsetHeight;
+      setEstado((anterior) => (anterior.altura === altura ? anterior : { altura, crescendo: altura > anterior.altura }));
+    });
+    observer.observe(viewport);
+    return () => observer.disconnect();
+  }, [viewport]);
+
+  return estado;
 }
 
 export function useToast() {

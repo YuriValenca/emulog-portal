@@ -2,13 +2,14 @@
   position: fixed;
   bottom: var(--spacing-large);
   right: var(--spacing-large);
-  width: 280px;
+  width: 300px;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   padding: var(--spacing-small) var(--spacing-default);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
   z-index: 150;
+  transition: bottom 1.2s ease;
 }
 
 .closeBtn {
@@ -38,6 +39,7 @@
   color: var(--text-muted);
   padding-right: var(--spacing-large);
   margin-bottom: var(--spacing-xsmall);
+  font-variant-numeric: tabular-nums;
 }
 
 .bar {
@@ -51,4 +53,10 @@
   height: 100%;
   background: var(--accent);
   transition: width 0.2s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card {
+    transition: none;
+  }
 }
