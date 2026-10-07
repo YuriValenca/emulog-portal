@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/Button/Button';
 import { Select } from '@/components/ui/Select/Select';
 import { Table } from '@/components/ui/Table/Table';
 import { Modal } from '@/components/ui/Modal/Modal';
-import { Input } from '@/components/ui/Input/Input';
+import { Input, DATA_MINIMA } from '@/components/ui/Input/Input';
 import { Textarea } from '@/components/ui/Textarea/Textarea';
 import { Spinner } from '@/components/ui/Spinner/Spinner';
 import { StatusPill } from '@/components/ui/StatusPill/StatusPill';
@@ -74,6 +74,19 @@ function CategoriaTag({ categoria }: { categoria: 'fogo' | 'geral' }) {
   );
 }
 
+const doisDigitos = (n: number) => String(n).padStart(2, '0');
+
+function dataLocalISO(data: Date): string {
+  return `${data.getFullYear()}-${doisDigitos(data.getMonth() + 1)}-${doisDigitos(data.getDate())}`;
+}
+
+function dentroDoPeriodoDoFogo(o: Ocorrencia, inicio: string, fim: string): boolean {
+  if (!inicio && !fim) return true;
+  if (!o.dataFogo) return false;
+  const data = dataLocalISO(o.dataFogo.toDate());
+  return (!inicio || data >= inicio) && (!fim || data <= fim);
+}
+
 const OPCOES_POR_PAGINA = PAGE_SIZE_OPTIONS.map((n) => ({ value: String(n), label: `${n} por página` }));
 
 type EtapaExclusao = 'aviso' | 'confirmacao' | null;
@@ -90,6 +103,8 @@ export default function OcorrenciasPage() {
 
   const [filtroStatus, setFiltroStatus] = useState('');
   const [filtroTipo, setFiltroTipo] = useState('');
+  const [filtroDataInicio, setFiltroDataInicio] = useState('');
+  const [filtroDataFim, setFiltroDataFim] = useState('');
   const [pagina, setPagina] = useState(1);
   const [porPagina, setPorPagina] = useState(DEFAULT_PAGE_SIZE);
 
@@ -113,9 +128,9 @@ export default function OcorrenciasPage() {
     return ocorrencias.filter((o) => {
       const passaStatus = filtroStatus ? o.status === filtroStatus : true;
       const passaTipo = filtroTipo ? o.tipo === filtroTipo : true;
-      return passaStatus && passaTipo;
+      return passaStatus && passaTipo && dentroDoPeriodoDoFogo(o, filtroDataInicio, filtroDataFim);
     });
-  }, [ocorrencias, filtroStatus, filtroTipo]);
+  }, [ocorrencias, filtroStatus, filtroTipo, filtroDataInicio, filtroDataFim]);
 
   const totalPaginas = Math.max(1, Math.ceil(ocorrenciasFiltradas.length / porPagina));
   const paginaAtual = Math.min(pagina, totalPaginas);
@@ -124,6 +139,7 @@ export default function OcorrenciasPage() {
     paginaAtual * porPagina
   );
   const totalEncontradas = ocorrenciasFiltradas.length;
+  const hoje = dataLocalISO(new Date());
 
   const mudarFiltroStatus = (valor: string) => {
     setFiltroStatus(valor);
@@ -132,6 +148,18 @@ export default function OcorrenciasPage() {
 
   const mudarFiltroTipo = (valor: string) => {
     setFiltroTipo(valor);
+    setPagina(1);
+  };
+
+  const mudarDataInicio = (valor: string) => {
+    setFiltroDataInicio(valor);
+    if (filtroDataFim && valor > filtroDataFim) setFiltroDataFim(valor);
+    setPagina(1);
+  };
+
+  const mudarDataFim = (valor: string) => {
+    setFiltroDataFim(valor);
+    if (valor >= DATA_MINIMA && filtroDataInicio && valor < filtroDataInicio) setFiltroDataInicio(valor);
     setPagina(1);
   };
 
@@ -278,6 +306,25 @@ export default function OcorrenciasPage() {
           size="sm"
           width={250}
         />
+        <Input
+          id="ocorrencias-data-inicio"
+          type="date"
+          label="Fogo de"
+          value={filtroDataInicio}
+          max={filtroDataFim || hoje}
+          onChange={(e) => mudarDataInicio(e.target.value)}
+          size="sm"
+        />
+        <Input
+          id="ocorrencias-data-fim"
+          type="date"
+          label="Fogo até"
+          value={filtroDataFim}
+          min={filtroDataInicio || undefined}
+          max={hoje}
+          onChange={(e) => mudarDataFim(e.target.value)}
+          size="sm"
+        />
         <Select
           value={String(porPagina)}
           onValueChange={mudarPorPagina}
@@ -299,13 +346,14 @@ export default function OcorrenciasPage() {
         </div>
       ) : (
         <>
-          <Table columns={['110px', '200px', '100px', '1fr', '140px', '190px', '56px']}>
+          <Table columns={['110px', '200px', '100px', '1fr', '120px', '120px', '190px', '56px']}>
             <thead>
               <tr>
                 <th>Categoria</th>
                 <th>Tipo</th>
                 <th>Origem</th>
                 <th>Descrição</th>
+                <th>Data do fogo</th>
                 <th>Aberta em</th>
                 <th>Status</th>
                 <th />
@@ -322,6 +370,7 @@ export default function OcorrenciasPage() {
                   </td>
                   <td>{o.origem === 'manual' ? 'Manual' : 'Automática'}</td>
                   <td>{o.descricao || '—'}</td>
+                  <td>{o.dataFogo ? o.dataFogo.toDate().toLocaleDateString('pt-BR') : '—'}</td>
                   <td>{o.criadoEm.toDate().toLocaleDateString('pt-BR')}</td>
                   <td>
                     <Select

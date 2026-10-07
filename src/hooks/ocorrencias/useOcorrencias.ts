@@ -29,7 +29,16 @@ async function fetchOcorrencias(companyIds: string[]): Promise<Ocorrencia[]> {
       return snap.docs.map((d) => ocorrenciaSchema.parse({ id: d.id, ...d.data() }));
     })
   );
-  return results.flat().sort((a, b) => b.criadoEm.toMillis() - a.criadoEm.toMillis());
+  return results.flat().sort(doFogoMaisNovo);
+}
+
+// Ocorrência sem fogo (licença, manual) entra na ordem pela data em que foi aberta.
+function dataDeOrdenacao(o: Ocorrencia): number {
+  return (o.dataFogo ?? o.criadoEm).toMillis();
+}
+
+function doFogoMaisNovo(a: Ocorrencia, b: Ocorrencia): number {
+  return dataDeOrdenacao(b) - dataDeOrdenacao(a) || b.criadoEm.toMillis() - a.criadoEm.toMillis();
 }
 
 async function criarOcorrenciaManual(input: CriarOcorrenciaManualInput) {

@@ -19,6 +19,7 @@ export const ocorrenciaSchema = z.object({
   id: z.string(),
   companyId: z.string(),
   projetoId: z.string().nullable(),
+  dataFogo: zTimestamp.nullable().optional(),
   licenseId: z.string().nullable().optional(),
   /** Regra de detecção que gerou a ocorrência. Ausente em docs criados antes do campo existir. */
   regraId: z.string().nullable().optional(),

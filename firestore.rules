@@ -214,7 +214,7 @@ service cloud.firestore {
           && request.resource.data.tipo == resource.data.tipo
           && request.resource.data.companyId == resource.data.companyId
           && request.resource.data.projetoId == resource.data.projetoId
-          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['descricao','valorReferencia','status','encerradoEm'])
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['descricao','valorReferencia','status','encerradoEm','dataFogo'])
         );
       allow delete: if isSuperadmin()
         || (isCompanyAdmin() && resource.data.companyId == companyId());

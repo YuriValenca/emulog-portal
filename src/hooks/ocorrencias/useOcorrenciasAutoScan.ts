@@ -162,7 +162,12 @@ function idOcorrenciaFogo(projetoId: string, detectada: OcorrenciaDetectada): st
     : `${projetoId}_${detectada.tipo}`;
 }
 
-async function registrarOcorrenciaFogo(companyId: string, projetoId: string, detectada: OcorrenciaDetectada) {
+async function registrarOcorrenciaFogo(
+  companyId: string,
+  projetoId: string,
+  dataFogo: Timestamp,
+  detectada: OcorrenciaDetectada
+) {
   const ref = doc(db, 'ocorrencias', idOcorrenciaFogo(projetoId, detectada));
 
   let existe = false;
@@ -177,6 +182,7 @@ async function registrarOcorrenciaFogo(companyId: string, projetoId: string, det
   const payload: Record<string, unknown> = {
     companyId,
     projetoId,
+    dataFogo,
     tipo: detectada.tipo,
     origem: 'automatica',
     descricao: detectada.descricao,
@@ -185,7 +191,7 @@ async function registrarOcorrenciaFogo(companyId: string, projetoId: string, det
   };
 
   // Só detecção vinda de regra grava `regraId`. As rules restringem o update de
-  // ocorrência automática a ['descricao','valorReferencia','status','encerradoEm'],
+  // ocorrência automática a ['descricao','valorReferencia','status','encerradoEm','dataFogo'],
   // então introduzir um campo novo num documento que já existe seria negado —
   // e ocorrência de densidade, que não tem regra, mantém o mesmo id de sempre.
   if (detectada.regraId) payload.regraId = detectada.regraId;
@@ -303,7 +309,7 @@ export function useOcorrenciasAutoScan(companyId: string | null) {
       if (cancelado) return;
       const agora = new Date();
       const rascunhosDetectados = rascunhos.flatMap((rascunho) =>
-        detectarOcorrenciasDoRascunho(rascunho, regras, agora).map((detectada) => ({ rascunhoId: rascunho.id, detectada }))
+        detectarOcorrenciasDoRascunho(rascunho, regras, agora).map((detectada) => ({ rascunho, detectada }))
       );
 
       let licencasDetectadas: LicencaOcorrenciaDetectada[] = [];
@@ -342,7 +348,7 @@ export function useOcorrenciasAutoScan(companyId: string | null) {
         const detectadas = detectarOcorrenciasDoProjeto(projeto, contextoFaixa, regras);
 
         await Promise.all(
-          detectadas.map((d) => registrarOcorrenciaFogo(companyId, projeto.id, d))
+          detectadas.map((d) => registrarOcorrenciaFogo(companyId, projeto.id, projeto.dataCriacao, d))
         );
 
         try {
@@ -355,9 +361,9 @@ export function useOcorrenciasAutoScan(companyId: string | null) {
         atualizarProgresso({ isScanning: true, total: totalGeral, processados });
       }
 
-      for (const { rascunhoId, detectada } of rascunhosDetectados) {
+      for (const { rascunho, detectada } of rascunhosDetectados) {
         if (cancelado) return;
-        await registrarOcorrenciaFogo(companyId, rascunhoId, detectada);
+        await registrarOcorrenciaFogo(companyId, rascunho.id, rascunho.dataCriacao, detectada);
         processados += 1;
         atualizarProgresso({ isScanning: true, total: totalGeral, processados });
       }

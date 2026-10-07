@@ -12,13 +12,15 @@
 
 .filtros {
   display: flex;
-  align-items: center;
+  flex-wrap: wrap;
+  align-items: flex-end;
   gap: var(--spacing-small);
   margin-bottom: var(--spacing-default);
 }
 
 .resumo {
   margin-left: auto;
+  padding-bottom: var(--spacing-xsmall);
   font-size: var(--font-size-small);
   color: var(--text-muted);
   font-variant-numeric: tabular-nums;
