@@ -114,25 +114,6 @@ export function useProjetosList(companyIds: string[], filtros: ProjetosFiltros =
   };
 }
 
-async function fetchProjetoDetail(projetoId: string): Promise<Projeto> {
-  const snap = await getDoc(doc(db, 'projetos', projetoId));
-  if (!snap.exists()) throw new Error('projeto-not-found');
-  return projetoSchema.parse({ id: snap.id, ...snap.data() });
-}
-
-export function useProjetoDetail(projetoId: string | null) {
-  const detailQuery = useQuery({
-    queryKey: ['projetoDetail', projetoId],
-    queryFn: () => fetchProjetoDetail(projetoId!),
-    enabled: !!projetoId,
-  });
-
-  return {
-    projeto: detailQuery.data ?? null,
-    isLoading: detailQuery.isLoading,
-  };
-}
-
 interface AmostraManualInput {
   amostraId: number;
   densidadeInicial: number | null;

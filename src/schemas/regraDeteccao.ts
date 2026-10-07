@@ -15,6 +15,5 @@ export const regraDeteccaoSchema = z.object({
   criadoEm: zTimestamp,
 });
 
-export type RegraMetrica = z.infer<typeof regraMetricaSchema>;
 export type RegraOperador = z.infer<typeof regraOperadorSchema>;
 export type RegraDeteccao = z.infer<typeof regraDeteccaoSchema>;
