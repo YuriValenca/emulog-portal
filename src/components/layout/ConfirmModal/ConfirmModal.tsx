@@ -40,7 +40,7 @@ export default function ConfirmModal({
       }}
     >
       <RadixDialog.Portal>
-        <RadixDialog.Overlay className={styles.overlay} />
+        <RadixDialog.Overlay className={styles.overlay} data-overlay-modal="" />
         <RadixDialog.Content
           className={styles.card}
           onEscapeKeyDown={impedirFechamento}

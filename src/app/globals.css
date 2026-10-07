@@ -55,3 +55,7 @@ html {
 *::-webkit-scrollbar-thumb:hover {
   background: var(--text-muted);
 }
+
+[data-overlay-modal] ~ [data-overlay-modal] {
+  background: transparent;
+}
