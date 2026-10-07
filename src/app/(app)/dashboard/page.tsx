@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Flame, Weight, Gauge } from 'lucide-react';
 import { FAIXA_DENSIDADE_PADRAO } from '@/lib/densidade';
-import { opcoesPeriodoDisponiveis, labelPeriodo, type PeriodoDias } from '@/lib/periodo';
+import { OPCOES_PERIODO, labelPeriodo, periodoDoValor, type Periodo } from '@/lib/periodo';
 import { useAppAuth } from '@/hooks/useAppAuth';
 import { useDashboardStats } from '@/hooks/useDashboardStats';
 import { useCaminhoes } from '@/hooks/cadastro/useCaminhoes';
@@ -15,9 +15,9 @@ import { DashboardCharts } from './components/DashboardCharts/DashboardCharts';
 import { RankingsSection } from './components/RankingsSection/RankingsSection';
 import styles from './page.module.scss';
 
-const OPCOES_SELECT_PERIODO = opcoesPeriodoDisponiveis().map((dias) => ({
-  value: String(dias),
-  label: labelPeriodo(dias),
+const OPCOES_SELECT_PERIODO = OPCOES_PERIODO.map((periodo) => ({
+  value: String(periodo),
+  label: labelPeriodo(periodo),
 }));
 
 export default function DashboardPage() {
@@ -36,7 +36,7 @@ export default function DashboardPage() {
 }
 
 function PainelOperacional({ companyId }: { companyId: string | null }) {
-  const [diasPeriodo, setDiasPeriodo] = useState<PeriodoDias>(30);
+  const [periodo, setPeriodo] = useState<Periodo>(30);
   const [caminhaoId, setCaminhaoId] = useState<string[]>([]);
   const [operadorIds, setOperadorIds] = useState<string[]>([]);
 
@@ -44,7 +44,7 @@ function PainelOperacional({ companyId }: { companyId: string | null }) {
   const { operadores } = useOperadores(companyId);
   const { data, isLoading, isError } = useDashboardStats(
     companyId,
-    diasPeriodo,
+    periodo,
     caminhaoId.length === 0 ? null : caminhaoId[0] ?? null,
     operadorIds
   );
@@ -52,7 +52,7 @@ function PainelOperacional({ companyId }: { companyId: string | null }) {
   const opcoesSelectUmb = (caminhoes ?? []).map((c) => ({ value: c.id, label: c.tag ?? c.placa }));
   const opcoesSelectOperador = (operadores ?? []).map((o) => ({ value: o.id, label: o.nome }));
 
-  const periodoLabel = labelPeriodo(diasPeriodo);
+  const periodoLabel = labelPeriodo(periodo);
 
   if (isLoading) {
     return (
@@ -94,8 +94,8 @@ function PainelOperacional({ companyId }: { companyId: string | null }) {
       </div>
       <div className={styles.filtros}>
         <Select
-          value={String(diasPeriodo)}
-          onValueChange={(value) => setDiasPeriodo(Number(value) as PeriodoDias)}
+          value={String(periodo)}
+          onValueChange={(value) => setPeriodo(periodoDoValor(value))}
           options={OPCOES_SELECT_PERIODO}
           size="sm"
           label='Período'

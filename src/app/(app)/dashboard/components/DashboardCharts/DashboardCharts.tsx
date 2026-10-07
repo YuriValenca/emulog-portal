@@ -24,6 +24,7 @@ const CORES = { accent: '#FF9621', data: '#1A73E8', ok: '#4CAF50', crit: '#E2503
 const LABEL_GRANULARIDADE: Record<GranularidadeGrafico, string> = {
   diaria: 'por dia',
   semanal: 'por semana',
+  mensal: 'por mês',
 };
 
 interface FatiaColorida {

@@ -5,11 +5,11 @@ import { useProjetosPeriodo } from './useProjetosPeriodo';
 import { useLicencas } from './useLicencas';
 import { densidadeMediaDoProjeto, projetoForaDaFaixa, FAIXA_DENSIDADE_PADRAO, type FaixaDensidade } from '@/lib/densidade';
 import { statusExpiracaoLicenca } from '@/lib/licenca';
-import type { PeriodoDias } from '@/lib/periodo';
+import { inicioDoPeriodo, type Periodo } from '@/lib/periodo';
 import { paraKg } from '@/helpers/parseNumbers';
 import type { License, Projeto } from '@/types';
 
-export type GranularidadeGrafico = 'diaria' | 'semanal';
+export type GranularidadeGrafico = 'diaria' | 'semanal' | 'mensal';
 
 export interface FogoPorPeriodo {
   rotulo: string;
@@ -53,8 +53,8 @@ export interface DashboardStats {
   rankingOperadores: RankingItem[];
 }
 
-const MS_DIA = 1000 * 60 * 60 * 24;
 const DIAS_LIMITE_AGRUPAMENTO_DIARIO = 31;
+const DIAS_LIMITE_AGRUPAMENTO_SEMANAL = 180;
 const LIMITE_RANKING = 5;
 
 function toDate(value: unknown): Date {
@@ -64,26 +64,38 @@ function toDate(value: unknown): Date {
   return new Date(value as string);
 }
 
-function granularidadePara(diasPeriodo: number): GranularidadeGrafico {
-  return diasPeriodo <= DIAS_LIMITE_AGRUPAMENTO_DIARIO ? 'diaria' : 'semanal';
+function granularidadePara(periodo: Periodo): GranularidadeGrafico {
+  if (periodo === 'tudo' || periodo > DIAS_LIMITE_AGRUPAMENTO_SEMANAL) return 'mensal';
+  return periodo <= DIAS_LIMITE_AGRUPAMENTO_DIARIO ? 'diaria' : 'semanal';
 }
 
+const doisDigitos = (n: number) => String(n).padStart(2, '0');
+
+// Chave em data local: `toISOString` é UTC e jogava fogos da noite para o dia seguinte.
 function chaveAgrupamento(dataCriacao: Date, granularidade: GranularidadeGrafico): string {
-  if (granularidade === 'diaria') return dataCriacao.toISOString().slice(0, 10);
-  const inicioSemana = new Date(dataCriacao);
-  inicioSemana.setDate(inicioSemana.getDate() - inicioSemana.getDay());
-  return inicioSemana.toISOString().slice(0, 10);
+  const ano = dataCriacao.getFullYear();
+  const mes = doisDigitos(dataCriacao.getMonth() + 1);
+  if (granularidade === 'mensal') return `${ano}-${mes}`;
+
+  const dia = new Date(ano, dataCriacao.getMonth(), dataCriacao.getDate());
+  if (granularidade === 'semanal') dia.setDate(dia.getDate() - dia.getDay());
+  return `${dia.getFullYear()}-${doisDigitos(dia.getMonth() + 1)}-${doisDigitos(dia.getDate())}`;
+}
+
+function rotuloAgrupamento(chave: string, granularidade: GranularidadeGrafico): string {
+  const [ano, mes, dia] = chave.split('-');
+  return granularidade === 'mensal' ? `${mes}/${ano}` : `${dia}/${mes}`;
 }
 
 function filtrarProjetosDoPeriodo(
   projetos: Projeto[],
-  inicioPeriodo: Date,
+  inicioPeriodo: Date | null,
   caminhaoId: string | null,
   operadorIds: string[]
 ): Projeto[] {
   return projetos.filter((data) => {
     const dataCriacao = toDate(data.dataCriacao);
-    if (dataCriacao < inicioPeriodo) return false;
+    if (inicioPeriodo && dataCriacao < inicioPeriodo) return false;
     if (caminhaoId && data.informacoesOperacao?.caminhao?.id !== caminhaoId) return false;
     if (operadorIds.length > 0 && !data.informacoesOperacao?.equipe?.some((membro) => operadorIds.includes(membro.id))) return false;
     return true;
@@ -157,7 +169,7 @@ function calcularAgrupamentos(projetos: Projeto[], granularidade: GranularidadeG
   return Array.from(agrupamentos.entries())
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([chave, valores]) => ({
-      rotulo: new Date(chave).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }),
+      rotulo: rotuloAgrupamento(chave, granularidade),
       totalFogos: valores.totalFogos,
       kgAplicado: Math.round(valores.kgAplicado),
     }));
@@ -207,14 +219,14 @@ function calcularLicencas(licencas: License[], agora: Date) {
 function calcularStats(
   projetos: Projeto[],
   licencas: License[],
-  diasPeriodo: number,
+  periodo: Periodo,
   faixaDensidade: FaixaDensidade,
   caminhaoId: string | null,
   operadorIds: string[]
 ): DashboardStats {
   const agora = new Date();
-  const inicioPeriodo = new Date(agora.getTime() - diasPeriodo * MS_DIA);
-  const granularidadeGrafico = granularidadePara(diasPeriodo);
+  const inicioPeriodo = inicioDoPeriodo(periodo, agora);
+  const granularidadeGrafico = granularidadePara(periodo);
 
   const projetosFiltrados = filtrarProjetosDoPeriodo(projetos, inicioPeriodo, caminhaoId, operadorIds);
 
@@ -238,18 +250,18 @@ function calcularStats(
 
 export function useDashboardStats(
   companyId: string | null,
-  diasPeriodo: PeriodoDias,
+  periodo: Periodo,
   caminhaoId: string | null = null,
   operadorIds: string[] = [],
   faixaDensidade: FaixaDensidade = FAIXA_DENSIDADE_PADRAO
 ) {
-  const projetosQuery = useProjetosPeriodo(companyId);
+  const projetosQuery = useProjetosPeriodo(companyId, periodo);
   const licencasQuery = useLicencas(companyId);
 
   const data = useMemo(() => {
     if (!projetosQuery.data || !licencasQuery.data) return undefined;
-    return calcularStats(projetosQuery.data, licencasQuery.data, diasPeriodo, faixaDensidade, caminhaoId, operadorIds);
-  }, [projetosQuery.data, licencasQuery.data, diasPeriodo, faixaDensidade, caminhaoId, operadorIds]);
+    return calcularStats(projetosQuery.data, licencasQuery.data, periodo, faixaDensidade, caminhaoId, operadorIds);
+  }, [projetosQuery.data, licencasQuery.data, periodo, faixaDensidade, caminhaoId, operadorIds]);
 
   return {
     data,
