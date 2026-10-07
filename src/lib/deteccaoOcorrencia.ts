@@ -2,13 +2,13 @@ import type { Projeto } from '@/types';
 import type { RegraDeteccao } from '@/schemas/regraDeteccao';
 import type { OcorrenciaTipo } from '@/schemas/ocorrencia';
 import { diffPercent } from './fogoUtils';
-import { densidadesForaDaFaixa, faixaDoProjeto, type ContextoFaixa, type FaixaResolvida } from './densidade';
+import { densidadesForaDaFaixa, faixaDoProjeto, type ContextoFaixa } from './densidade';
 import { avaliarRegra } from './avaliarRegra';
 
 export interface OcorrenciaDetectada {
   tipo: OcorrenciaTipo;
   descricao: string;
-  valorReferencia: number;
+  valorReferencia: number | null;
   /** Regra que disparou a detecção. `null` para detecções que não vêm de regra (densidade). */
   regraId: string | null;
 }
@@ -18,22 +18,17 @@ export interface OcorrenciaDetectada {
 
 const nomeDoFogo = (projeto: Projeto) => projeto.nomeProjeto?.trim() || 'Sem nome';
 
-function distanciaDaFaixa(densidade: number, faixa: FaixaResolvida): number {
-  return densidade < faixa.min ? faixa.min - densidade : densidade - faixa.max;
-}
-
 function detectarDensidadeForaDaFaixa(projeto: Projeto, contexto: ContextoFaixa): OcorrenciaDetectada | null {
   const faixa = faixaDoProjeto(projeto, contexto);
   const fora = densidadesForaDaFaixa(projeto.amostras ?? [], faixa);
   if (fora.length === 0) return null;
 
-  const maisDistante = fora.reduce((pior, d) => (distanciaDaFaixa(d, faixa) > distanciaDaFaixa(pior, faixa) ? d : pior));
   const amostras = fora.length === 1 ? '1 amostra' : `${fora.length} amostras`;
 
   return {
     tipo: 'densidade_fora_da_faixa',
-    descricao: `Fogo "${nomeDoFogo(projeto)}": ${amostras} com densidade final fora da faixa ${faixa.origem} (${faixa.min.toFixed(2)}–${faixa.max.toFixed(2)}). Mais distante: ${maisDistante.toFixed(2)} g/cm³.`,
-    valorReferencia: maisDistante,
+    descricao: `Fogo "${nomeDoFogo(projeto)}": ${amostras} com densidade final fora da faixa ${faixa.origem} (${faixa.min.toFixed(2)}–${faixa.max.toFixed(2)}).`,
+    valorReferencia: null,
     regraId: null,
   };
 }
