@@ -12,9 +12,10 @@ import { Switch } from '@/components/ui/Switch/Switch';
 import { Button } from '@/components/ui/Button/Button';
 import { useModifyCompany } from '@/hooks/useModifyCompany';
 import { getCompanyModules } from '@/lib/companyModules';
+import { ExcluirEmpresa } from '../ExcluirEmpresa/ExcluirEmpresa';
 import type { Company } from '@/types';
 import styles from './EmpresasFormModal.module.scss';
-import { formatCNPJ } from '@/helpers/formatCNPJ';
+import { formatCNPJ, isValidCNPJ } from '@/helpers/formatCNPJ';
 
 interface EmpresaFormModalProps {
   visible: boolean;
@@ -29,7 +30,7 @@ const LOGO_QUALITY = 0.7;
 
 const empresaFormSchema = z.object({
   name: z.string().min(1, 'Nome é obrigatório.'),
-  cnpj: z.string(),
+  cnpj: z.string().refine((cnpj) => !cnpj.trim() || isValidCNPJ(cnpj), 'CNPJ inválido. Confira os dígitos.'),
   logo: z.string().nullable(),
   primaryColor: z.string().min(1),
   parentCompanyId: z.string(),
@@ -175,6 +176,9 @@ export default function EmpresaFormModal({ visible, onClose, empresaEditando, em
       width={500}
       footer={
         <>
+          {empresaEditando && !isFounding && (
+            <ExcluirEmpresa empresa={empresaEditando} disabled={saving} onExcluida={onClose} />
+          )}
           <Button variant="ghost" onClick={onClose} disabled={saving}>
             Cancelar
           </Button>
@@ -205,6 +209,8 @@ export default function EmpresaFormModal({ visible, onClose, empresaEditando, em
               value={field.value}
               onChange={(e) => field.onChange(formatCNPJ(e.target.value))}
               maxLength={18}
+              error={!!errors.cnpj}
+              errorMessage={errors.cnpj?.message}
             />
           )}
         />
