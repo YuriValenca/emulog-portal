@@ -12,7 +12,7 @@ import { useContextoFaixa } from '@/hooks/useContextoFaixa';
 import { Button } from '@/components/ui/Button/Button';
 import { Pagination } from '@/components/ui/Pagination/Pagination';
 import { useToast } from '@/components/ui/Toast/Toast';
-import ConfirmModal from '@/components/layout/ConfirmModal/ConfirmModal';
+import { ConfirmModal } from '@/components/ui/ConfirmModal/ConfirmModal';
 import type { FiltrosState } from '../FiltrosFogos/FiltrosFogos';
 import FogosTable from '../FogosTable/FogosTable';
 import FogoDetailModal from '../FogoDetailModal/FogoDetailModal';
@@ -38,7 +38,6 @@ export default function ConcluidosTab({ companyId, filtros, page, onPageChange }
   const { deletarProjeto, isDeletando } = useDeleteProjeto();
 
   const [projetoParaExcluir, setProjetoParaExcluir] = useState<Projeto | null>(null);
-  const [etapaExclusao, setEtapaExclusao] = useState<'confirmar' | 'final' | null>(null);
   const [selecionado, setSelecionado] = useState<Projeto | null>(null);
   const [modalCriarAberto, setModalCriarAberto] = useState(false);
 
@@ -54,19 +53,7 @@ export default function ConcluidosTab({ companyId, filtros, page, onPageChange }
     pageSize: filtros.pageSize,
   });
 
-  const handleDelete = (projeto: Projeto) => {
-    setProjetoParaExcluir(projeto);
-    setEtapaExclusao('confirmar');
-  };
-
-  const avancarParaConfirmacaoFinal = () => {
-    setEtapaExclusao('final');
-  };
-
-  const cancelarExclusao = () => {
-    setEtapaExclusao(null);
-    setProjetoParaExcluir(null);
-  };
+  const cancelarExclusao = () => setProjetoParaExcluir(null);
 
   const confirmarExclusao = async () => {
     if (!projetoParaExcluir) return;
@@ -98,7 +85,7 @@ export default function ConcluidosTab({ companyId, filtros, page, onPageChange }
       ) : isLoadingMeta || isLoadingPagina ? (
         <div className={styles.loading}>Carregando fogos...</div>
       ) : (
-        <FogosTable projetos={projetos} contextoFaixa={contextoFaixa} onSelect={setSelecionado} onDelete={handleDelete} />
+        <FogosTable projetos={projetos} contextoFaixa={contextoFaixa} onSelect={setSelecionado} onDelete={setProjetoParaExcluir} />
       )}
 
       <Pagination page={page} totalPages={totalPaginas} onPageChange={onPageChange} />
@@ -106,31 +93,20 @@ export default function ConcluidosTab({ companyId, filtros, page, onPageChange }
       <FogoDetailModal projeto={selecionado} onClose={() => setSelecionado(null)} />
 
       <ConfirmModal
-        open={etapaExclusao === 'confirmar'}
-        title="Tem certeza?"
-        description={
-          projetoParaExcluir
-            ? `Você está prestes a apagar o fogo "${projetoParaExcluir.nomeProjeto}".`
-            : undefined
-        }
-        confirmLabel="Continuar"
-        cancelLabel="Cancelar"
-        tone="default"
-        onConfirm={avancarParaConfirmacaoFinal}
-        onCancel={cancelarExclusao}
-      />
-
-      <ConfirmModal
-        open={etapaExclusao === 'final'}
-        title="Apagar permanentemente?"
-        description={
-          projetoParaExcluir
-            ? `Essa ação não pode ser desfeita. "${projetoParaExcluir.nomeProjeto}" e as ocorrências geradas a partir dele serão apagados para sempre.`
-            : undefined
-        }
-        confirmLabel="Apagar"
-        cancelLabel="Cancelar"
-        tone="danger"
+        open={projetoParaExcluir !== null}
+        etapas={[
+          {
+            title: 'Tem certeza?',
+            description: `Você está prestes a apagar o fogo "${projetoParaExcluir?.nomeProjeto}".`,
+            confirmLabel: 'Continuar',
+          },
+          {
+            title: 'Apagar permanentemente?',
+            description: `Essa ação não pode ser desfeita. "${projetoParaExcluir?.nomeProjeto}" e as ocorrências geradas a partir dele serão apagados para sempre.`,
+            confirmLabel: 'Apagar',
+            tone: 'danger',
+          },
+        ]}
         isConfirming={isDeletando}
         onConfirm={confirmarExclusao}
         onCancel={cancelarExclusao}

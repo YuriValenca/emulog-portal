@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import clsx from 'clsx';
 import { Modal } from '@/components/ui/Modal/Modal';
+import { ConfirmModal } from '@/components/ui/ConfirmModal/ConfirmModal';
 import { Input } from '@/components/ui/Input/Input';
 import { Select } from '@/components/ui/Select/Select';
 import { MultiSelect } from '@/components/ui/Multiselect/Multiselect';
@@ -384,48 +385,27 @@ export default function CriarFogoModal({
         </form>
       </Modal>
 
-      <Modal
+      <ConfirmModal
         open={pendingConfirmation !== null}
-        onOpenChange={(v) => !v && setPendingConfirmation(null)}
         title="Confirmar densidade"
-        width={300}
-      >
-        {pendingConfirmation && (
-          <div className={styles.confirmPopup}>
-            <p>
-              Confirma densidade {pendingConfirmation.tipo === 'inicial' ? 'inicial' : 'final'} de {pendingConfirmation.numero} g/cm³ para a amostra {pendingConfirmation.amostraIndex + 1}?
-            </p>
-            <div className={styles.confirmActions}>
-              <Button type="button" variant="ghost" onClick={() => setPendingConfirmation(null)}>
-                Cancelar
-              </Button>
-              <Button type="button" variant="ok" onClick={handleConfirmDensidade}>
-                Confirmar
-              </Button>
-            </div>
-          </div>
-        )}
-      </Modal>
+        description={
+          pendingConfirmation
+            ? `Confirma densidade ${pendingConfirmation.tipo} de ${pendingConfirmation.numero} g/cm³ para a amostra ${pendingConfirmation.amostraIndex + 1}?`
+            : undefined
+        }
+        onConfirm={handleConfirmDensidade}
+        onCancel={() => setPendingConfirmation(null)}
+      />
 
-      <Modal
+      <ConfirmModal
         open={confirmClearOpen}
-        onOpenChange={(v) => !v && setConfirmClearOpen(false)}
         title="Limpar valores?"
-        description="Essa ação não pode ser desfeita."
-        width={350}
-      >
-        <div className={styles.confirmPopup}>
-          <p>Tem certeza que deseja limpar todos os valores preenchidos neste formulário?</p>
-          <div className={styles.confirmActions}>
-            <Button type="button" variant="ghost" onClick={() => setConfirmClearOpen(false)}>
-              Cancelar
-            </Button>
-            <Button type="button" variant="cancel" onClick={handleClear}>
-              Limpar
-            </Button>
-          </div>
-        </div>
-      </Modal>
+        description="Todos os valores preenchidos neste formulário serão apagados. Essa ação não pode ser desfeita."
+        confirmLabel="Limpar"
+        tone="danger"
+        onConfirm={handleClear}
+        onCancel={() => setConfirmClearOpen(false)}
+      />
     </>
   );
 }

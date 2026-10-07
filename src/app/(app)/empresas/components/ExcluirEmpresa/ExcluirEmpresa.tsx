@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/Button/Button';
-import ConfirmModal from '@/components/layout/ConfirmModal/ConfirmModal';
+import { ConfirmModal } from '@/components/ui/ConfirmModal/ConfirmModal';
 import { useToast } from '@/components/ui/Toast/Toast';
 import { MENSAGEM_BLOQUEIO, useExcluirEmpresa, verificarBloqueioExclusao } from '@/hooks/useExcluirEmpresa';
 import type { Company } from '@/types';

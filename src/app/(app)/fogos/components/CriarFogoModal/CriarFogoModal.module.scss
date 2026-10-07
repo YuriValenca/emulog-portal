@@ -149,15 +149,3 @@
   font-size: 12px;
   color: var(--text-secondary, #888);
 }
-
-.confirmPopup {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-default);
-}
-
-.confirmActions {
-  display: flex;
-  justify-content: flex-end;
-  gap: var(--spacing-xsmall);
-}

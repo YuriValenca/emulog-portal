@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { Pagination } from '@/components/ui/Pagination/Pagination';
 import { DEFAULT_PAGE_SIZE, PAGE_SIZE_OPTIONS } from '@/hooks/fogos/useProjetos';
 import { Plus, Settings, Trash2 } from 'lucide-react';
@@ -20,9 +21,7 @@ import { ActionsMenu } from '@/components/ui/ActionsMenu/ActionsMenu';
 import { useToast } from '@/components/ui/Toast/Toast';
 import CriarAutomacaoModal, { type CriarAutomacaoValues } from './components/CriarAutomacaoModal/CriarAutomacaoModal';
 import ConfigurarAutomacoesModal from './components/ConfigurarAutomacoesModal/ConfigurarAutomacoesModal';
-import ConfirmarRemocaoAutomacaoModal from './components/ConfirmarRemocaoAutomacaoModal/ConfirmarRemocaoAutomacaoModal';
-import ConfirmarRemocaoFinalModal from './components/ConfirmarRemocaoFinalModal/ConfirmarRemocaoFinalModal';
-import ConfirmModal from '@/components/layout/ConfirmModal/ConfirmModal';
+import { ConfirmModal } from '@/components/ui/ConfirmModal/ConfirmModal';
 import type { Ocorrencia, OcorrenciaStatus, OcorrenciaTipo } from '@/types';
 import type { RegraDeteccao } from '@/schemas/regraDeteccao';
 import styles from './page.module.scss';
@@ -89,8 +88,6 @@ function dentroDoPeriodoDoFogo(o: Ocorrencia, inicio: string, fim: string): bool
 
 const OPCOES_POR_PAGINA = PAGE_SIZE_OPTIONS.map((n) => ({ value: String(n), label: `${n} por página` }));
 
-type EtapaExclusao = 'aviso' | 'confirmacao' | null;
-
 export default function OcorrenciasPage() {
   const { companyId, appUser, isSuperadmin } = useAppAuth();
   const { toast } = useToast();
@@ -118,9 +115,6 @@ export default function OcorrenciasPage() {
   const [configurarModalOpen, setConfigurarModalOpen] = useState(false);
 
   const [regraParaExcluir, setRegraParaExcluir] = useState<RegraDeteccao | null>(null);
-  const [etapaExclusao, setEtapaExclusao] = useState<EtapaExclusao>(null);
-  const [quantidadeOcorrencias, setQuantidadeOcorrencias] = useState<number | null>(null);
-  const [carregandoQuantidade, setCarregandoQuantidade] = useState(false);
 
   const [ocorrenciaParaExcluir, setOcorrenciaParaExcluir] = useState<Ocorrencia | null>(null);
 
@@ -212,32 +206,22 @@ export default function OcorrenciasPage() {
     await criarRegra({ companyId, ...values });
   };
 
-  const resetarFluxoExclusao = () => {
-    setEtapaExclusao(null);
-    setRegraParaExcluir(null);
-    setQuantidadeOcorrencias(null);
-    setCarregandoQuantidade(false);
-  };
+  const quantidadeDaRegraQuery = useQuery({
+    queryKey: ['ocorrenciasDaRegra', regraParaExcluir?.id],
+    queryFn: () => contarOcorrenciasDaRegra(regraParaExcluir!),
+    enabled: regraParaExcluir !== null,
+    gcTime: 0,
+  });
 
-  const handleSolicitarExclusao = async (regra: RegraDeteccao) => {
+  const handleSolicitarExclusao = (regra: RegraDeteccao) => {
     setConfigurarModalOpen(false);
     setRegraParaExcluir(regra);
-    setEtapaExclusao('aviso');
-    setCarregandoQuantidade(true);
-    setQuantidadeOcorrencias(null);
-    const quantidade = await contarOcorrenciasDaRegra(regra);
-    setQuantidadeOcorrencias(quantidade);
-    setCarregandoQuantidade(false);
   };
 
-  const handleProsseguirExclusao = () => {
-    setEtapaExclusao('confirmacao');
-  };
-
-  const handleConfirmarExclusaoFinal = async () => {
+  const handleConfirmarExclusaoRegra = async () => {
     if (!regraParaExcluir || !companyId) return;
     await excluirRegra(regraParaExcluir);
-    resetarFluxoExclusao();
+    setRegraParaExcluir(null);
   };
 
   const handleSolicitarExclusaoOcorrencia = (ocorrencia: Ocorrencia) => {
@@ -458,23 +442,39 @@ export default function OcorrenciasPage() {
         onSolicitarExclusao={handleSolicitarExclusao}
       />
 
-      <ConfirmarRemocaoAutomacaoModal
-        open={etapaExclusao === 'aviso'}
-        onOpenChange={(open) => {
-          if (!open) resetarFluxoExclusao();
-        }}
-        onProsseguir={handleProsseguirExclusao}
-        quantidadeOcorrencias={quantidadeOcorrencias}
-        carregandoQuantidade={carregandoQuantidade}
-      />
-
-      <ConfirmarRemocaoFinalModal
-        open={etapaExclusao === 'confirmacao'}
-        onOpenChange={(open) => {
-          if (!open) resetarFluxoExclusao();
-        }}
-        onConfirmar={handleConfirmarExclusaoFinal}
-        confirmando={isExcluindoRegra}
+      <ConfirmModal
+        open={regraParaExcluir !== null}
+        etapas={[
+          {
+            title: 'Remover automação?',
+            tone: 'danger',
+            confirmLabel: 'Continuar',
+            carregando: quantidadeDaRegraQuery.isPending,
+            textoCarregando: 'Verificando ocorrências vinculadas...',
+            description: (
+              <>
+                <p>
+                  Essa automação já gerou <strong>{quantidadeDaRegraQuery.data ?? 0} ocorrência(s)</strong>. Ao
+                  remover a automação, todas elas serão apagadas permanentemente, mesmo as que já estiverem em
+                  acompanhamento.
+                </p>
+                <p>
+                  Se você recriar uma automação equivalente, os fogos que ainda se enquadrarem vão gerar novas
+                  ocorrências, mas o histórico das atuais não volta.
+                </p>
+              </>
+            ),
+          },
+          {
+            title: 'Confirmar exclusão definitiva',
+            tone: 'danger',
+            description: 'Essa automação e todas as ocorrências geradas por ela serão removidas. Essa ação não pode ser desfeita.',
+            confirmLabel: 'Remover automação e ocorrências',
+          },
+        ]}
+        isConfirming={isExcluindoRegra}
+        onConfirm={handleConfirmarExclusaoRegra}
+        onCancel={() => setRegraParaExcluir(null)}
       />
 
       <ConfirmModal

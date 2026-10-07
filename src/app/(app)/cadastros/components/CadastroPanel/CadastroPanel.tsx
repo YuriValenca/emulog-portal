@@ -7,7 +7,7 @@ import { Table } from '@/components/ui/Table/Table';
 import { Button } from '@/components/ui/Button/Button';
 import { Modal } from '@/components/ui/Modal/Modal';
 import { Spinner } from '@/components/ui/Spinner/Spinner';
-import ConfirmModal from '@/components/layout/ConfirmModal/ConfirmModal';
+import { ConfirmModal } from '@/components/ui/ConfirmModal/ConfirmModal';
 import { useToast } from '@/components/ui/Toast/Toast';
 import styles from '../Tabs/CadastrosTab.module.scss';
 

@@ -52,6 +52,25 @@
   color: var(--text-muted);
   margin: 0 0 var(--spacing-default);
   line-height: 1.5;
+
+  p {
+    margin: 0;
+  }
+
+  p + p {
+    margin-top: var(--spacing-xsmall);
+  }
+
+  strong {
+    color: var(--text);
+  }
+}
+
+.carregando {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-xsmall);
 }
 
 .actions {

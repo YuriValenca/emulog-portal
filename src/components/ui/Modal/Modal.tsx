@@ -25,7 +25,7 @@ export function Modal({ open, onOpenChange, title, description, headerAction, ch
     <RadixDialog.Root open={open} onOpenChange={onOpenChange}>
       <RadixDialog.Portal>
         <RadixDialog.Overlay className={styles.overlay} data-overlay-modal="" />
-        <RadixDialog.Content className={styles.content} style={contentStyle}>
+        <RadixDialog.Content className={styles.content} style={contentStyle} data-conteudo-modal="">
           <div className={styles.header}>
             <div>
               <RadixDialog.Title className={styles.title}>{title}</RadixDialog.Title>

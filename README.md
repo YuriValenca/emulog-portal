@@ -82,8 +82,8 @@ src/
 │     ├─ dashboard/ cadastros/ fogos/ ocorrencias/ vencimentos/ empresas/
 │     └─ */components/      componentes usados só naquela rota (colocation)
 ├─ components/
-│  ├─ ui/                   design system: Button, Input, Modal, Table, Select…
-│  └─ layout/               Sidebar, Topbar, ConfirmModal, ScanProgressCard
+│  ├─ ui/                   design system: Button, Input, Modal, ConfirmModal, Table, Select…
+│  └─ layout/               Sidebar, Topbar, ScanProgressCard
 ├─ hooks/                   um hook por domínio, encapsulando queries e mutations
 ├─ lib/                     regra de negócio pura, sem React e sem Firebase
 ├─ schemas/                 schemas Zod — a fonte de verdade dos tipos

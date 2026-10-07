@@ -16,7 +16,7 @@ import { Spinner } from '@/components/ui/Spinner/Spinner';
 import { StatusPill } from '@/components/ui/StatusPill/StatusPill';
 import { ActionsMenu } from '@/components/ui/ActionsMenu/ActionsMenu';
 import { Tabs } from '@/components/ui/Tabs/Tabs';
-import ConfirmModal from '@/components/layout/ConfirmModal/ConfirmModal';
+import { ConfirmModal } from '@/components/ui/ConfirmModal/ConfirmModal';
 import CriarVencimentoModal from './components/CriarVencimentoModal/CriarVencimentoModal';
 import RenovarVencimentoModal from './components/RenovarVencimentoModal/RenovarVencimentoModal';
 import ConfigurarAlertaModal from './components/ConfigurarAlertaModal/ConfigurarAlertaModal';
