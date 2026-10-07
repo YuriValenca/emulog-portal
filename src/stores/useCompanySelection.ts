@@ -2,7 +2,7 @@ import { create } from 'zustand';
 
 interface CompanySelectionState {
   selectedCompanyId: string | null;
-  setSelectedCompanyId: (companyId: string) => void;
+  setSelectedCompanyId: (companyId: string | null) => void;
 }
 
 export const useCompanySelection = create<CompanySelectionState>((set) => ({

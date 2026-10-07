@@ -72,7 +72,7 @@ service cloud.firestore {
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['alertaVencimento', 'faixaDensidade'])
           && (!('faixaDensidade' in request.resource.data) || faixaDensidadeValida(request.resource.data.faixaDensidade))
         );
-      allow delete: if false;
+      allow delete: if isSuperadmin();
 
       match /licenses/{licenseId} {
         allow read: if signedIn() && (isSuperadmin() || sameCompany(companyId));
