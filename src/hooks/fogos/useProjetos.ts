@@ -235,18 +235,23 @@ interface DeletarProjetoInput {
  * empresa — sem ele a consulta inteira é negada.
  */
 async function deletarProjeto({ id, companyId }: DeletarProjetoInput): Promise<string> {
-  const ocorrenciasSnap = await getDocs(
-    query(
-      collection(db, 'ocorrencias'),
-      where('companyId', '==', companyId),
-      where('projetoId', '==', id)
-    )
-  );
+  const [ocorrenciasSnap, midiasSnap] = await Promise.all([
+    getDocs(
+      query(
+        collection(db, 'ocorrencias'),
+        where('companyId', '==', companyId),
+        where('projetoId', '==', id)
+      )
+    ),
+    // O Firestore não apaga a subcoleção junto com o documento pai
+    getDocs(query(collection(db, 'projetos', id, 'midias'), where('companyId', '==', companyId))),
+  ]);
 
   const batch = writeBatch(db);
   batch.delete(doc(db, 'projetos', id));
   batch.delete(doc(db, 'projetos_meta', id));
   ocorrenciasSnap.docs.forEach((docSnap) => batch.delete(docSnap.ref));
+  midiasSnap.docs.forEach((docSnap) => batch.delete(docSnap.ref));
   await batch.commit();
 
   return id;

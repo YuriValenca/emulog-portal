@@ -171,6 +171,7 @@ alteráveis com `affectedKeys().hasOnly([...])`.
 | `users` | papel e vínculo com a empresa |
 | `caminhoes` · `operadores` · `produtos` · `clientes` | cadastros por empresa |
 | `projetos` | o fogo completo, com amostras |
+| `projetos/{id}/midias` | fotos da operação, em base64 no próprio documento (< 1 MB) enquanto não há Storage |
 | `projetos_meta` | espelho leve do fogo (nome, data, empresa) para listar e paginar sem puxar as amostras |
 | `regras_deteccao` | regras de diferença de Kg que geram ocorrência |
 | `ocorrencias` | desvios, automáticos e manuais |
@@ -179,6 +180,10 @@ alteráveis com `affectedKeys().hasOnly([...])`.
 
 `projetos_meta` existe porque um fogo com muitas amostras é pesado: a lista carrega só
 o meta e busca o documento completo apenas da página visível.
+
+O Firestore não apaga subcoleção junto com o documento pai, então a exclusão de fogo
+(`deletarProjeto`) apaga no mesmo batch `projetos`, `projetos_meta`, as `ocorrencias` e as
+fotos em `projetos/{id}/midias`.
 
 ---
 
