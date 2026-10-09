@@ -13,6 +13,15 @@
   width: fit-content;
 }
 
+.listLarguraTotal {
+  display: flex;
+  width: 100%;
+
+  .trigger {
+    flex: 1;
+  }
+}
+
 .trigger {
   padding: var(--spacing-xsmall) var(--spacing-default);
   border: none;

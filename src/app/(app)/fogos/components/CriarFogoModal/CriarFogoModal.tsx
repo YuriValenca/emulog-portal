@@ -1,32 +1,26 @@
 'use client';
 
 import { useState } from 'react';
-import {
-  useForm, useFieldArray, useWatch,
-} from 'react-hook-form';
+import { useForm, useFieldArray, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import {
-  Plus, ChevronDown, ChevronUp, Eraser, Check, CheckCircle2,
-} from 'lucide-react';
-import clsx from 'clsx';
+import { Eraser } from 'lucide-react';
 import { FormModal } from '@/components/layout/FormModal/FormModal';
 import { ConfirmModal } from '@/components/ui/ConfirmModal/ConfirmModal';
 import { Input } from '@/components/ui/Input/Input';
 import { Select } from '@/components/ui/Select/Select';
 import { MultiSelect } from '@/components/ui/Multiselect/Multiselect';
 import { Button } from '@/components/ui/Button/Button';
+import { useToast } from '@/components/ui/Toast/Toast';
 import { useCreateProjeto } from '@/hooks/fogos/useProjetos';
 import { paraKg } from '@/helpers/parseNumbers';
+import { formatarKg } from '@/lib/fogoUtils';
 import type { Produto, Caminhao, Operador } from '@/types';
+import { SecaoAmostras, isAmostraCompleta, type TipoDensidade } from './SecaoAmostras';
+import { SecaoFurosFormulario } from './SecaoFurosFormulario';
+import { SecaoFotosFormulario } from './SecaoFotosFormulario';
+import { furosParaSalvar, pendenciasDosFuros, somarCargasDigitadas, type FurosFormulario } from './furosFormulario';
 import styles from './CriarFogoModal.module.scss';
-
-function parseDensidade(value: string): number | null {
-  if (!value) return null;
-  const normalizado = value.replace(',', '.').trim();
-  const numero = Number(normalizado);
-  return Number.isFinite(numero) ? numero : null;
-}
 
 const amostraSchema = z.object({
   densidadeInicial: z.number().nullable(),
@@ -68,7 +62,6 @@ const formSchema = z.object({
 });
 
 type FormValues = z.infer<typeof formSchema>;
-type Tipo = 'inicial' | 'final';
 
 const amostraVazia = () => ({ densidadeInicial: null, densidadeFinal: null });
 
@@ -88,7 +81,7 @@ const FORM_ID = 'criar-fogo-form';
 
 interface PendingConfirmation {
   amostraIndex: number;
-  tipo: Tipo;
+  tipo: TipoDensidade;
   numero: number;
 }
 
@@ -106,12 +99,15 @@ export default function CriarFogoModal({
   open, onClose, companyId, uidUsuario, produtos, caminhoes, operadores,
 }: CriarFogoModalProps) {
   const { criarProjeto, isCriando } = useCreateProjeto();
+  const { toast } = useToast();
   const [equipeIds, setEquipeIds] = useState<string[]>([]);
   const [portalContainer, setPortalContainer] = useState<HTMLFormElement | null>(null);
-  const [collapsedIds, setCollapsedIds] = useState<Set<string>>(new Set());
   const [confirmClearOpen, setConfirmClearOpen] = useState(false);
-  const [rawInputs, setRawInputs] = useState<Record<string, { inicial: string; final: string }>>({});
   const [pendingConfirmation, setPendingConfirmation] = useState<PendingConfirmation | null>(null);
+  const [versaoAmostras, setVersaoAmostras] = useState(0);
+  const [furos, setFuros] = useState<FurosFormulario | null>(null);
+  const [fotos, setFotos] = useState<string[]>([]);
+  const [erroAoSalvar, setErroAoSalvar] = useState<string | null>(null);
 
   const {
     register, control, handleSubmit, reset, setValue, setError, clearErrors, formState: { errors },
@@ -130,29 +126,7 @@ export default function CriarFogoModal({
 
   const maxDate = new Date().toISOString().split('T')[0];
 
-  const toggleCollapse = (fieldId: string) => {
-    setCollapsedIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(fieldId)) {
-        next.delete(fieldId);
-      } else {
-        next.add(fieldId);
-      }
-      return next;
-    });
-  };
-
-  const getRaw = (fieldId: string, tipo: Tipo) => rawInputs[fieldId]?.[tipo] ?? '';
-
-  const handleRawChange = (fieldId: string, tipo: Tipo, value: string) => {
-    setRawInputs((prev) => ({ ...prev, [fieldId]: { ...prev[fieldId], [tipo]: value } }));
-  };
-
-  const requestConfirm = (amostraIndex: number, fieldId: string, tipo: Tipo) => {
-    const raw = getRaw(fieldId, tipo);
-    const numero = parseDensidade(raw);
-    if (numero === null) return;
-
+  const pedirConfirmacao = (amostraIndex: number, tipo: TipoDensidade, numero: number) => {
     const amostraAtual = amostrasValues[amostraIndex];
     const path = `amostras.${amostraIndex}.densidade${tipo === 'inicial' ? 'Inicial' : 'Final'}` as const;
 
@@ -177,25 +151,23 @@ export default function CriarFogoModal({
     setPendingConfirmation(null);
   };
 
-  const isAmostraCompleta = (amostra: { densidadeInicial: number | null; densidadeFinal: number | null }) => (
-    amostra.densidadeInicial !== null && amostra.densidadeFinal !== null
-  );
-
+  const pendenciasFuros = pendenciasDosFuros(furos);
   const nomePreenchido = Boolean(nomeProjeto?.trim());
   const dataPreenchida = Boolean(dataValue);
   const densidadesCompletas = amostrasValues.every(isAmostraCompleta);
-  const podeSalvar = nomePreenchido && dataPreenchida && densidadesCompletas;
+  const podeSalvar = nomePreenchido && dataPreenchida && densidadesCompletas && pendenciasFuros.length === 0;
 
   const handleClear = () => {
     reset(defaultFormValues);
     setEquipeIds([]);
-    setCollapsedIds(new Set());
-    setRawInputs({});
+    setVersaoAmostras((versao) => versao + 1);
+    setFuros(null);
+    setFotos([]);
     setPendingConfirmation(null);
     setConfirmClearOpen(false);
   };
 
-  const onSubmit = async (values: FormValues) => {
+  const montarFogo = (values: FormValues) => {
     const caminhao = caminhoes.find((c) => c.id === values.caminhaoId);
     const produto = produtos.find((p) => p.id === values.produtoId);
     const equipe = equipeIds
@@ -203,35 +175,51 @@ export default function CriarFogoModal({
       .filter((o): o is Operador => Boolean(o))
       .map((o) => ({ id: o.id, nome: o.nome }));
 
-    const amostras = values.amostras.map((amostra, index) => ({
-      amostraId: index + 1,
-      densidadeInicial: amostra.densidadeInicial,
-      densidadeFinal: amostra.densidadeFinal,
-    }));
-
-    await criarProjeto({
+    return {
       nomeProjeto: values.nomeProjeto,
       companyId,
       uidUsuario,
       data: values.data,
-      amostras,
+      amostras: values.amostras.map((amostra, index) => ({
+        amostraId: index + 1,
+        densidadeInicial: amostra.densidadeInicial,
+        densidadeFinal: amostra.densidadeFinal,
+      })),
       numeroNF: values.numeroNF,
       kgPrevisto: paraKg(values.kgPrevisto),
-      kgAplicado: paraKg(values.kgAplicado),
+      kgAplicado: furos ? somarCargasDigitadas(furos.itens) : paraKg(values.kgAplicado),
       caminhao: caminhao ? { id: caminhao.id, placa: caminhao.placa } : null,
       produto: produto ? { id: produto.id, nome: produto.nome } : null,
       equipe,
       informacoesGerais: values.informacoesGerais,
-    });
+      furos: furos ? furosParaSalvar(furos) : null,
+      fotos,
+    };
+  };
 
-    onClose();
+  const onSubmit = async (values: FormValues) => {
+    setErroAoSalvar(null);
+    try {
+      const { fotosEnviadas } = await criarProjeto(montarFogo(values));
+      if (!fotosEnviadas) {
+        toast({
+          title: 'Fogo salvo, mas as fotos não foram enviadas',
+          description: 'Abra o fogo na lista e envie as fotos pela galeria.',
+        });
+      }
+      onClose();
+    } catch (erro) {
+      console.error('[CriarFogoModal] falha ao salvar fogo:', erro);
+      setErroAoSalvar('Não foi possível salvar o fogo. Confira sua permissão nesta empresa e tente novamente.');
+    }
   };
 
   const dicaParaSalvar = !podeSalvar && (
     <>
       {!nomePreenchido && 'Informe o nome do fogo. '}
       {!dataPreenchida && 'Informe a data. '}
-      {!densidadesCompletas && 'Confirme a densidade inicial e final de cada amostra.'}
+      {!densidadesCompletas && 'Confirme a densidade inicial e final de cada amostra. '}
+      {pendenciasFuros.join(' ')}
     </>
   );
 
@@ -255,6 +243,7 @@ export default function CriarFogoModal({
         salvando={isCriando}
         desabilitado={!podeSalvar}
         complementoRodape={dicaParaSalvar}
+        erro={erroAoSalvar}
       >
         <form id={FORM_ID} ref={setPortalContainer} onSubmit={handleSubmit(onSubmit)} className={styles.form}>
           <Input label="Nome do fogo" {...register('nomeProjeto')} errorMessage={errors.nomeProjeto?.message} />
@@ -272,7 +261,17 @@ export default function CriarFogoModal({
 
           <div className={styles.row}>
             <Input label="Kg previsto" {...register('kgPrevisto')} errorMessage={errors.kgPrevisto?.message} />
-            <Input label="Kg aplicado" {...register('kgAplicado')} errorMessage={errors.kgAplicado?.message} />
+            {furos ? (
+              <Input
+                key="kg-aplicado-dos-furos"
+                label="Kg aplicado (soma dos furos)"
+                value={formatarKg(somarCargasDigitadas(furos.itens))}
+                disabled
+                readOnly
+              />
+            ) : (
+              <Input key="kg-aplicado-digitado" label="Kg aplicado" {...register('kgAplicado')} errorMessage={errors.kgAplicado?.message} />
+            )}
           </div>
 
           <div className={styles.row}>
@@ -300,82 +299,20 @@ export default function CriarFogoModal({
             portalContainer={portalContainer}
           />
 
-          <div className={styles.amostras}>
-            {fields.map((field, amostraIndex) => {
-              const amostraAtual = amostrasValues[amostraIndex];
-              const completa = amostraAtual ? isAmostraCompleta(amostraAtual) : false;
-              const isCollapsed = collapsedIds.has(field.id);
+          <SecaoAmostras
+            key={versaoAmostras}
+            campos={fields}
+            amostras={amostrasValues}
+            mensagemDeErro={(amostraIndex, tipo) =>
+              errors.amostras?.[amostraIndex]?.[tipo === 'inicial' ? 'densidadeInicial' : 'densidadeFinal']?.message
+            }
+            onAdicionar={() => append(amostraVazia())}
+            onPedirConfirmacao={pedirConfirmacao}
+          />
 
-              return (
-                <div key={field.id} className={styles.amostraBox}>
-                  <div className={styles.amostraHeader}>
-                    <span className={styles.amostraTitulo}>Amostra {amostraIndex + 1}</span>
-                    <span className={clsx(styles.amostraProgress, completa && styles.amostraProgressDone)}>
-                      {completa ? 'Completa' : 'Incompleta'}
-                    </span>
-                    <button
-                      type="button"
-                      className={styles.collapseBtn}
-                      onClick={() => toggleCollapse(field.id)}
-                      aria-expanded={!isCollapsed}
-                      aria-label={isCollapsed ? 'Expandir amostra' : 'Recolher amostra'}
-                    >
-                      {isCollapsed ? <ChevronDown size={16} /> : <ChevronUp size={16} />}
-                    </button>
-                  </div>
+          <SecaoFurosFormulario furos={furos} setFuros={setFuros} />
 
-                  <div
-                    className={clsx(styles.collapseWrapper, !isCollapsed && styles.collapseWrapperOpen)}
-                    aria-hidden={isCollapsed}
-                  >
-                    <div className={styles.collapseInner}>
-                      {(['inicial', 'final'] as Tipo[]).map((tipo) => {
-                        const confirmado = tipo === 'inicial' ? amostraAtual?.densidadeInicial : amostraAtual?.densidadeFinal;
-                        const label = tipo === 'inicial' ? 'Densidade inicial' : 'Densidade final';
-                        const errorMessage = tipo === 'inicial'
-                          ? errors.amostras?.[amostraIndex]?.densidadeInicial?.message
-                          : errors.amostras?.[amostraIndex]?.densidadeFinal?.message;
-
-                        if (confirmado !== null && confirmado !== undefined) {
-                          return (
-                            <div key={tipo} className={styles.densidadeConfirmedRow}>
-                              <CheckCircle2 size={16} color="var(--ok)" />
-                              <span>{label}: {confirmado.toFixed(2)} g/cm³</span>
-                            </div>
-                          );
-                        }
-
-                        return (
-                          <div key={tipo} className={styles.densidadeRow}>
-                            <div className={styles.densidadeInputWrapper}>
-                              <Input
-                                label={label}
-                                placeholder="g/cm³"
-                                value={getRaw(field.id, tipo)}
-                                onChange={(e) => handleRawChange(field.id, tipo, e.target.value)}
-                                errorMessage={errorMessage}
-                              />
-                            </div>
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              icon={<Check size={20} />}
-                              disabled={parseDensidade(getRaw(field.id, tipo)) === null}
-                              onClick={() => requestConfirm(amostraIndex, field.id, tipo)}
-                            />
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-
-            <Button type="button" variant="ghost" icon={<Plus size={16} />} onClick={() => append(amostraVazia())}>
-              Adicionar amostra
-            </Button>
-          </div>
+          <SecaoFotosFormulario fotos={fotos} setFotos={setFotos} />
 
           <Input label="Informações gerais" {...register('informacoesGerais')} />
         </form>

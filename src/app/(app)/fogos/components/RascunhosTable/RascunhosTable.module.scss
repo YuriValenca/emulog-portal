@@ -1,5 +1,10 @@
+.rolagem {
+  overflow-x: auto;
+}
+
 .table {
   width: 100%;
+  white-space: nowrap;
   border-collapse: collapse;
   font-size: 14px;
 }
@@ -14,8 +19,14 @@
   padding-bottom: var(--spacing-xsmall);
 }
 
+.table th,
 .table td {
-  padding: 10px 0;
+  padding-right: var(--spacing-default);
+}
+
+.table td {
+  padding-top: 10px;
+  padding-bottom: 10px;
   border-top: 1px solid var(--border);
 }
 

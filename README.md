@@ -127,6 +127,28 @@ O mesmo campo `densidade` chega de três jeitos, dependendo de quem gravou o fog
 `lib/amostras.ts` tem os type guards e a normalização. **Não acesse `amostra.peso` ou
 `amostra.densidade` direto** — use `isAmostraGrupo` / `isAmostraManual` / `numeroOuNull`.
 
+### Furos
+
+Etapa opcional, gravada em `projetos.furos` (e em `projetos_rascunho.furos` enquanto o fogo
+está em andamento):
+
+```ts
+furos: null | {
+  profundidadePrevista: number; // m, a mesma para todos os furos
+  cargaPrevista: number;        // kg, a mesma para todos os furos
+  itens: { profundidadeReal: number; cargaReal: number }[]; // a ordem é o número do furo
+}
+```
+
+- **Kg aplicado:** quando o fogo tem furos, `informacoesOperacao.kgAplicado` é a soma das
+  `cargaReal`, arredondada em 2 casas. O app e a criação manual do portal calculam e travam o campo.
+- **Rascunho:** qualquer número pode vir `null`, porque o operador ainda está digitando.
+- **Formato inválido vira "sem furos":** o campo tem `.catch(null)` no schema. Inclui o array
+  `[{ kg }]` dos testes antigos do app. Sem isso o `safeParse` da lista descartaria o fogo inteiro.
+- **Imutável depois de concluído:** a rule de update de `projetos` não libera `furos`.
+- **Destaque no detalhe:** os limiares de alerta e crítico ficam em `LIMIARES_DESVIO_FURO`,
+  em `lib/furos.ts`.
+
 ---
 
 ## Autorização
@@ -170,8 +192,8 @@ alteráveis com `affectedKeys().hasOnly([...])`.
 | `companies/{id}/licenses` | licenças do app mobile |
 | `users` | papel e vínculo com a empresa |
 | `caminhoes` · `operadores` · `produtos` · `clientes` | cadastros por empresa |
-| `projetos` | o fogo completo, com amostras |
-| `projetos/{id}/midias` | fotos da operação, em base64 no próprio documento (< 1 MB) enquanto não há Storage |
+| `projetos` | o fogo completo, com amostras e furos |
+| `projetos/{id}/midias` | fotos da operação, em base64 no próprio documento (< 1 MB) enquanto não há Storage; até 10 por fogo, lidas só ao abrir o detalhe |
 | `projetos_meta` | espelho leve do fogo (nome, data, empresa) para listar e paginar sem puxar as amostras |
 | `regras_deteccao` | regras de diferença de Kg que geram ocorrência |
 | `ocorrencias` | desvios, automáticos e manuais |

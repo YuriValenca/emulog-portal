@@ -2,6 +2,7 @@
 
 import * as RadixTabs from '@radix-ui/react-tabs';
 import { ReactNode } from 'react';
+import clsx from 'clsx';
 import styles from './Tabs.module.scss';
 
 interface TabItem {
@@ -15,9 +16,10 @@ interface TabsProps {
   defaultValue?: string;
   value?: string;
   onValueChange?: (value: string) => void;
+  larguraTotal?: boolean;
 }
 
-export function Tabs({ items, defaultValue, value, onValueChange }: TabsProps) {
+export function Tabs({ items, defaultValue, value, onValueChange, larguraTotal = false }: TabsProps) {
   return (
     <RadixTabs.Root
       className={styles.root}
@@ -25,7 +27,7 @@ export function Tabs({ items, defaultValue, value, onValueChange }: TabsProps) {
       value={value}
       onValueChange={onValueChange}
     >
-      <RadixTabs.List className={styles.list}>
+      <RadixTabs.List className={clsx(styles.list, larguraTotal && styles.listLarguraTotal)}>
         {items.map((item) => (
           <RadixTabs.Trigger key={item.value} value={item.value} className={styles.trigger}>
             {item.label}

@@ -7,6 +7,7 @@ import { useRascunhos } from '@/hooks/fogos/useRascunhos';
 import { useUsuarios } from '@/hooks/cadastro/useUsuarios';
 import { useContextoFaixa } from '@/hooks/useContextoFaixa';
 import { useAgora } from '@/hooks/useAgora';
+import { useContagemFotos } from '@/hooks/fogos/useMidias';
 import type { FiltrosState } from '../FiltrosFogos/FiltrosFogos';
 import RascunhosTable from '../RascunhosTable/RascunhosTable';
 import FogoDetailModal from '../FogoDetailModal/FogoDetailModal';
@@ -52,6 +53,7 @@ export default function RascunhosTab({ companyId, filtros, page, onPageChange }:
 
   const totalPaginas = Math.max(1, Math.ceil(filtrados.length / filtros.pageSize));
   const pagina = filtrados.slice((page - 1) * filtros.pageSize, page * filtros.pageSize);
+  const fotosPorRascunho = useContagemFotos(pagina);
 
   const nomePorUid = useMemo(
     () => new Map(usuarios.map((u) => [u.uid, u.nome ?? u.email])),
@@ -91,6 +93,7 @@ export default function RascunhosTab({ companyId, filtros, page, onPageChange }:
         contextoFaixa={contextoFaixa}
         nomePorUid={nomePorUid}
         agora={agora}
+        fotosPorRascunho={fotosPorRascunho}
         onSelect={setSelecionado}
       />
 

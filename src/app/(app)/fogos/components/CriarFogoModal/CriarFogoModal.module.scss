@@ -96,18 +96,6 @@
   gap: var(--spacing-default);
 }
 
-.horaRow {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: var(--spacing-xsmall);
-}
-
-.pesagensList {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-tiny);
-}
-
 .densidadeRow {
   display: flex;
   align-items: flex-end;
@@ -126,7 +114,104 @@
   margin-bottom: var(--spacing-small);
 }
 
-.fieldError {
-  font-size: 12px;
-  color: var(--crit);
+.secaoFuros,
+.secaoFotos {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-small);
+  padding-top: var(--spacing-default);
+  border-top: 1px solid var(--border);
+}
+
+.tituloSecao {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.resumoFuros {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--spacing-xsmall);
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.listaFuros {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-tiny);
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.linhaFuro {
+  display: grid;
+  grid-template-columns: 64px 1fr 1fr 28px;
+  align-items: center;
+  gap: var(--spacing-xsmall);
+}
+
+.rotuloFuro {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.inputFuro {
+  width: 100%;
+  min-width: 0;
+  height: 32px;
+  padding: 0 var(--spacing-xsmall);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 13px;
+
+  &:focus {
+    outline: none;
+    border-color: var(--brand);
+  }
+}
+
+.miniaturas {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+  gap: var(--spacing-xsmall);
+}
+
+.miniatura {
+  position: relative;
+  aspect-ratio: 1;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+}
+
+.removerFoto {
+  position: absolute;
+  top: var(--spacing-tiny);
+  right: var(--spacing-tiny);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border: none;
+  border-radius: var(--radius-50);
+  background: rgba(0, 0, 0, 0.6);
+  color: var(--text);
+  cursor: pointer;
+
+  &:hover {
+    background: var(--crit);
+  }
 }

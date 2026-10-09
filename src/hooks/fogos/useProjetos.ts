@@ -2,13 +2,14 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
-  addDoc, collection, doc, getDoc, getDocs,
-  orderBy, query, setDoc, Timestamp, where, writeBatch,
+  collection, doc, getDoc, getDocs,
+  orderBy, query, Timestamp, where, writeBatch,
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase/client';
-import { projetoSchema, projetoMetaSchema, type Projeto, type ProjetoMeta } from '@/schemas/projeto';
+import { projetoSchema, projetoMetaSchema, type Furos, type Projeto, type ProjetoMeta } from '@/schemas/projeto';
 import { chunk } from '@/lib/chunk';
 import { useOcorrenciaRescan } from '@/hooks/ocorrencias/useOcorrenciasAutoScan';
+import { gravarFotos } from './useMidias';
 
 export const PAGE_SIZE_OPTIONS = [15, 25, 50] as const;
 export const DEFAULT_PAGE_SIZE = 25;
@@ -133,9 +134,27 @@ interface CreateProjetoInput {
   equipe?: { id: string; nome: string }[];
   produto?: { id: string; nome: string } | null;
   informacoesGerais?: string;
+  furos: Furos | null;
+  fotos: string[];
 }
 
-async function criarProjetoManual(input: CreateProjetoInput): Promise<ProjetoMeta> {
+interface ProjetoCriado {
+  meta: ProjetoMeta;
+  fotosEnviadas: boolean;
+}
+
+async function enviarFotosDoFogoNovo(projetoId: string, input: CreateProjetoInput): Promise<boolean> {
+  if (input.fotos.length === 0) return true;
+  try {
+    await gravarFotos({ projetoId, companyId: input.companyId, enviadoPor: input.uidUsuario, imagens: input.fotos });
+    return true;
+  } catch (erro) {
+    console.error('[criarProjetoManual] fogo criado, mas as fotos falharam:', projetoId, erro);
+    return false;
+  }
+}
+
+async function criarProjetoManual(input: CreateProjetoInput): Promise<ProjetoCriado> {
   const [ano, mes, dia] = input.data.split('-').map(Number);
   const agora = new Date();
   const dataCriacao = Timestamp.fromDate(
@@ -172,18 +191,25 @@ async function criarProjetoManual(input: CreateProjetoInput): Promise<ProjetoMet
       produto: input.produto ?? null,
       informacoesGerais: input.informacoesGerais ?? '',
     },
+    furos: input.furos,
   };
 
-  const docRef = await addDoc(collection(db, 'projetos'), dadosDoProjeto);
+  // Id gerado antes da gravação para as fotos poderem ser penduradas no fogo logo em seguida
+  const projetoRef = doc(collection(db, 'projetos'));
   const metaData = {
     nomeProjeto: dadosDoProjeto.nomeProjeto,
     dataCriacao: dadosDoProjeto.dataCriacao,
     uidUsuario: dadosDoProjeto.uidUsuario,
     companyId: dadosDoProjeto.companyId,
   };
-  await setDoc(doc(db, 'projetos_meta', docRef.id), metaData);
+  const batch = writeBatch(db);
+  batch.set(projetoRef, dadosDoProjeto);
+  batch.set(doc(db, 'projetos_meta', projetoRef.id), metaData);
+  await batch.commit();
 
-  return { id: docRef.id, ...metaData };
+  // Fora do batch: até 10 fotos de quase 1 MB estourariam o limite de tamanho da requisição
+  const fotosEnviadas = await enviarFotosDoFogoNovo(projetoRef.id, input);
+  return { meta: { id: projetoRef.id, ...metaData }, fotosEnviadas };
 }
 
 export function useCreateProjeto() {
@@ -191,7 +217,7 @@ export function useCreateProjeto() {
 
   const criarMutation = useMutation({
     mutationFn: criarProjetoManual,
-    onSuccess: (novoMeta) => {
+    onSuccess: ({ meta: novoMeta }) => {
       queryClient.setQueriesData<MetaResult>({ queryKey: ['projetosMeta'] }, (old) => {
         if (!old) return old;
         return {

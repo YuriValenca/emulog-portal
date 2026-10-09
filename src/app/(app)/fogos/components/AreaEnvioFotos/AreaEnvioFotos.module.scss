@@ -1,0 +1,28 @@
+.area {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-xsmall);
+  width: 100%;
+  padding: var(--spacing-default);
+  border: 1px dashed var(--border-hover);
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 13px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.area:hover:not(:disabled),
+.arrastando {
+  border-color: var(--brand);
+  background: var(--brand-soft);
+  color: var(--text);
+}
+
+.area:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}

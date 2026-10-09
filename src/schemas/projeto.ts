@@ -67,6 +67,29 @@ export const informacoesOperacaoSchema = z.object({
   informacoesGerais: z.string(),
 });
 
+export const furoSchema = z.object({
+  profundidadeReal: z.number(),
+  cargaReal: z.number(),
+});
+
+/** A ordem de `itens` é o número do furo (índice + 1). */
+export const furosSchema = z.object({
+  profundidadePrevista: z.number(),
+  cargaPrevista: z.number(),
+  itens: z.array(furoSchema),
+});
+
+const furoEmPreenchimentoSchema = z.object({
+  profundidadeReal: z.number().nullable(),
+  cargaReal: z.number().nullable(),
+});
+
+export const furosEmPreenchimentoSchema = z.object({
+  profundidadePrevista: z.number().nullable(),
+  cargaPrevista: z.number().nullable(),
+  itens: z.array(furoEmPreenchimentoSchema),
+});
+
 export const projetoSchema = z.object({
   id: z.string(),
   nomeProjeto: z.string(),
@@ -80,6 +103,9 @@ export const projetoSchema = z.object({
   calibragem: projetoCalibragemSchema,
   informacoesOperacao: informacoesOperacaoSchema.optional(),
   ocorrenciasVerificadas: z.boolean().optional(),
+  // O `safeParse` da lista descarta o fogo inteiro se falhar: furos fora do formato (inclusive o `[{ kg }]`
+  // dos testes antigos do app) viram "sem furos", e número faltando num furo vira "—" em vez de esconder todos.
+  furos: furosEmPreenchimentoSchema.nullable().optional().catch(null),
 });
 
 export const projetoMetaSchema = z.object({
@@ -98,15 +124,21 @@ export type AmostraManual = z.infer<typeof amostraManualSchema>;
 export type ProjetoCalibragem = z.infer<typeof projetoCalibragemSchema>;
 export type InformacoesOperacao = z.infer<typeof informacoesOperacaoSchema>;
 export type Projeto = z.infer<typeof projetoSchema>;
+export type Furos = z.infer<typeof furosSchema>;
+export type FurosEmPreenchimento = z.infer<typeof furosEmPreenchimentoSchema>;
 
 /** O que a tabela e o modal de detalhe realmente leem — satisfeito por Projeto e por rascunho. */
 export type FogoDetalhavel = {
   id: string;
+  companyId: string;
   nomeProjeto?: string;
   dataCriacao: z.infer<typeof zTimestamp>;
   dataConclusao?: z.infer<typeof zTimestamp>;
   quantidadeAmostras?: number;
   amostras?: AmostraItem[];
   informacoesOperacao?: Partial<InformacoesOperacao>;
+  furos?: FurosEmPreenchimento | null;
+  cliente?: z.infer<typeof clienteRefSchema> | null;
+  calibragem?: ProjetoCalibragem | null;
 };
 export type ProjetoMeta = z.infer<typeof projetoMetaSchema>;
