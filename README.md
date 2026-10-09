@@ -234,5 +234,5 @@ duas linguagens.
 
 - **Sem testes automatizados.** As funções de `lib/` são puras e seriam o primeiro alvo óbvio (`avaliarRegra`, `densidade`, `licenca`, `vencimento`).
 - **Criar e excluir usuário acontece no cliente.** A criação usa uma instância secundária do Firebase Auth para não deslogar o admin. Excluir apaga o documento do Firestore, mas **a conta no Firebase Auth continua existindo** — remover de verdade precisa do Admin SDK, ou seja, do Blaze.
-- **Papel novo só por edição.** As rules só permitem criar usuário com `role: 'user'`; promover a `company_admin` é uma edição posterior.
+- **Conta órfã se o doc for negado.** A conta é criada no Auth antes do `setDoc` em `users`. Se as rules negarem o doc (company_admin só cria `user` ou `company_admin` da própria empresa), a conta de login fica no Auth sem doc.
 - **Módulo de relatórios não existe ainda.** As pastas `relatorios/` estão vazias e o link na Sidebar está desabilitado.

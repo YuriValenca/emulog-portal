@@ -108,7 +108,7 @@ service cloud.firestore {
         || (
           isCompanyAdmin()
           && request.resource.data.companyId == companyId()
-          && request.resource.data.role == 'user'
+          && request.resource.data.role in ['user', 'company_admin']
           && userId == request.resource.data.uid
         );
 
@@ -222,7 +222,8 @@ service cloud.firestore {
 
     match /vencimentos/{id} {
       allow read: if signedIn() && (isSuperadmin() || sameCompanyOrGroup(resource.data.companyId));
-      allow create: if isCompanyAdmin() && sameCompanyOrGroup(request.resource.data.companyId);
+      allow create: if isSuperadmin()
+        || (isCompanyAdmin() && sameCompanyOrGroup(request.resource.data.companyId));
       allow update: if isSuperadmin()
         || (
           isCompanyAdmin()
