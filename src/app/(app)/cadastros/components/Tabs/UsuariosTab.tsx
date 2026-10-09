@@ -55,7 +55,7 @@ export function UsuariosTab({ companyId }: UsuariosTabProps) {
           nome: v.nome.trim(),
           email: v.email.trim().toLowerCase(),
           senha: v.senha,
-          role: 'user',
+          role: v.role,
           companyId: v.companyId,
         }),
       editar: (v) => editarUsuario({ id: v.id, nome: v.nome.trim(), email: v.email.trim(), role: v.role }),
@@ -147,31 +147,22 @@ export function UsuariosTab({ companyId }: UsuariosTabProps) {
           disabled={salvando}
         />
       )}
-      {/* As rules só permitem criar usuário com role 'user' — promover a
-          Company Admin é uma edição. Mostrar o seletor na criação prometia
-          algo que a criação sempre ignorava. */}
-      {editando ? (
-        <div className={styles.row}>
-          <Button
-            variant={values.role === 'user' ? 'brand' : 'ghost'}
-            onClick={() => setValues({ ...values, role: 'user' })}
-            disabled={salvando}
-          >
-            Usuário
-          </Button>
-          <Button
-            variant={values.role === 'company_admin' ? 'brand' : 'ghost'}
-            onClick={() => setValues({ ...values, role: 'company_admin' })}
-            disabled={salvando}
-          >
-            Company Admin
-          </Button>
-        </div>
-      ) : (
-        <p className={styles.hint}>
-          O usuário é criado como Usuário. Para promover a Company Admin, edite o cadastro depois de criar.
-        </p>
-      )}
+      <div className={styles.row}>
+        <Button
+          variant={values.role === 'user' ? 'brand' : 'ghost'}
+          onClick={() => setValues({ ...values, role: 'user' })}
+          disabled={salvando}
+        >
+          Usuário
+        </Button>
+        <Button
+          variant={values.role === 'company_admin' ? 'brand' : 'ghost'}
+          onClick={() => setValues({ ...values, role: 'company_admin' })}
+          disabled={salvando}
+        >
+          Company Admin
+        </Button>
+      </div>
     </CadastroPanel>
   );
 }
