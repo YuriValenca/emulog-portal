@@ -10,7 +10,7 @@ import {
   Plus, ChevronDown, ChevronUp, Eraser, Check, CheckCircle2,
 } from 'lucide-react';
 import clsx from 'clsx';
-import { Modal } from '@/components/ui/Modal/Modal';
+import { FormModal } from '@/components/layout/FormModal/FormModal';
 import { ConfirmModal } from '@/components/ui/ConfirmModal/ConfirmModal';
 import { Input } from '@/components/ui/Input/Input';
 import { Select } from '@/components/ui/Select/Select';
@@ -227,20 +227,12 @@ export default function CriarFogoModal({
     onClose();
   };
 
-  const footerContent = (
-    <div className={styles.footerContent}>
-      {!podeSalvar && (
-        <span className={styles.saveHint}>
-          {!nomePreenchido && 'Informe o nome do fogo. '}
-          {!dataPreenchida && 'Informe a data. '}
-          {!densidadesCompletas && 'Confirme a densidade inicial e final de cada amostra.'}
-        </span>
-      )}
-
-      <Button type="submit" form={FORM_ID} variant="ok" loading={isCriando} disabled={!podeSalvar}>
-        Salvar fogo
-      </Button>
-    </div>
+  const dicaParaSalvar = !podeSalvar && (
+    <>
+      {!nomePreenchido && 'Informe o nome do fogo. '}
+      {!dataPreenchida && 'Informe a data. '}
+      {!densidadesCompletas && 'Confirme a densidade inicial e final de cada amostra.'}
+    </>
   );
 
   const headerActionContent = (
@@ -251,14 +243,18 @@ export default function CriarFogoModal({
 
   return (
     <>
-      <Modal
+      <FormModal
         open={open}
         onOpenChange={(v) => !v && onClose()}
         title="Novo fogo"
         description="Cadastro manual"
         headerAction={headerActionContent}
         width={550}
-        footer={footerContent}
+        rotuloAcao="Salvar fogo"
+        formId={FORM_ID}
+        salvando={isCriando}
+        desabilitado={!podeSalvar}
+        complementoRodape={dicaParaSalvar}
       >
         <form id={FORM_ID} ref={setPortalContainer} onSubmit={handleSubmit(onSubmit)} className={styles.form}>
           <Input label="Nome do fogo" {...register('nomeProjeto')} errorMessage={errors.nomeProjeto?.message} />
@@ -383,7 +379,7 @@ export default function CriarFogoModal({
 
           <Input label="Informações gerais" {...register('informacoesGerais')} />
         </form>
-      </Modal>
+      </FormModal>
 
       <ConfirmModal
         open={pendingConfirmation !== null}

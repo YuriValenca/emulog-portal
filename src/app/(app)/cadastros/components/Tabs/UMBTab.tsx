@@ -74,9 +74,16 @@ export function UmbsTab({ companyId }: UmbsTabProps) {
           </td>
         </tr>
       )}
-      modalOpen={modalOpen}
-      onModalOpenChange={fechar}
-      modalTitle={editando ? 'Editar UMB' : 'Nova UMB'}
+      modal={{
+        open: modalOpen,
+        onOpenChange: fechar,
+        title: editando ? 'Editar UMB' : 'Nova UMB',
+        rotuloAcao: editando ? 'Salvar alterações' : 'Cadastrar UMB',
+        onAcao: handleSalvar,
+        salvando,
+        desabilitado: !values.placa.trim(),
+        erro,
+      }}
     >
       <Input
         id="umb-placa"
@@ -93,15 +100,6 @@ export function UmbsTab({ companyId }: UmbsTabProps) {
         onChange={(e) => setValues({ ...values, tag: e.target.value })}
         disabled={salvando}
       />
-      {erro && <p className={styles.formError}>{erro}</p>}
-      <Button
-        variant="ok"
-        onClick={handleSalvar}
-        loading={salvando}
-        disabled={salvando || !values.placa.trim()}
-      >
-        {editando ? 'Salvar alterações' : 'Cadastrar UMB'}
-      </Button>
     </CadastroPanel>
   );
 }

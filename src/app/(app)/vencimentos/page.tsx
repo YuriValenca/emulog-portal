@@ -16,9 +16,10 @@ import { Spinner } from '@/components/ui/Spinner/Spinner';
 import { StatusPill } from '@/components/ui/StatusPill/StatusPill';
 import { ActionsMenu } from '@/components/ui/ActionsMenu/ActionsMenu';
 import { Tabs } from '@/components/ui/Tabs/Tabs';
+import { Input } from '@/components/ui/Input/Input';
 import { ConfirmModal } from '@/components/ui/ConfirmModal/ConfirmModal';
+import { FormModal } from '@/components/layout/FormModal/FormModal';
 import CriarVencimentoModal from './components/CriarVencimentoModal/CriarVencimentoModal';
-import RenovarVencimentoModal from './components/RenovarVencimentoModal/RenovarVencimentoModal';
 import ConfigurarAlertaModal from './components/ConfigurarAlertaModal/ConfigurarAlertaModal';
 import type { Vencimento, VencimentoTipo } from '@/types';
 import styles from './page.module.scss';
@@ -39,7 +40,7 @@ function itemLabel(v: Vencimento): string {
 }
 
 export default function VencimentosPage() {
-  const { companyId, appUser, company, isSuperadmin, isCompanyAdmin } = useAppAuth();
+  const { companyId, appUser, company, isSuperadmin } = useAppAuth();
   const agora = useAgora();
   const { companyIds } = useCompanyGroup(companyId);
   const { itens: caminhoes } = useCaminhoes(companyId);
@@ -54,6 +55,7 @@ export default function VencimentosPage() {
   const [modalCriarAberto, setModalCriarAberto] = useState(false);
   const [modalConfigAberto, setModalConfigAberto] = useState(false);
   const [vencimentoParaRenovar, setVencimentoParaRenovar] = useState<Vencimento | null>(null);
+  const [novaDataVencimento, setNovaDataVencimento] = useState('');
   const [renovando, setRenovando] = useState(false);
   const [vencimentoParaExcluir, setVencimentoParaExcluir] = useState<Vencimento | null>(null);
   const [excluindo, setExcluindo] = useState(false);
@@ -64,11 +66,17 @@ export default function VencimentosPage() {
       .filter((v) => (filtroTipo ? v.tipo === filtroTipo : true));
   }, [vencimentos, aba, filtroTipo]);
 
-  const handleRenovar = async (data: Date) => {
-    if (!vencimentoParaRenovar) return;
+  const abrirRenovacao = (vencimento: Vencimento) => {
+    setNovaDataVencimento('');
+    setVencimentoParaRenovar(vencimento);
+  };
+
+  const handleRenovar = async () => {
+    if (!vencimentoParaRenovar || !novaDataVencimento) return;
+    const [ano, mes, dia] = novaDataVencimento.split('-').map(Number);
     setRenovando(true);
     try {
-      await editarDataVencimento({ id: vencimentoParaRenovar.id, dataVencimento: data });
+      await editarDataVencimento({ id: vencimentoParaRenovar.id, dataVencimento: new Date(ano, mes - 1, dia, 23, 59, 0) });
       setVencimentoParaRenovar(null);
     } finally {
       setRenovando(false);
@@ -173,7 +181,7 @@ export default function VencimentosPage() {
                         items={
                           aba === 'ativos'
                             ? [
-                                { key: 'renovar', label: 'Renovar', icon: <RefreshCcw size={14} />, onClick: () => setVencimentoParaRenovar(v) },
+                                { key: 'renovar', label: 'Renovar', icon: <RefreshCcw size={14} />, onClick: () => abrirRenovacao(v) },
                                 { key: 'resolver', label: 'Marcar resolvido', icon: <Check size={14} />, onClick: () => marcarResolvido(v.id) },
                                 ...(isSuperadmin
                                   ? [{ key: 'excluir', label: 'Excluir', icon: <Trash2 size={14} />, variant: 'danger' as const, onClick: () => setVencimentoParaExcluir(v) }]
@@ -198,7 +206,7 @@ export default function VencimentosPage() {
         </>
       )}
 
-      {isCompanyAdmin && companyId && appUser && modalCriarAberto && (
+      {companyId && appUser && modalCriarAberto && (
         <CriarVencimentoModal
           open={modalCriarAberto}
           onClose={() => setModalCriarAberto(false)}
@@ -235,14 +243,25 @@ export default function VencimentosPage() {
         onCancel={() => !excluindo && setVencimentoParaExcluir(null)}
       />
 
-      {vencimentoParaRenovar && (
-        <RenovarVencimentoModal
-          vencimento={vencimentoParaRenovar}
-          onClose={() => setVencimentoParaRenovar(null)}
-          onSalvar={handleRenovar}
-          saving={renovando}
+      <FormModal
+        open={vencimentoParaRenovar !== null}
+        onOpenChange={(aberto) => !aberto && setVencimentoParaRenovar(null)}
+        title="Renovar vencimento"
+        width={340}
+        rotuloAcao="Salvar nova data"
+        onAcao={handleRenovar}
+        salvando={renovando}
+        desabilitado={!novaDataVencimento}
+      >
+        <Input
+          id="renovar-data"
+          type="date"
+          label="Nova data de vencimento"
+          value={novaDataVencimento}
+          onChange={(e) => setNovaDataVencimento(e.target.value)}
+          disabled={renovando}
         />
-      )}
+      </FormModal>
     </div>
   );
 }

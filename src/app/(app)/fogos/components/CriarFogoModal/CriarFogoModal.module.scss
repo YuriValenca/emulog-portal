@@ -130,22 +130,3 @@
   font-size: 12px;
   color: var(--crit);
 }
-
-.footerContent {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--spacing-xsmall);
-  width: 100%;
-
-  button {
-    margin-left: auto;
-    min-width: 170px;
-    max-width: 170px;
-  }
-}
-
-.saveHint {
-  font-size: 12px;
-  color: var(--text-secondary, #888);
-}

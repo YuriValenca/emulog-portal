@@ -44,12 +44,6 @@
   text-align: center;
 }
 
-.form {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-default);
-}
-
 .field {
   display: flex;
   flex-direction: column;
@@ -61,12 +55,10 @@
   color: var(--text-muted);
 }
 
-.formError {
-  font-size: 13px;
-  color: var(--crit);
-  background: var(--crit-soft);
-  border-radius: var(--radius-sm);
-  padding: var(--spacing-xsmall) var(--spacing-small);
+.linhaDupla {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--spacing-xsmall);
 }
 
 .progressWrap {

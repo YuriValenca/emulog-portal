@@ -4,12 +4,11 @@ import { useEffect, useState } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Modal } from '@/components/ui/Modal/Modal';
+import { FormModal } from '@/components/layout/FormModal/FormModal';
 import { Input } from '@/components/ui/Input/Input';
 import { FilePicker } from '@/components/ui/FilePicker/FilePicker';
 import { Select } from '@/components/ui/Select/Select';
 import { Switch } from '@/components/ui/Switch/Switch';
-import { Button } from '@/components/ui/Button/Button';
 import { useModifyCompany } from '@/hooks/useModifyCompany';
 import { getCompanyModules } from '@/lib/companyModules';
 import { ExcluirEmpresa } from '../ExcluirEmpresa/ExcluirEmpresa';
@@ -169,23 +168,18 @@ export default function EmpresaFormModal({ visible, onClose, empresaEditando, em
   };
 
   return (
-    <Modal
+    <FormModal
       open={visible}
       onOpenChange={(open) => !open && onClose()}
       title={isEditing ? 'Editar Empresa' : 'Nova Empresa'}
       width={500}
-      footer={
-        <>
-          {empresaEditando && !isFounding && (
-            <ExcluirEmpresa empresa={empresaEditando} disabled={saving} onExcluida={onClose} />
-          )}
-          <Button variant="ghost" onClick={onClose} disabled={saving}>
-            Cancelar
-          </Button>
-          <Button variant="ok" onClick={handleSubmit(onSubmit)} loading={saving}>
-            {isEditing ? 'Salvar alterações' : 'Criar empresa'}
-          </Button>
-        </>
+      rotuloAcao={isEditing ? 'Salvar alterações' : 'Criar empresa'}
+      onAcao={handleSubmit(onSubmit)}
+      salvando={saving}
+      complementoRodape={
+        empresaEditando && !isFounding && (
+          <ExcluirEmpresa empresa={empresaEditando} disabled={saving} onExcluida={onClose} />
+        )
       }
     >
       <form className={styles.form} onSubmit={handleSubmit(onSubmit)}>
@@ -274,6 +268,6 @@ export default function EmpresaFormModal({ visible, onClose, empresaEditando, em
         </div>
 
       </form>
-    </Modal>
+    </FormModal>
   );
 }

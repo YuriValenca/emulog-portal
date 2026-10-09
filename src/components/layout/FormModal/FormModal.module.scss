@@ -1,0 +1,35 @@
+.corpo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-default);
+}
+
+.erro {
+  font-size: 13px;
+  color: var(--crit);
+  background: var(--crit-soft);
+  border-radius: var(--radius-sm);
+  padding: var(--spacing-xsmall) var(--spacing-small);
+}
+
+.rodape {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-default);
+  width: 100%;
+}
+
+.complemento {
+  flex: 1;
+  min-width: 0;
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+.acoes {
+  display: flex;
+  gap: var(--spacing-xsmall);
+  margin-left: auto;
+  flex-shrink: 0;
+}

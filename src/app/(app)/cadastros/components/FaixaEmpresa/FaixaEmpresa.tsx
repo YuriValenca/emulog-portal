@@ -2,12 +2,12 @@
 
 import { useState } from 'react';
 import { Pencil } from 'lucide-react';
-import { Modal } from '@/components/ui/Modal/Modal';
+import { FormModal } from '@/components/layout/FormModal/FormModal';
 import { Input } from '@/components/ui/Input/Input';
 import { Button } from '@/components/ui/Button/Button';
 import { useAppAuth } from '@/hooks/useAppAuth';
 import { useFaixaDensidadeEmpresa } from '@/hooks/cadastro/useFaixaDensidadeEmpresa';
-import { erroFaixaDigitada, faixaDaEmpresa, lerDensidadeDigitada, type FaixaDensidade } from '@/lib/densidade';
+import { erroFaixaDigitada, faixaDaEmpresa, lerDensidadeDigitada } from '@/lib/densidade';
 import tabStyles from '../Tabs/CadastrosTab.module.scss';
 import styles from './FaixaEmpresa.module.scss';
 
@@ -20,7 +20,34 @@ const formatarDensidade = (valor: number) => valor.toFixed(2).replace('.', ',');
 export function FaixaEmpresa({ companyId }: FaixaEmpresaProps) {
   const { company } = useAppAuth();
   const faixa = faixaDaEmpresa(company);
+  const { salvarFaixaDensidade, isSalvando } = useFaixaDensidadeEmpresa();
   const [aberto, setAberto] = useState(false);
+  const [min, setMin] = useState('');
+  const [max, setMax] = useState('');
+  const [erro, setErro] = useState<string | null>(null);
+
+  const abrir = () => {
+    setMin(formatarDensidade(faixa.min));
+    setMax(formatarDensidade(faixa.max));
+    setErro(null);
+    setAberto(true);
+  };
+
+  const handleSalvar = async () => {
+    if (!companyId) return;
+    const faixaDigitada = { min: lerDensidadeDigitada(min), max: lerDensidadeDigitada(max) };
+    const erroValidacao = erroFaixaDigitada(faixaDigitada.min, faixaDigitada.max);
+    if (erroValidacao) {
+      setErro(erroValidacao);
+      return;
+    }
+    try {
+      await salvarFaixaDensidade({ companyId, faixaDensidade: faixaDigitada });
+      setAberto(false);
+    } catch {
+      setErro('Não foi possível salvar a faixa. Tente novamente.');
+    }
+  };
 
   return (
     <div className={styles.linha}>
@@ -30,46 +57,19 @@ export function FaixaEmpresa({ companyId }: FaixaEmpresaProps) {
           {formatarDensidade(faixa.min)} a {formatarDensidade(faixa.max)} g/cm³
         </strong>
       </p>
-      <Button variant="ghost" icon={<Pencil size={14} />} onClick={() => setAberto(true)} disabled={!companyId}>
+      <Button variant="ghost" icon={<Pencil size={14} />} onClick={abrir} disabled={!companyId}>
         Editar faixa
       </Button>
-      {aberto && companyId && (
-        <FaixaEmpresaModal companyId={companyId} faixaAtual={faixa} onClose={() => setAberto(false)} />
-      )}
-    </div>
-  );
-}
 
-interface FaixaEmpresaModalProps {
-  companyId: string;
-  faixaAtual: FaixaDensidade;
-  onClose: () => void;
-}
-
-function FaixaEmpresaModal({ companyId, faixaAtual, onClose }: FaixaEmpresaModalProps) {
-  const { salvarFaixaDensidade, isSalvando } = useFaixaDensidadeEmpresa();
-  const [min, setMin] = useState(formatarDensidade(faixaAtual.min));
-  const [max, setMax] = useState(formatarDensidade(faixaAtual.max));
-  const [erro, setErro] = useState<string | null>(null);
-
-  const handleSalvar = async () => {
-    const faixa = { min: lerDensidadeDigitada(min), max: lerDensidadeDigitada(max) };
-    const erroValidacao = erroFaixaDigitada(faixa.min, faixa.max);
-    if (erroValidacao) {
-      setErro(erroValidacao);
-      return;
-    }
-    try {
-      await salvarFaixaDensidade({ companyId, faixaDensidade: faixa });
-      onClose();
-    } catch {
-      setErro('Não foi possível salvar a faixa. Tente novamente.');
-    }
-  };
-
-  return (
-    <Modal open onOpenChange={(open) => !open && !isSalvando && onClose()} title="Faixa de densidade da empresa">
-      <div className={tabStyles.form}>
+      <FormModal
+        open={aberto}
+        onOpenChange={setAberto}
+        title="Faixa de densidade da empresa"
+        rotuloAcao="Salvar faixa"
+        onAcao={handleSalvar}
+        salvando={isSalvando}
+        erro={erro}
+      >
         <p className={tabStyles.note}>
           Vale para todo fogo sem produto, inclusive os que vêm do app, no painel, na lista de fogos e nas ocorrências.
           Fogos já verificados não geram ocorrência de novo.
@@ -94,11 +94,7 @@ function FaixaEmpresaModal({ companyId, faixaAtual, onClose }: FaixaEmpresaModal
             />
           </div>
         </div>
-        {erro && <p className={tabStyles.formError}>{erro}</p>}
-        <Button variant="ok" onClick={handleSalvar} loading={isSalvando}>
-          Salvar faixa
-        </Button>
-      </div>
-    </Modal>
+      </FormModal>
+    </div>
   );
 }

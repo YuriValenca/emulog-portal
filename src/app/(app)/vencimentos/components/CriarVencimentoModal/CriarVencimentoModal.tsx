@@ -1,11 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import { Modal } from '@/components/ui/Modal/Modal';
+import { FormModal } from '@/components/layout/FormModal/FormModal';
 import { Select } from '@/components/ui/Select/Select';
 import { Input } from '@/components/ui/Input/Input';
 import { Textarea } from '@/components/ui/Textarea/Textarea';
-import { Button } from '@/components/ui/Button/Button';
 import { useVencimentos } from '@/hooks/vencimentos/useVencimentos';
 import type { Caminhao, Operador, VencimentoTipo } from '@/types';
 import styles from './CriarVencimentoModal.module.scss';
@@ -87,81 +86,76 @@ export default function CriarVencimentoModal({
   };
 
   return (
-    <Modal
+    <FormModal
       open={open}
       onOpenChange={(v) => !v && onClose()}
       title="Novo vencimento"
       width={420}
-      footer={
-        <Button variant="ok" onClick={handleSalvar} loading={isCriando} disabled={isCriando}>
-          Registrar vencimento
-        </Button>
-      }
+      rotuloAcao="Registrar vencimento"
+      onAcao={handleSalvar}
+      salvando={isCriando}
+      erro={erro}
     >
-      <div className={styles.form}>
+      <div className={styles.field}>
+        <span className={styles.label}>Tipo</span>
+        <Select value={tipo} onValueChange={(v) => setTipo(v as VencimentoTipo)} options={TIPO_OPTIONS} disabled={isCriando} />
+      </div>
+
+      {precisaCaminhao && (
         <div className={styles.field}>
-          <span className={styles.label}>Tipo</span>
-          <Select value={tipo} onValueChange={(v) => setTipo(v as VencimentoTipo)} options={TIPO_OPTIONS} disabled={isCriando} />
-        </div>
-
-        {precisaCaminhao && (
-          <div className={styles.field}>
-            <span className={styles.label}>UMB</span>
-            <Select
-              value={caminhaoId}
-              onValueChange={setCaminhaoId}
-              options={caminhoes.map((c) => ({ value: c.id, label: c.tag ?? c.placa }))}
-              placeholder="Selecionar UMB"
-              disabled={isCriando}
-            />
-          </div>
-        )}
-
-        {precisaOperador && (
-          <div className={styles.field}>
-            <span className={styles.label}>Operador</span>
-            <Select
-              value={operadorId}
-              onValueChange={setOperadorId}
-              options={operadores.map((o) => ({ value: o.id, label: o.nome }))}
-              placeholder="Selecionar operador"
-              disabled={isCriando}
-            />
-          </div>
-        )}
-
-        {precisaTitulo && (
-          <Input
-            id="vencimento-titulo"
-            label="Título"
-            placeholder={tipo === 'calibracao_equipamento' ? 'Ex: Sismógrafo SIS-04' : 'Ex: Alvará da pedreira'}
-            value={tituloManual}
-            onChange={(e) => setTituloManual(e.target.value)}
-            maxLength={80}
+          <span className={styles.label}>UMB</span>
+          <Select
+            value={caminhaoId}
+            onValueChange={setCaminhaoId}
+            options={caminhoes.map((c) => ({ value: c.id, label: c.tag ?? c.placa }))}
+            placeholder="Selecionar UMB"
             disabled={isCriando}
           />
-        )}
+        </div>
+      )}
 
+      {precisaOperador && (
+        <div className={styles.field}>
+          <span className={styles.label}>Operador</span>
+          <Select
+            value={operadorId}
+            onValueChange={setOperadorId}
+            options={operadores.map((o) => ({ value: o.id, label: o.nome }))}
+            placeholder="Selecionar operador"
+            disabled={isCriando}
+          />
+        </div>
+      )}
+
+      {precisaTitulo && (
         <Input
-          id="vencimento-data"
-          type="date"
-          label="Vence em"
-          value={dataVencimento}
-          onChange={(e) => setDataVencimento(e.target.value)}
+          id="vencimento-titulo"
+          label="Título"
+          placeholder={tipo === 'calibracao_equipamento' ? 'Ex: Sismógrafo SIS-04' : 'Ex: Alvará da pedreira'}
+          value={tituloManual}
+          onChange={(e) => setTituloManual(e.target.value)}
+          maxLength={80}
           disabled={isCriando}
         />
+      )}
 
-        <Textarea
-          id="vencimento-descricao"
-          label="Observações (opcional)"
-          value={descricao}
-          onChange={(e) => setDescricao(e.target.value)}
-          maxLength={500}
-          disabled={isCriando}
-        />
+      <Input
+        id="vencimento-data"
+        type="date"
+        label="Vence em"
+        value={dataVencimento}
+        onChange={(e) => setDataVencimento(e.target.value)}
+        disabled={isCriando}
+      />
 
-        {erro && <p className={styles.formError}>{erro}</p>}
-      </div>
-    </Modal>
+      <Textarea
+        id="vencimento-descricao"
+        label="Observações (opcional)"
+        value={descricao}
+        onChange={(e) => setDescricao(e.target.value)}
+        maxLength={500}
+        disabled={isCriando}
+      />
+    </FormModal>
   );
 }

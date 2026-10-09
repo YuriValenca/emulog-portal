@@ -74,9 +74,16 @@ export function EquipeTab({ companyId }: EquipeTabProps) {
           </td>
         </tr>
       )}
-      modalOpen={modalOpen}
-      onModalOpenChange={fechar}
-      modalTitle={editando ? 'Editar membro' : 'Novo membro da equipe'}
+      modal={{
+        open: modalOpen,
+        onOpenChange: fechar,
+        title: editando ? 'Editar membro' : 'Novo membro da equipe',
+        rotuloAcao: editando ? 'Salvar alterações' : 'Cadastrar membro',
+        onAcao: handleSalvar,
+        salvando,
+        desabilitado: !values.nome.trim() || !values.cargo.trim(),
+        erro,
+      }}
     >
       <Input
         id="equipe-nome"
@@ -92,15 +99,6 @@ export function EquipeTab({ companyId }: EquipeTabProps) {
         onChange={(e) => setValues({ ...values, cargo: e.target.value })}
         disabled={salvando}
       />
-      {erro && <p className={styles.formError}>{erro}</p>}
-      <Button
-        variant="ok"
-        onClick={handleSalvar}
-        loading={salvando}
-        disabled={salvando || !values.nome.trim() || !values.cargo.trim()}
-      >
-        {editando ? 'Salvar alterações' : 'Cadastrar membro'}
-      </Button>
     </CadastroPanel>
   );
 }

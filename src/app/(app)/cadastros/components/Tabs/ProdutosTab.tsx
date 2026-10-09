@@ -100,9 +100,15 @@ export function ProdutosTab({ companyId }: ProdutosTabProps) {
           </td>
         </tr>
       )}
-      modalOpen={modalOpen}
-      onModalOpenChange={fechar}
-      modalTitle={editando ? 'Editar produto' : 'Novo produto'}
+      modal={{
+        open: modalOpen,
+        onOpenChange: fechar,
+        title: editando ? 'Editar produto' : 'Novo produto',
+        rotuloAcao: editando ? 'Salvar alterações' : 'Cadastrar produto',
+        onAcao: handleSalvar,
+        salvando,
+        erro,
+      }}
     >
       <Input
         id="produto-nome"
@@ -131,10 +137,6 @@ export function ProdutosTab({ companyId }: ProdutosTabProps) {
           />
         </div>
       </div>
-      {erro && <p className={styles.formError}>{erro}</p>}
-      <Button variant="ok" onClick={handleSalvar} loading={salvando}>
-        {editando ? 'Salvar alterações' : 'Cadastrar produto'}
-      </Button>
     </CadastroPanel>
   );
 }

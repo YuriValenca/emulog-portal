@@ -111,9 +111,16 @@ export function UsuariosTab({ companyId }: UsuariosTabProps) {
           A senha é definida na criação do acesso e não pode ser reexibida — o Firebase Auth não devolve esse dado.
         </p>
       }
-      modalOpen={modalOpen}
-      onModalOpenChange={fechar}
-      modalTitle={editando ? 'Editar usuário' : 'Novo usuário'}
+      modal={{
+        open: modalOpen,
+        onOpenChange: fechar,
+        title: editando ? 'Editar usuário' : 'Novo usuário',
+        rotuloAcao: editando ? 'Salvar alterações' : 'Cadastrar usuário',
+        onAcao: handleSalvar,
+        salvando,
+        desabilitado: !values.nome.trim() || !values.email.trim() || (!editando && values.senha.trim().length === 0),
+        erro,
+      }}
     >
       <Input
         id="usuario-nome"
@@ -165,15 +172,6 @@ export function UsuariosTab({ companyId }: UsuariosTabProps) {
           O usuário é criado como Usuário. Para promover a Company Admin, edite o cadastro depois de criar.
         </p>
       )}
-      {erro && <p className={styles.formError}>{erro}</p>}
-      <Button
-        variant="ok"
-        onClick={handleSalvar}
-        loading={salvando}
-        disabled={salvando || !values.nome.trim() || !values.email.trim() || (!editando && values.senha.trim().length === 0)}
-      >
-        {editando ? 'Salvar alterações' : 'Cadastrar usuário'}
-      </Button>
     </CadastroPanel>
   );
 }

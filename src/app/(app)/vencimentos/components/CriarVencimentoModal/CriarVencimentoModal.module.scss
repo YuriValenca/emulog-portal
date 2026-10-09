@@ -1,9 +1,3 @@
-.form {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-default);
-}
-
 .field {
   display: flex;
   flex-direction: column;
@@ -13,12 +7,4 @@
 .label {
   font-size: var(--font-size-small);
   color: var(--text-muted);
-}
-
-.formError {
-  font-size: 13px;
-  color: var(--crit);
-  background: var(--crit-soft);
-  border-radius: var(--radius-sm);
-  padding: var(--spacing-xsmall) var(--spacing-small);
 }

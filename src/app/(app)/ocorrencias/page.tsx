@@ -12,18 +12,17 @@ import { useRegrasDeteccao } from '@/hooks/ocorrencias/useRegrasDeteccao';
 import { Button } from '@/components/ui/Button/Button';
 import { Select } from '@/components/ui/Select/Select';
 import { Table } from '@/components/ui/Table/Table';
-import { Modal } from '@/components/ui/Modal/Modal';
 import { Input, DATA_MINIMA } from '@/components/ui/Input/Input';
-import { Textarea } from '@/components/ui/Textarea/Textarea';
 import { Spinner } from '@/components/ui/Spinner/Spinner';
 import { StatusPill } from '@/components/ui/StatusPill/StatusPill';
+import { Textarea } from '@/components/ui/Textarea/Textarea';
 import { ActionsMenu } from '@/components/ui/ActionsMenu/ActionsMenu';
 import { useToast } from '@/components/ui/Toast/Toast';
-import CriarAutomacaoModal, { type CriarAutomacaoValues } from './components/CriarAutomacaoModal/CriarAutomacaoModal';
 import ConfigurarAutomacoesModal from './components/ConfigurarAutomacoesModal/ConfigurarAutomacoesModal';
 import { ConfirmModal } from '@/components/ui/ConfirmModal/ConfirmModal';
+import { FormModal } from '@/components/layout/FormModal/FormModal';
 import type { Ocorrencia, OcorrenciaStatus, OcorrenciaTipo } from '@/types';
-import type { RegraDeteccao } from '@/schemas/regraDeteccao';
+import type { RegraDeteccao, RegraMetrica, RegraOperador } from '@/schemas/regraDeteccao';
 import styles from './page.module.scss';
 
 const TIPO_OPTIONS: { value: OcorrenciaTipo; label: string }[] = [
@@ -88,6 +87,50 @@ function dentroDoPeriodoDoFogo(o: Ocorrencia, inicio: string, fim: string): bool
 
 const OPCOES_POR_PAGINA = PAGE_SIZE_OPTIONS.map((n) => ({ value: String(n), label: `${n} por página` }));
 
+const OPERADOR_OPTIONS: { value: RegraOperador; label: string }[] = [
+  { value: 'entre', label: 'Entre' },
+  { value: 'maior', label: 'Maior que' },
+  { value: 'menor', label: 'Menor que' },
+  { value: 'igual', label: 'Igual a' },
+];
+
+interface MetricaConfig {
+  descricao: string;
+  labelValor: string;
+  labelDe?: string;
+  labelAte?: string;
+  operadorFixo?: RegraOperador;
+  somenteInteiro?: boolean;
+  avisoJaExiste: string;
+}
+
+const METRICA_CONFIG: Record<RegraMetrica, MetricaConfig> = {
+  diferenca_kg: {
+    descricao: 'Gera ocorrência quando a diferença entre Kg previsto e aplicado de um fogo bate a condição.',
+    labelValor: 'Valor (%)',
+    labelDe: 'De (%)',
+    labelAte: 'Até (%)',
+    avisoJaExiste: 'Já existe uma automação de diferença de Kg. Remova-a antes de criar outra.',
+  },
+  rascunho_parado: {
+    descricao: 'Gera ocorrência quando um fogo em andamento fica mais de X dias sem atualização.',
+    labelValor: 'Dias sem atualização',
+    operadorFixo: 'maior',
+    somenteInteiro: true,
+    avisoJaExiste: 'Já existe uma automação de rascunho parado. Remova-a antes de criar outra.',
+  },
+};
+
+const METRICA_OPTIONS: { value: RegraMetrica; label: string }[] = [
+  { value: 'diferenca_kg', label: 'Diferença de Kg previsto/aplicado' },
+  { value: 'rascunho_parado', label: 'Rascunho parado' },
+];
+
+function lerNumeroDigitado(texto: string): number | null {
+  const numero = parseFloat(texto.replace(',', '.'));
+  return isNaN(numero) ? null : numero;
+}
+
 export default function OcorrenciasPage() {
   const { companyId, appUser, isSuperadmin } = useAppAuth();
   const { toast } = useToast();
@@ -105,13 +148,18 @@ export default function OcorrenciasPage() {
   const [pagina, setPagina] = useState(1);
   const [porPagina, setPorPagina] = useState(DEFAULT_PAGE_SIZE);
 
-  const [modalOpen, setModalOpen] = useState(false);
+  const [novaOcorrenciaAberta, setNovaOcorrenciaAberta] = useState(false);
   const [tituloManual, setTituloManual] = useState('');
   const [descricao, setDescricao] = useState('');
   const [valorReferencia, setValorReferencia] = useState('');
-  const [erro, setErro] = useState<string | null>(null);
+  const [erroOcorrencia, setErroOcorrencia] = useState<string | null>(null);
 
-  const [automacaoModalOpen, setAutomacaoModalOpen] = useState(false);
+  const [novaAutomacaoAberta, setNovaAutomacaoAberta] = useState(false);
+  const [metrica, setMetrica] = useState<RegraMetrica>('diferenca_kg');
+  const [operadorEscolhido, setOperadorEscolhido] = useState<RegraOperador>('maior');
+  const [valor1, setValor1] = useState('');
+  const [valor2, setValor2] = useState('');
+  const [erroAutomacao, setErroAutomacao] = useState<string | null>(null);
   const [configurarModalOpen, setConfigurarModalOpen] = useState(false);
 
   const [regraParaExcluir, setRegraParaExcluir] = useState<RegraDeteccao | null>(null);
@@ -162,48 +210,88 @@ export default function OcorrenciasPage() {
     setPagina(1);
   };
 
-  const abrirCriacao = () => {
+  const configMetrica = METRICA_CONFIG[metrica];
+  const operador = configMetrica.operadorFixo ?? operadorEscolhido;
+  const jaExisteRegra = regras.some((regra) => regra.metrica === metrica);
+
+  const abrirNovaOcorrencia = () => {
     setTituloManual('');
     setDescricao('');
     setValorReferencia('');
-    setErro(null);
-    setModalOpen(true);
+    setErroOcorrencia(null);
+    setNovaOcorrenciaAberta(true);
   };
 
-  const fecharModal = () => {
-    setModalOpen(false);
-    setErro(null);
-  };
-
-  const handleSalvar = async () => {
+  const handleCriarOcorrencia = async () => {
     if (!companyId || !appUser) return;
     if (!tituloManual.trim()) {
-      setErro('Dê um título curto pra ocorrência.');
+      setErroOcorrencia('Dê um título curto pra ocorrência.');
       return;
     }
     if (!descricao.trim()) {
-      setErro('Descreva a ocorrência.');
+      setErroOcorrencia('Descreva a ocorrência.');
       return;
     }
-    const valor = valorReferencia.trim() ? parseFloat(valorReferencia.replace(',', '.')) : null;
     try {
       await criarOcorrencia({
         companyId,
         responsavelUid: appUser.uid,
         tituloManual: tituloManual.trim(),
         descricao: descricao.trim(),
-        valorReferencia: valor !== null && !isNaN(valor) ? valor : null,
+        valorReferencia: lerNumeroDigitado(valorReferencia),
         projetoId: null,
       });
-      fecharModal();
+      setNovaOcorrenciaAberta(false);
     } catch {
-      setErro('Não foi possível registrar a ocorrência. Tente novamente.');
+      setErroOcorrencia('Não foi possível registrar a ocorrência. Tente novamente.');
     }
   };
 
-  const handleCriarAutomacao = async (values: CriarAutomacaoValues) => {
+  const limparValoresAutomacao = () => {
+    setValor1('');
+    setValor2('');
+    setErroAutomacao(null);
+  };
+
+  const abrirNovaAutomacao = () => {
+    setMetrica('diferenca_kg');
+    setOperadorEscolhido('maior');
+    limparValoresAutomacao();
+    setNovaAutomacaoAberta(true);
+  };
+
+  const mudarMetrica = (valor: string) => {
+    setMetrica(valor as RegraMetrica);
+    limparValoresAutomacao();
+  };
+
+  const erroDosValoresAutomacao = (v1: number | null, v2: number | null): string | null => {
+    if (v1 === null) return 'Informe um valor numérico válido.';
+    if (configMetrica.somenteInteiro && (!Number.isInteger(v1) || v1 < 1)) {
+      return 'Informe um número inteiro de dias, a partir de 1.';
+    }
+    if (operador !== 'entre') return null;
+    if (v2 === null) return 'Informe o segundo valor do intervalo.';
+    if (v2 <= v1) return 'O valor final deve ser maior que o inicial.';
+    return null;
+  };
+
+  const handleCriarAutomacao = async () => {
     if (!companyId) return;
-    await criarRegra({ companyId, ...values });
+    const v1 = lerNumeroDigitado(valor1);
+    const v2 = operador === 'entre' ? lerNumeroDigitado(valor2) : null;
+    const erroValidacao = erroDosValoresAutomacao(v1, v2);
+    if (erroValidacao || v1 === null) {
+      setErroAutomacao(erroValidacao);
+      return;
+    }
+    setErroAutomacao(null);
+    try {
+      await criarRegra({ companyId, metrica, operador, valor1: v1, valor2: v2 });
+      setNovaAutomacaoAberta(false);
+    } catch {
+      setErroAutomacao('Não foi possível salvar a automação. Tente novamente.');
+    }
   };
 
   const quantidadeDaRegraQuery = useQuery({
@@ -261,10 +349,10 @@ export default function OcorrenciasPage() {
             Configurar automações
           </Button>
         )}
-        <Button variant="ghost" icon={<Settings size={16} />} onClick={() => setAutomacaoModalOpen(true)}>
+        <Button variant="ghost" icon={<Settings size={16} />} onClick={abrirNovaAutomacao}>
           Nova automação
         </Button>
-        <Button variant="accent" icon={<Plus size={16} />} onClick={abrirCriacao}>
+        <Button variant="accent" icon={<Plus size={16} />} onClick={abrirNovaOcorrencia}>
           Nova ocorrência
         </Button>
       </div>
@@ -389,51 +477,84 @@ export default function OcorrenciasPage() {
         </>
       )}
 
-      <Modal open={modalOpen} onOpenChange={fecharModal} title="Nova ocorrência">
-        <div className={styles.form}>
-          <Input
-            id="ocorrencia-titulo"
-            label="Título"
-            placeholder="Ex: Capacete não utilizado"
-            value={tituloManual}
-            onChange={(e) => setTituloManual(e.target.value)}
-            maxLength={80}
-            showCharCount
-            disabled={isCriando}
-          />
-          <Textarea
-            id="ocorrencia-descricao"
-            label="Descrição"
-            value={descricao}
-            onChange={(e) => setDescricao(e.target.value)}
-            maxLength={500}
-            showCharCount
-            disabled={isCriando}
-          />
-          <Input
-            id="ocorrencia-valor"
-            label="Valor de referência (opcional)"
-            placeholder="Ex: 1.15 ou 6.5"
-            value={valorReferencia}
-            onChange={(e) => setValorReferencia(e.target.value)}
-            disabled={isCriando}
-          />
-          {erro && <p className={styles.formError}>{erro}</p>}
-          <Button variant="ok" onClick={handleSalvar} loading={isCriando} disabled={isCriando}>
-            Registrar ocorrência
-          </Button>
-        </div>
-      </Modal>
-
-      {automacaoModalOpen && (
-        <CriarAutomacaoModal
-          open={automacaoModalOpen}
-          onOpenChange={setAutomacaoModalOpen}
-          onSalvar={handleCriarAutomacao}
-          regrasExistentes={regras}
-          saving={isCriandoRegra}
+      <FormModal
+        open={novaOcorrenciaAberta}
+        onOpenChange={setNovaOcorrenciaAberta}
+        title="Nova ocorrência"
+        rotuloAcao="Registrar ocorrência"
+        onAcao={handleCriarOcorrencia}
+        salvando={isCriando}
+        erro={erroOcorrencia}
+      >
+        <Input
+          id="ocorrencia-titulo"
+          label="Título"
+          placeholder="Ex: Capacete não utilizado"
+          value={tituloManual}
+          onChange={(e) => setTituloManual(e.target.value)}
+          maxLength={80}
+          showCharCount
+          disabled={isCriando}
         />
-      )}
+        <Textarea
+          id="ocorrencia-descricao"
+          label="Descrição"
+          value={descricao}
+          onChange={(e) => setDescricao(e.target.value)}
+          maxLength={500}
+          showCharCount
+          disabled={isCriando}
+        />
+        <Input
+          id="ocorrencia-valor"
+          label="Valor de referência (opcional)"
+          placeholder="Ex: 1.15 ou 6.5"
+          value={valorReferencia}
+          onChange={(e) => setValorReferencia(e.target.value)}
+          disabled={isCriando}
+        />
+      </FormModal>
+
+      <FormModal
+        open={novaAutomacaoAberta}
+        onOpenChange={setNovaAutomacaoAberta}
+        title="Nova automação"
+        description={configMetrica.descricao}
+        width={420}
+        rotuloAcao="Criar automação"
+        onAcao={handleCriarAutomacao}
+        salvando={isCriandoRegra}
+        desabilitado={jaExisteRegra}
+        erro={jaExisteRegra ? configMetrica.avisoJaExiste : erroAutomacao}
+      >
+        <div className={styles.field}>
+          <span className={styles.label}>Tipo de automação</span>
+          <Select value={metrica} onValueChange={mudarMetrica} options={METRICA_OPTIONS} disabled={isCriandoRegra} />
+        </div>
+
+        {!jaExisteRegra && !configMetrica.operadorFixo && (
+          <div className={styles.field}>
+            <span className={styles.label}>Condição</span>
+            <Select
+              value={operador}
+              onValueChange={(v) => setOperadorEscolhido(v as RegraOperador)}
+              options={OPERADOR_OPTIONS}
+              disabled={isCriandoRegra}
+            />
+          </div>
+        )}
+
+        {!jaExisteRegra && operador === 'entre' && (
+          <div className={styles.linhaDupla}>
+            <Input id="automacao-valor1" label={configMetrica.labelDe} value={valor1} onChange={(e) => setValor1(e.target.value)} disabled={isCriandoRegra} />
+            <Input id="automacao-valor2" label={configMetrica.labelAte} value={valor2} onChange={(e) => setValor2(e.target.value)} disabled={isCriandoRegra} />
+          </div>
+        )}
+
+        {!jaExisteRegra && operador !== 'entre' && (
+          <Input id="automacao-valor1" label={configMetrica.labelValor} value={valor1} onChange={(e) => setValor1(e.target.value)} disabled={isCriandoRegra} />
+        )}
+      </FormModal>
 
       <ConfigurarAutomacoesModal
         open={configurarModalOpen}

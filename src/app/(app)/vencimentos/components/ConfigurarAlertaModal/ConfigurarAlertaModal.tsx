@@ -1,10 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import { Modal } from '@/components/ui/Modal/Modal';
+import { FormModal } from '@/components/layout/FormModal/FormModal';
 import { Input } from '@/components/ui/Input/Input';
 import { Select } from '@/components/ui/Select/Select';
-import { Button } from '@/components/ui/Button/Button';
 import { useConfigurarAlertaVencimento } from '@/hooks/vencimentos/useConfigurarAlertaVencimento';
 import { DEFAULT_ALERTA_VENCIMENTO } from '@/lib/vencimento';
 import type { AlertaVencimentoPorTipo, VencimentoTipo } from '@/types';
@@ -117,17 +116,16 @@ export default function ConfigurarAlertaModal({ open, onClose, companyId, alerta
   };
 
   return (
-    <Modal
+    <FormModal
       open={open}
       onOpenChange={(v) => !v && onClose()}
       title="Configurar alertas de vencimento"
       description="Defina, por tipo, com quanto tempo de antecedência cada nível de urgência começa."
       width={520}
-      footer={
-        <Button variant="ok" onClick={handleSalvar} loading={isSalvando} disabled={isSalvando}>
-          Salvar configuração
-        </Button>
-      }
+      rotuloAcao="Salvar configuração"
+      onAcao={handleSalvar}
+      salvando={isSalvando}
+      erro={erro}
     >
       <div className={styles.lista}>
         {TIPOS.map((tipo) => {
@@ -165,9 +163,7 @@ export default function ConfigurarAlertaModal({ open, onClose, companyId, alerta
             </div>
           );
         })}
-
-        {erro && <p className={styles.formError}>{erro}</p>}
       </div>
-    </Modal>
+    </FormModal>
   );
 }

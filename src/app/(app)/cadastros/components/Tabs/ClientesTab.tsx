@@ -97,9 +97,16 @@ export function ClientesTab({ companyId }: ClientesTabProps) {
           </td>
         </tr>
       )}
-      modalOpen={modalOpen}
-      onModalOpenChange={fechar}
-      modalTitle={editando ? 'Editar cliente' : 'Novo cliente'}
+      modal={{
+        open: modalOpen,
+        onOpenChange: fechar,
+        title: editando ? 'Editar cliente' : 'Novo cliente',
+        rotuloAcao: editando ? 'Salvar alterações' : 'Cadastrar cliente',
+        onAcao: handleSalvar,
+        salvando,
+        desabilitado: !values.nome.trim(),
+        erro,
+      }}
     >
       <Input
         id="cliente-nome"
@@ -122,10 +129,6 @@ export function ClientesTab({ companyId }: ClientesTabProps) {
         onChange={(e) => setValues({ ...values, endereco: e.target.value })}
         disabled={salvando}
       />
-      {erro && <p className={styles.formError}>{erro}</p>}
-      <Button variant="ok" onClick={handleSalvar} loading={salvando} disabled={salvando || !values.nome.trim()}>
-        {editando ? 'Salvar alterações' : 'Cadastrar cliente'}
-      </Button>
     </CadastroPanel>
   );
 }
