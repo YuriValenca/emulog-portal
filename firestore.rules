@@ -254,6 +254,10 @@ service cloud.firestore {
           && request.resource.data.companyId == companyId()
           && exists(/databases/$(database)/documents/projetos_rascunho/$(id))
           && get(/databases/$(database)/documents/projetos_rascunho/$(id)).data.uidUsuario == request.resource.data.uidUsuario
+        )
+        || (
+          isSuperadmin()
+          && request.resource.data.uidUsuario == uid()
         );
       allow update: if isSuperadmin()
         || (
@@ -273,7 +277,7 @@ service cloud.firestore {
       // Fotos da operação em base64 enquanto o projeto Firebase não está no Blaze (Storage)
       match /midias/{midiaId} {
         allow read: if isSuperadmin() || sameCompany(resource.data.companyId);
-        allow create: if sameCompany(request.resource.data.companyId)
+        allow create: if (isSuperadmin() || sameCompany(request.resource.data.companyId))
           && request.resource.data.keys().hasOnly(['companyId', 'projetoId', 'enviadoPor', 'criadoEm', 'imagem'])
           && request.resource.data.projetoId == id
           && request.resource.data.enviadoPor == uid()
@@ -298,6 +302,10 @@ service cloud.firestore {
           && request.resource.data.companyId == companyId()
           && exists(/databases/$(database)/documents/projetos_rascunho/$(id))
           && get(/databases/$(database)/documents/projetos_rascunho/$(id)).data.uidUsuario == request.resource.data.uidUsuario
+        )
+        || (
+          isSuperadmin()
+          && request.resource.data.uidUsuario == uid()
         );
       allow update: if false;
       allow delete: if isSuperadmin()
