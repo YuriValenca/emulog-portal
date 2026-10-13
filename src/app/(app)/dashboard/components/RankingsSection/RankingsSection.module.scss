@@ -1,6 +1,6 @@
 .row {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 320px));
+  grid-template-columns: repeat(4, 1fr);
   justify-content: start;
   align-items: start;
   gap: var(--spacing-medium);
@@ -18,5 +18,47 @@
   font-size: var(--font-size-default);
   font-weight: var(--font-weight-semibold);
   color: var(--text);
-  margin: 0 0 var(--spacing-xsmall);
+  margin: 0;
+}
+
+.cardHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--spacing-xsmall);
+  margin-bottom: var(--spacing-xsmall);
+}
+
+.seletor {
+  display: inline-flex;
+  padding: var(--spacing-nano);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+}
+
+.opcaoSeletor {
+  padding: var(--spacing-nano) var(--spacing-xsmall);
+  border: none;
+  border-radius: 4px;
+  background: none;
+  font: inherit;
+  font-size: var(--font-size-tooltip);
+  font-weight: var(--font-weight-medium);
+  color: var(--text-muted);
+  cursor: pointer;
+
+  &:hover {
+    color: var(--text);
+  }
+}
+
+.opcaoSeletorAtiva {
+  background: var(--data-soft);
+  color: var(--data);
+
+  &:hover {
+    color: var(--data);
+  }
 }

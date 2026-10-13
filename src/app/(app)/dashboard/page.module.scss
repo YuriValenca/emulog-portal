@@ -19,8 +19,14 @@
 }
 
 .filtros {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  justify-content: start;
+  gap: var(--spacing-medium);
+}
+
+.filtrosLeft {
   display: flex;
-  flex-direction: row;
   gap: var(--spacing-medium);
 }
 

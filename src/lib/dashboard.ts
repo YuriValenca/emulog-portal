@@ -18,6 +18,8 @@ export interface RankingItem {
   kgAplicado: number;
 }
 
+export type MetricaRanking = 'totalFogos' | 'kgAplicado';
+
 export interface FogoNaoConforme {
   id: string;
   nomeProjeto: string;
@@ -196,6 +198,10 @@ function calcularRanking(projetos: Projeto[], extrairRefs: (projeto: Projeto) =>
   });
 
   return Array.from(mapa.values()).sort((a, b) => b.totalFogos - a.totalFogos);
+}
+
+export function ordenarRanking(ranking: RankingItem[], metrica: MetricaRanking): RankingItem[] {
+  return [...ranking].sort((a, b) => b[metrica] - a[metrica]);
 }
 
 export function calcularEstatisticasDeFogos(

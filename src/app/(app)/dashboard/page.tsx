@@ -108,23 +108,23 @@ function PainelOperacional({ companyId }: { companyId: string | null }) {
         />
       </div>
       <div className={styles.filtros}>
-        <Select
-          value={String(periodo)}
-          onValueChange={(value) => setPeriodo(periodoDoValor(value))}
-          options={OPCOES_SELECT_PERIODO}
-          size="sm"
-          label='Período'
-          width={150}
-        />
-        <MultiSelect
-          values={caminhaoId}
-          onValuesChange={setCaminhaoId}
-          options={opcoesSelectUmb}
-          placeholder="Todas"
-          size="sm"
-          label='UMB'
-          width={150}
-        />
+        <div className={styles.filtrosLeft}>
+          <Select
+            value={String(periodo)}
+            onValueChange={(value) => setPeriodo(periodoDoValor(value))}
+            options={OPCOES_SELECT_PERIODO}
+            size="sm"
+            label='Período'
+          />
+          <MultiSelect
+            values={caminhaoId}
+            onValuesChange={setCaminhaoId}
+            options={opcoesSelectUmb}
+            placeholder="Todas"
+            size="sm"
+            label='UMB'
+          />
+        </div>
         <MultiSelect
           values={operadorIds}
           onValuesChange={setOperadorIds}
@@ -132,7 +132,6 @@ function PainelOperacional({ companyId }: { companyId: string | null }) {
           placeholder="Todos"
           size="sm"
           label='Operadores'
-          width={320}
         />
         {isAtualizando && (
           <span className={styles.atualizando} aria-label="Atualizando período">

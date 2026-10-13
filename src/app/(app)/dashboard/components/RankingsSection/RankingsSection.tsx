@@ -1,6 +1,7 @@
 'use client';
 
-import type { RankingItem } from '@/lib/dashboard';
+import { useState } from 'react';
+import { ordenarRanking, type MetricaRanking, type RankingItem } from '@/lib/dashboard';
 import { RankingCard } from './RankingCard/RankingCard';
 import styles from './RankingsSection.module.scss';
 
@@ -21,17 +22,38 @@ export function RankingsSection({
   mostrarOperadores,
   modoRelatorio = false,
 }: RankingsSectionProps) {
+  const [metricaUmb, setMetricaUmb] = useState<MetricaRanking>('totalFogos');
+  const [metricaOperadores, setMetricaOperadores] = useState<MetricaRanking>('totalFogos');
+
   const exibirUmb = mostrarUmb && rankingUmb.length > 0;
   const exibirOperadores = mostrarOperadores && rankingOperadores.length > 0;
-  const limitar = (ranking: RankingItem[]) => (modoRelatorio ? ranking : ranking.slice(0, LIMITE_RANKING));
+
+  const prepararItens = (ranking: RankingItem[], metrica: MetricaRanking) => {
+    const ordenado = ordenarRanking(ranking, metrica);
+    return modoRelatorio ? ordenado : ordenado.slice(0, LIMITE_RANKING);
+  };
 
   if (!exibirUmb && !exibirOperadores) return null;
 
   return (
     <div className={styles.row}>
-      {exibirUmb && <RankingCard title="Fogos por UMB" items={limitar(rankingUmb)} modoRelatorio={modoRelatorio} />}
+      {exibirUmb && (
+        <RankingCard
+          entidade="UMB"
+          items={prepararItens(rankingUmb, metricaUmb)}
+          metrica={metricaUmb}
+          onMetricaChange={setMetricaUmb}
+          modoRelatorio={modoRelatorio}
+        />
+      )}
       {exibirOperadores && (
-        <RankingCard title="Fogos por operador" items={limitar(rankingOperadores)} modoRelatorio={modoRelatorio} />
+        <RankingCard
+          entidade="operador"
+          items={prepararItens(rankingOperadores, metricaOperadores)}
+          metrica={metricaOperadores}
+          onMetricaChange={setMetricaOperadores}
+          modoRelatorio={modoRelatorio}
+        />
       )}
     </div>
   );

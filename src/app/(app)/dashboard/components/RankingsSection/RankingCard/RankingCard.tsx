@@ -2,7 +2,9 @@
 
 import { useMemo } from 'react';
 import { Bar, BarChart, LabelList, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
-import type { RankingItem } from '@/lib/dashboard';
+import clsx from 'clsx';
+import type { MetricaRanking, RankingItem } from '@/lib/dashboard';
+import { formatarKg } from '@/lib/fogoUtils';
 import styles from '../RankingsSection.module.scss';
 
 const MAX_NOMES_LABEL = 2;
@@ -99,21 +101,58 @@ function TickEixoNome({ x = 0, y = 0, payload }: TickEixoProps) {
   );
 }
 
+const METRICAS: Record<MetricaRanking, { rotulo: string; titulo: string; nomeNoTooltip: string; margemDireita: number }> = {
+  totalFogos: { rotulo: 'Fogos', titulo: 'Fogos por', nomeNoTooltip: 'Fogos', margemDireita: 24 },
+  kgAplicado: { rotulo: 'Kg', titulo: 'Kg aplicado por', nomeNoTooltip: 'Kg aplicado', margemDireita: 72 },
+};
+
+const formatarValor = (valor: number, metrica: MetricaRanking) =>
+  metrica === 'kgAplicado' ? `${formatarKg(Math.round(valor))} kg` : String(valor);
+
+interface SeletorDeMetricaProps {
+  metrica: MetricaRanking;
+  onChange: (metrica: MetricaRanking) => void;
+}
+
+function SeletorDeMetrica({ metrica, onChange }: SeletorDeMetricaProps) {
+  return (
+    <div role="group" aria-label="Métrica do ranking" className={styles.seletor}>
+      {(Object.keys(METRICAS) as MetricaRanking[]).map((opcao) => (
+        <button
+          key={opcao}
+          type="button"
+          aria-pressed={opcao === metrica}
+          className={clsx(styles.opcaoSeletor, opcao === metrica && styles.opcaoSeletorAtiva)}
+          onClick={() => onChange(opcao)}
+        >
+          {METRICAS[opcao].rotulo}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 interface RankingCardProps {
-  title: string;
+  entidade: string;
   items: RankingItem[];
+  metrica: MetricaRanking;
+  onMetricaChange: (metrica: MetricaRanking) => void;
   modoRelatorio?: boolean;
 }
 
-export function RankingCard({ title, items, modoRelatorio = false }: RankingCardProps) {
+export function RankingCard({ entidade, items, metrica, onMetricaChange, modoRelatorio = false }: RankingCardProps) {
   const { dados, altura, larguraEixo } = usePreparoDados(items);
+  const { titulo, nomeNoTooltip, margemDireita } = METRICAS[metrica];
 
   return (
     <div className={styles.card}>
-      <p className={styles.cardTitle}>{title}</p>
+      <div className={styles.cardHeader}>
+        <p className={styles.cardTitle}>{`${titulo} ${entidade}`}</p>
+        {!modoRelatorio && <SeletorDeMetrica metrica={metrica} onChange={onMetricaChange} />}
+      </div>
       <div style={{ width: '100%', height: altura }}>
         <ResponsiveContainer>
-          <BarChart data={dados} layout="vertical" barCategoryGap="20%" margin={{ top: 0, right: 24, bottom: 0, left: 0 }}>
+          <BarChart data={dados} layout="vertical" barCategoryGap="20%" margin={{ top: 0, right: margemDireita, bottom: 0, left: 0 }}>
             <XAxis type="number" hide />
             <YAxis
               type="category"
@@ -125,7 +164,7 @@ export function RankingCard({ title, items, modoRelatorio = false }: RankingCard
             />
             <Tooltip
               cursor={{ fill: 'var(--surface)' }}
-              formatter={(value) => [value, 'Fogos']}
+              formatter={(value) => [formatarValor(Number(value), metrica), nomeNoTooltip]}
               labelFormatter={(_, payload) => payload?.[0]?.payload?.label ?? ''}
               contentStyle={{
                 background: 'var(--surface-2)',
@@ -136,8 +175,14 @@ export function RankingCard({ title, items, modoRelatorio = false }: RankingCard
               labelStyle={{ color: 'var(--text)' }}
               itemStyle={{ color: 'var(--text)' }}
             />
-            <Bar dataKey="totalFogos" fill="var(--data)" radius={[0, 4, 4, 0]} barSize={16} isAnimationActive={!modoRelatorio}>
-              <LabelList dataKey="totalFogos" position="right" fill="var(--text)" fontSize={12} />
+            <Bar dataKey={metrica} fill="var(--data)" radius={[0, 4, 4, 0]} barSize={16} isAnimationActive={!modoRelatorio}>
+              <LabelList
+                dataKey={metrica}
+                position="right"
+                fill="var(--text)"
+                fontSize={12}
+                formatter={(value) => formatarValor(Number(value), metrica)}
+              />
             </Bar>
           </BarChart>
         </ResponsiveContainer>
