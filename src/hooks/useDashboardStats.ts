@@ -3,249 +3,9 @@
 import { useMemo } from 'react';
 import { useProjetosPeriodo } from './useProjetosPeriodo';
 import { useLicencas } from './useLicencas';
-import { densidadeMediaDoProjeto, statusConformidade, type ContextoFaixa } from '@/lib/densidade';
-import { statusExpiracaoLicenca } from '@/lib/licenca';
+import { calcularEstatisticasDeFogos, calcularEstatisticasDeLicencas } from '@/lib/dashboard';
+import type { ContextoFaixa } from '@/lib/densidade';
 import { inicioDoPeriodo, type Periodo } from '@/lib/periodo';
-import { paraKg } from '@/helpers/parseNumbers';
-import type { License, Projeto } from '@/types';
-
-export type GranularidadeGrafico = 'diaria' | 'semanal' | 'mensal';
-
-export interface FogoPorPeriodo {
-  rotulo: string;
-  totalFogos: number;
-  kgAplicado: number;
-}
-
-export interface RankingItem {
-  id: string;
-  label: string;
-  totalFogos: number;
-}
-
-export interface FogoNaoConforme {
-  id: string;
-  nomeProjeto: string;
-  umb: string | null;
-  data: string;
-  densidadeMedia: number | null;
-}
-
-interface RefRanking {
-  id: string;
-  label: string;
-}
-
-export interface DashboardStats {
-  totalFogosPeriodo: number;
-  kgAplicadoPeriodo: number;
-  densidadeMediaPeriodo: number | null;
-  fogosConformesPeriodo: number;
-  fogosAlertaPeriodo: number;
-  fogosNaoConformes: FogoNaoConforme[];
-  licencasAtivas: number;
-  licencasExpirando: number;
-  licencasDisponiveis: number;
-  licencasTotal: number;
-  fogosAgrupados: FogoPorPeriodo[];
-  granularidadeGrafico: GranularidadeGrafico;
-  rankingUmb: RankingItem[];
-  rankingOperadores: RankingItem[];
-}
-
-const DIAS_LIMITE_AGRUPAMENTO_DIARIO = 31;
-const DIAS_LIMITE_AGRUPAMENTO_SEMANAL = 180;
-const LIMITE_RANKING = 5;
-
-function toDate(value: unknown): Date {
-  const v = value as { toDate?: () => Date; seconds?: number };
-  if (v?.toDate) return v.toDate();
-  if (v?.seconds) return new Date(v.seconds * 1000);
-  return new Date(value as string);
-}
-
-function granularidadePara(periodo: Periodo): GranularidadeGrafico {
-  if (periodo === 'tudo' || periodo > DIAS_LIMITE_AGRUPAMENTO_SEMANAL) return 'mensal';
-  return periodo <= DIAS_LIMITE_AGRUPAMENTO_DIARIO ? 'diaria' : 'semanal';
-}
-
-const doisDigitos = (n: number) => String(n).padStart(2, '0');
-
-// Chave em data local: `toISOString` é UTC e jogava fogos da noite para o dia seguinte.
-function chaveAgrupamento(dataCriacao: Date, granularidade: GranularidadeGrafico): string {
-  const ano = dataCriacao.getFullYear();
-  const mes = doisDigitos(dataCriacao.getMonth() + 1);
-  if (granularidade === 'mensal') return `${ano}-${mes}`;
-
-  const dia = new Date(ano, dataCriacao.getMonth(), dataCriacao.getDate());
-  if (granularidade === 'semanal') dia.setDate(dia.getDate() - dia.getDay());
-  return `${dia.getFullYear()}-${doisDigitos(dia.getMonth() + 1)}-${doisDigitos(dia.getDate())}`;
-}
-
-function rotuloAgrupamento(chave: string, granularidade: GranularidadeGrafico): string {
-  const [ano, mes, dia] = chave.split('-');
-  return granularidade === 'mensal' ? `${mes}/${ano}` : `${dia}/${mes}`;
-}
-
-function filtrarProjetosDoPeriodo(
-  projetos: Projeto[],
-  inicioPeriodo: Date | null,
-  caminhaoId: string | null,
-  operadorIds: string[]
-): Projeto[] {
-  return projetos.filter((data) => {
-    const dataCriacao = toDate(data.dataCriacao);
-    if (inicioPeriodo && dataCriacao < inicioPeriodo) return false;
-    if (caminhaoId && data.informacoesOperacao?.caminhao?.id !== caminhaoId) return false;
-    if (operadorIds.length > 0 && !data.informacoesOperacao?.equipe?.some((membro) => operadorIds.includes(membro.id))) return false;
-    return true;
-  });
-}
-
-function calcularTotais(projetos: Projeto[]) {
-  let totalFogosPeriodo = 0;
-  let kgAplicadoPeriodo = 0;
-  projetos.forEach((data) => {
-    totalFogosPeriodo += 1;
-    kgAplicadoPeriodo += paraKg(data.informacoesOperacao?.kgAplicado) ?? 0;
-  });
-  return { totalFogosPeriodo, kgAplicadoPeriodo };
-}
-
-function itemNaoConforme(data: Projeto, densidadeMedia: number | null): FogoNaoConforme {
-  const dataCriacao = toDate(data.dataCriacao);
-  return {
-    id: data.id,
-    nomeProjeto: data.nomeProjeto || 'Projeto sem nome',
-    umb: data.informacoesOperacao?.caminhao?.placa ?? null,
-    data: dataCriacao.toLocaleDateString('pt-BR'),
-    densidadeMedia,
-  };
-}
-
-function calcularConformidadeDensidade(projetos: Projeto[], contextoFaixa: ContextoFaixa) {
-  let somaDensidades = 0;
-  let projetosComDensidade = 0;
-  let fogosConformesPeriodo = 0;
-  let fogosAlertaPeriodo = 0;
-  const naoConformes: { data: Projeto; densidadeMedia: number | null; timestamp: number }[] = [];
-
-  projetos.forEach((data) => {
-    const densidadeDoFogo = densidadeMediaDoProjeto(data.amostras ?? []);
-    if (densidadeDoFogo !== null) {
-      somaDensidades += densidadeDoFogo;
-      projetosComDensidade += 1;
-    }
-    const status = statusConformidade(data, contextoFaixa);
-    if (status === 'crit') {
-      fogosAlertaPeriodo += 1;
-      naoConformes.push({ data, densidadeMedia: densidadeDoFogo, timestamp: toDate(data.dataCriacao).getTime() });
-    } else if (status === 'ok') {
-      fogosConformesPeriodo += 1;
-    }
-  });
-
-  const fogosNaoConformes = naoConformes
-    .sort((a, b) => b.timestamp - a.timestamp)
-    .map((item) => itemNaoConforme(item.data, item.densidadeMedia));
-
-  const densidadeMediaPeriodo = projetosComDensidade > 0 ? somaDensidades / projetosComDensidade : null;
-  return { densidadeMediaPeriodo, fogosConformesPeriodo, fogosAlertaPeriodo, fogosNaoConformes };
-}
-
-function calcularAgrupamentos(projetos: Projeto[], granularidade: GranularidadeGrafico): FogoPorPeriodo[] {
-  const agrupamentos = new Map<string, { totalFogos: number; kgAplicado: number }>();
-
-  projetos.forEach((data) => {
-    const dataCriacao = toDate(data.dataCriacao);
-    const chave = chaveAgrupamento(dataCriacao, granularidade);
-    const atual = agrupamentos.get(chave) ?? { totalFogos: 0, kgAplicado: 0 };
-    atual.totalFogos += 1;
-    atual.kgAplicado += paraKg(data.informacoesOperacao?.kgAplicado) ?? 0;
-    agrupamentos.set(chave, atual);
-  });
-
-  return Array.from(agrupamentos.entries())
-    .sort(([a], [b]) => a.localeCompare(b))
-    .map(([chave, valores]) => ({
-      rotulo: rotuloAgrupamento(chave, granularidade),
-      totalFogos: valores.totalFogos,
-      kgAplicado: Math.round(valores.kgAplicado),
-    }));
-}
-
-function itensCaminhaoDoProjeto(data: Projeto): RefRanking[] {
-  const caminhao = data.informacoesOperacao?.caminhao;
-  return caminhao ? [{ id: caminhao.id, label: caminhao.placa }] : [];
-}
-
-function itensOperadoresDoProjeto(data: Projeto): RefRanking[] {
-  return (data.informacoesOperacao?.equipe ?? []).map((membro) => ({ id: membro.id, label: membro.nome }));
-}
-
-function calcularRanking(projetos: Projeto[], extrairRefs: (data: Projeto) => RefRanking[]): RankingItem[] {
-  const mapa = new Map<string, RankingItem>();
-
-  projetos.forEach((data) => {
-    extrairRefs(data).forEach((ref) => {
-      const atual = mapa.get(ref.id) ?? { id: ref.id, label: ref.label, totalFogos: 0 };
-      atual.totalFogos += 1;
-      mapa.set(ref.id, atual);
-    });
-  });
-
-  return Array.from(mapa.values())
-    .sort((a, b) => b.totalFogos - a.totalFogos)
-    .slice(0, LIMITE_RANKING);
-}
-
-function calcularLicencas(licencas: License[], agora: Date) {
-  let licencasAtivas = 0;
-  let licencasExpirando = 0;
-  let licencasDisponiveis = 0;
-
-  licencas.forEach((data) => {
-    if (data.status === 'active') {
-      licencasAtivas += 1;
-      if (statusExpiracaoLicenca(data, agora) === 'expirando') licencasExpirando += 1;
-    }
-    if (data.status === 'available') licencasDisponiveis += 1;
-  });
-
-  return { licencasAtivas, licencasExpirando, licencasDisponiveis, licencasTotal: licencas.length };
-}
-
-function calcularStats(
-  projetos: Projeto[],
-  licencas: License[],
-  periodo: Periodo,
-  contextoFaixa: ContextoFaixa,
-  caminhaoId: string | null,
-  operadorIds: string[]
-): DashboardStats {
-  const agora = new Date();
-  const inicioPeriodo = inicioDoPeriodo(periodo, agora);
-  const granularidadeGrafico = granularidadePara(periodo);
-
-  const projetosFiltrados = filtrarProjetosDoPeriodo(projetos, inicioPeriodo, caminhaoId, operadorIds);
-
-  const totais = calcularTotais(projetosFiltrados);
-  const conformidade = calcularConformidadeDensidade(projetosFiltrados, contextoFaixa);
-  const fogosAgrupados = calcularAgrupamentos(projetosFiltrados, granularidadeGrafico);
-  const rankingUmb = calcularRanking(projetosFiltrados, itensCaminhaoDoProjeto);
-  const rankingOperadores = calcularRanking(projetosFiltrados, itensOperadoresDoProjeto);
-  const licencasStats = calcularLicencas(licencas, agora);
-
-  return {
-    ...totais,
-    ...conformidade,
-    ...licencasStats,
-    fogosAgrupados,
-    granularidadeGrafico,
-    rankingUmb,
-    rankingOperadores,
-  };
-}
 
 export function useDashboardStats(
   companyId: string | null,
@@ -259,7 +19,16 @@ export function useDashboardStats(
 
   const data = useMemo(() => {
     if (!projetosQuery.data || !licencasQuery.data) return undefined;
-    return calcularStats(projetosQuery.data, licencasQuery.data, periodo, contextoFaixa, caminhaoId, operadorIds);
+    const agora = new Date();
+    return {
+      ...calcularEstatisticasDeFogos(
+        projetosQuery.data,
+        { inicio: inicioDoPeriodo(periodo, agora), caminhaoId, operadorIds },
+        contextoFaixa,
+        agora
+      ),
+      ...calcularEstatisticasDeLicencas(licencasQuery.data, agora),
+    };
   }, [projetosQuery.data, licencasQuery.data, periodo, contextoFaixa, caminhaoId, operadorIds]);
 
   return {

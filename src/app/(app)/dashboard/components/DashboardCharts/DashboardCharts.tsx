@@ -4,7 +4,8 @@ import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
   ResponsiveContainer, PieChart, Pie, Sector,
 } from 'recharts';
-import type { FogoPorPeriodo, FogoNaoConforme, GranularidadeGrafico } from '@/hooks/useDashboardStats';
+import type { FogoPorPeriodo, FogoNaoConforme, GranularidadeGrafico } from '@/lib/dashboard';
+import clsx from 'clsx';
 import styles from './DashboardCharts.module.scss';
 
 interface DashboardChartsProps {
@@ -17,9 +18,19 @@ interface DashboardChartsProps {
   fogosConformesPeriodo: number;
   fogosAlertaPeriodo: number;
   fogosNaoConformes: FogoNaoConforme[];
+  modoRelatorio?: boolean;
 }
 
-const CORES = { accent: '#FF9621', data: '#1A73E8', ok: '#4CAF50', crit: '#E2503F', border: '#2E3941', textMuted: '#8C99A3', surface: '#1B2126' };
+const CORES = {
+  accent: 'var(--accent)',
+  data: 'var(--data)',
+  ok: 'var(--ok)',
+  crit: 'var(--crit)',
+  border: 'var(--border)',
+  textMuted: 'var(--text-muted)',
+  surface: 'var(--surface-2)',
+  texto: 'var(--text)',
+};
 
 const LABEL_GRANULARIDADE: Record<GranularidadeGrafico, string> = {
   diaria: 'por dia',
@@ -62,6 +73,7 @@ export function DashboardCharts({
   fogosConformesPeriodo,
   fogosAlertaPeriodo,
   fogosNaoConformes,
+  modoRelatorio = false,
 }: DashboardChartsProps) {
   const licencasData = [
     { nome: 'Ativas', valor: licencasAtivas, cor: CORES.ok },
@@ -90,10 +102,10 @@ export function DashboardCharts({
                 <XAxis dataKey="rotulo" stroke={CORES.textMuted} fontSize={12} tickLine={false} axisLine={false} />
                 <YAxis yAxisId="fogos" stroke={CORES.accent} fontSize={12} tickLine={false} axisLine={false} allowDecimals={false} />
                 <YAxis yAxisId="kg" orientation="right" stroke={CORES.data} fontSize={12} tickLine={false} axisLine={false} />
-                <Tooltip contentStyle={tooltipStyle} labelStyle={{ color: '#E7EBEE' }} />
+                <Tooltip contentStyle={tooltipStyle} labelStyle={{ color: CORES.texto }} />
                 <Legend wrapperStyle={{ fontSize: 12 }} />
-                <Line yAxisId="fogos" type="monotone" dataKey="totalFogos" name="Fogos" stroke={CORES.accent} strokeWidth={2} dot={{ r: 3, fill: CORES.accent }} />
-                <Line yAxisId="kg" type="monotone" dataKey="kgAplicado" name="Kg aplicado" stroke={CORES.data} strokeWidth={2} dot={{ r: 3, fill: CORES.data }} />
+                <Line yAxisId="fogos" type="monotone" dataKey="totalFogos" name="Fogos" stroke={CORES.accent} strokeWidth={2} dot={{ r: 3, fill: CORES.accent }} isAnimationActive={!modoRelatorio} />
+                <Line yAxisId="kg" type="monotone" dataKey="kgAplicado" name="Kg aplicado" stroke={CORES.data} strokeWidth={2} dot={{ r: 3, fill: CORES.data }} isAnimationActive={!modoRelatorio} />
               </LineChart>
             </ResponsiveContainer>
           </div>
@@ -115,8 +127,9 @@ export function DashboardCharts({
                     outerRadius="85%"
                     paddingAngle={2}
                     shape={renderFatiaColorida as never}
+                    isAnimationActive={!modoRelatorio}
                   />
-                  <Tooltip contentStyle={tooltipStyle} labelStyle={{ color: '#E7EBEE' }} />
+                  <Tooltip contentStyle={tooltipStyle} labelStyle={{ color: CORES.texto }} />
                 </PieChart>
               </ResponsiveContainer>
             )}
@@ -150,8 +163,9 @@ export function DashboardCharts({
                       outerRadius="85%"
                       paddingAngle={2}
                       shape={renderFatiaColorida as never}
+                      isAnimationActive={!modoRelatorio}
                     />
-                    <Tooltip contentStyle={tooltipStyle} labelStyle={{ color: '#E7EBEE' }} />
+                    <Tooltip contentStyle={tooltipStyle} labelStyle={{ color: CORES.texto }} />
                   </PieChart>
                 </ResponsiveContainer>
               )}
@@ -165,7 +179,7 @@ export function DashboardCharts({
               {fogosNaoConformes.length === 0 ? (
                 <p className={styles.empty}>Nenhum fogo fora da faixa.</p>
               ) : (
-                <ul className={styles.naoConformesScroll}>
+                <ul className={clsx(styles.naoConformesScroll, modoRelatorio && styles.naoConformesCompleta)}>
                   {fogosNaoConformes.map((item) => (
                     <li key={item.id} className={styles.naoConformeItem}>
                       <div className={styles.naoConformeInfo}>

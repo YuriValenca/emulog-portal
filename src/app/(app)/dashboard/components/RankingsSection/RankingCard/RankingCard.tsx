@@ -2,7 +2,7 @@
 
 import { useMemo } from 'react';
 import { Bar, BarChart, LabelList, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
-import type { RankingItem } from '@/hooks/useDashboardStats';
+import type { RankingItem } from '@/lib/dashboard';
 import styles from '../RankingsSection.module.scss';
 
 const MAX_NOMES_LABEL = 2;
@@ -102,9 +102,10 @@ function TickEixoNome({ x = 0, y = 0, payload }: TickEixoProps) {
 interface RankingCardProps {
   title: string;
   items: RankingItem[];
+  modoRelatorio?: boolean;
 }
 
-export function RankingCard({ title, items }: RankingCardProps) {
+export function RankingCard({ title, items, modoRelatorio = false }: RankingCardProps) {
   const { dados, altura, larguraEixo } = usePreparoDados(items);
 
   return (
@@ -135,7 +136,7 @@ export function RankingCard({ title, items }: RankingCardProps) {
               labelStyle={{ color: 'var(--text)' }}
               itemStyle={{ color: 'var(--text)' }}
             />
-            <Bar dataKey="totalFogos" fill="var(--data)" radius={[0, 4, 4, 0]} barSize={16}>
+            <Bar dataKey="totalFogos" fill="var(--data)" radius={[0, 4, 4, 0]} barSize={16} isAnimationActive={!modoRelatorio}>
               <LabelList dataKey="totalFogos" position="right" fill="var(--text)" fontSize={12} />
             </Bar>
           </BarChart>

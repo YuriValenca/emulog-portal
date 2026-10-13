@@ -62,6 +62,24 @@
   --spacing-HUGE: 64px;
 }
 
+[data-tema='claro'] {
+  --bg: #F4F6F7;
+  --surface: #FFFFFF;
+  --surface-2: #F0F3F5;
+  --border: #DCE2E6;
+  --border-hover: #C5CED4;
+  --contrast: #333B41;
+
+  --text: #1B2126;
+  --text-muted: #5F6C75;
+
+  --brand-on-dark: var(--brand);
+
+  color-scheme: light;
+  background: var(--bg);
+  color: var(--text);
+}
+
 body {
   background: var(--bg);
   color: var(--text);
