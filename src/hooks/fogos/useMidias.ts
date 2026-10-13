@@ -18,7 +18,7 @@ const consultaMidias = (projetoId: string, companyId: string) =>
 
 export const urlDaMidia = (midia: Midia) => midia.imagem;
 
-async function buscarMidias(projetoId: string, companyId: string): Promise<Midia[]> {
+export async function buscarMidias(projetoId: string, companyId: string): Promise<Midia[]> {
   const snap = await getDocs(consultaMidias(projetoId, companyId));
   const midias: Midia[] = [];
   for (const docSnap of snap.docs) {

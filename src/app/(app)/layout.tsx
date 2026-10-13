@@ -23,6 +23,7 @@ const PAGE_TITLES: Record<string, string> = {
   '/empresas': 'Empresas',
   '/fogos': 'Gestão de fogos',
   '/ocorrencias': 'Ocorrências',
+  '/relatorios': 'Relatórios',
   '/vencimentos': 'Vencimentos',
 };
 

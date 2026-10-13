@@ -29,7 +29,7 @@ const operationLinks: NavLink[] = [
   { icon: <LayoutGrid size={16} />, label: 'Painel operacional', href: '/dashboard' },
   { icon: <FileText size={16} />, label: 'Cadastros', href: '/cadastros' },
   { icon: <Flame size={16} />, label: 'Gestão de fogos', href: '/fogos' },
-  { icon: <FilePlus size={16} />, label: 'Relatórios', href: '/relatorios', disabled: true },
+  { icon: <FilePlus size={16} />, label: 'Relatórios', href: '/relatorios' },
   { icon: <TriangleAlert size={16} />, label: 'Ocorrências', href: '/ocorrencias' },
   { icon: <CalendarX size={16} />, label: 'Vencimentos', href: '/vencimentos' },
 ];
