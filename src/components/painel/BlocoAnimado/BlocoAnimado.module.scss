@@ -1,0 +1,15 @@
+.bloco {
+  min-width: 0;
+  opacity: 1;
+  transform: scale(1);
+  transition:
+    opacity var(--duracao-bloco) ease,
+    transform var(--duracao-bloco) ease,
+    margin var(--duracao-bloco) ease;
+}
+
+.recolhido {
+  opacity: 0;
+  transform: scale(0.97);
+  pointer-events: none;
+}

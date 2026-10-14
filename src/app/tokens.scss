@@ -60,14 +60,16 @@
   --spacing-xxxlarge: 40px;
   --spacing-huge: 48px;
   --spacing-HUGE: 64px;
+
+  --duracao-bloco: 450ms;
 }
 
 [data-tema='claro'] {
-  --bg: #F4F6F7;
-  --surface: #FFFFFF;
-  --surface-2: #F0F3F5;
-  --border: #DCE2E6;
-  --border-hover: #C5CED4;
+  --bg: #FFFFFF;
+  --surface: #F4F6F7;
+  --surface-2: #E9EDF0;
+  --border: #D8DFE3;
+  --border-hover: #C1CBD1;
   --contrast: #333B41;
 
   --text: #1B2126;

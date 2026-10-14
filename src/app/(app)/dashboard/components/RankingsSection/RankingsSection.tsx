@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { ordenarRanking, type MetricaRanking, type RankingItem } from '@/lib/dashboard';
+import { ordenarRanking, type MetricaRanking, type MetricasDosRankings, type RankingItem } from '@/lib/dashboard';
+import { BlocoAnimado } from '@/components/painel/BlocoAnimado/BlocoAnimado';
 import { RankingCard } from './RankingCard/RankingCard';
 import styles from './RankingsSection.module.scss';
 
@@ -12,6 +12,8 @@ interface RankingsSectionProps {
   mostrarUmb: boolean;
   rankingOperadores: RankingItem[];
   mostrarOperadores: boolean;
+  metricas: MetricasDosRankings;
+  onMetricasChange?: (metricas: MetricasDosRankings) => void;
   modoRelatorio?: boolean;
 }
 
@@ -20,10 +22,12 @@ export function RankingsSection({
   mostrarUmb,
   rankingOperadores,
   mostrarOperadores,
+  metricas,
+  onMetricasChange,
   modoRelatorio = false,
 }: RankingsSectionProps) {
-  const [metricaUmb, setMetricaUmb] = useState<MetricaRanking>('totalFogos');
-  const [metricaOperadores, setMetricaOperadores] = useState<MetricaRanking>('totalFogos');
+  const alterarMetrica = (campo: keyof MetricasDosRankings) =>
+    onMetricasChange && ((metrica: MetricaRanking) => onMetricasChange({ ...metricas, [campo]: metrica }));
 
   const exibirUmb = mostrarUmb && rankingUmb.length > 0;
   const exibirOperadores = mostrarOperadores && rankingOperadores.length > 0;
@@ -33,28 +37,26 @@ export function RankingsSection({
     return modoRelatorio ? ordenado : ordenado.slice(0, LIMITE_RANKING);
   };
 
-  if (!exibirUmb && !exibirOperadores) return null;
-
   return (
     <div className={styles.row}>
-      {exibirUmb && (
+      <BlocoAnimado visivel={exibirUmb}>
         <RankingCard
           entidade="UMB"
-          items={prepararItens(rankingUmb, metricaUmb)}
-          metrica={metricaUmb}
-          onMetricaChange={setMetricaUmb}
+          items={prepararItens(rankingUmb, metricas.umb)}
+          metrica={metricas.umb}
+          onMetricaChange={alterarMetrica('umb')}
           modoRelatorio={modoRelatorio}
         />
-      )}
-      {exibirOperadores && (
+      </BlocoAnimado>
+      <BlocoAnimado visivel={exibirOperadores}>
         <RankingCard
           entidade="operador"
-          items={prepararItens(rankingOperadores, metricaOperadores)}
-          metrica={metricaOperadores}
-          onMetricaChange={setMetricaOperadores}
+          items={prepararItens(rankingOperadores, metricas.operadores)}
+          metrica={metricas.operadores}
+          onMetricaChange={alterarMetrica('operadores')}
           modoRelatorio={modoRelatorio}
         />
-      )}
+      </BlocoAnimado>
     </div>
   );
 }

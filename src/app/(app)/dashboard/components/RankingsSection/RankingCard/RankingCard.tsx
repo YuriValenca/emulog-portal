@@ -103,7 +103,7 @@ function TickEixoNome({ x = 0, y = 0, payload }: TickEixoProps) {
 
 const METRICAS: Record<MetricaRanking, { rotulo: string; titulo: string; nomeNoTooltip: string; margemDireita: number }> = {
   totalFogos: { rotulo: 'Fogos', titulo: 'Fogos por', nomeNoTooltip: 'Fogos', margemDireita: 24 },
-  kgAplicado: { rotulo: 'Kg', titulo: 'Kg aplicado por', nomeNoTooltip: 'Kg aplicado', margemDireita: 72 },
+  kgAplicado: { rotulo: 'Kg', titulo: 'Kg aplicado por', nomeNoTooltip: 'Kg aplicado', margemDireita: 88 },
 };
 
 const formatarValor = (valor: number, metrica: MetricaRanking) =>
@@ -136,7 +136,7 @@ interface RankingCardProps {
   entidade: string;
   items: RankingItem[];
   metrica: MetricaRanking;
-  onMetricaChange: (metrica: MetricaRanking) => void;
+  onMetricaChange?: (metrica: MetricaRanking) => void;
   modoRelatorio?: boolean;
 }
 
@@ -148,7 +148,7 @@ export function RankingCard({ entidade, items, metrica, onMetricaChange, modoRel
     <div className={styles.card}>
       <div className={styles.cardHeader}>
         <p className={styles.cardTitle}>{`${titulo} ${entidade}`}</p>
-        {!modoRelatorio && <SeletorDeMetrica metrica={metrica} onChange={onMetricaChange} />}
+        {!modoRelatorio && onMetricaChange && <SeletorDeMetrica metrica={metrica} onChange={onMetricaChange} />}
       </div>
       <div style={{ width: '100%', height: altura }}>
         <ResponsiveContainer>

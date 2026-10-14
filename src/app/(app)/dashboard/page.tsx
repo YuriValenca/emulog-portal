@@ -1,21 +1,22 @@
 'use client';
 
 import { useState } from 'react';
-import { Flame, Weight, Gauge, AlertTriangle } from 'lucide-react';
-import { OPCOES_PERIODO, labelPeriodo, periodoDoValor, type Periodo } from '@/lib/periodo';
+import { Download } from 'lucide-react';
+import { OPCOES_PERIODO, inicioDoPeriodo, labelPeriodo, periodoDoValor, type Periodo } from '@/lib/periodo';
+import { METRICAS_PADRAO, blocosVisiveisDoPainel, type MetricasDosRankings } from '@/lib/dashboard';
+import { descreverFiltro, descreverIntervalo, empresaDoRelatorio, type TemaDoRelatorio } from '@/lib/relatorios/painel';
 import { useAppAuth } from '@/hooks/useAppAuth';
 import { useDashboardStats } from '@/hooks/useDashboardStats';
 import { useContextoFaixa } from '@/hooks/useContextoFaixa';
 import { useCaminhoes } from '@/hooks/cadastro/useCaminhoes';
 import { useOperadores } from '@/hooks/cadastro/useOperadores';
-import { useCompanyGroup } from '@/hooks/fogos/useCompanyGroup';
-import { useOcorrencias } from '@/hooks/ocorrencias/useOcorrencias';
+import { useOcorrenciasAbertas } from '@/hooks/ocorrencias/useOcorrenciasAbertas';
+import { Button } from '@/components/ui/Button/Button';
 import { Select } from '@/components/ui/Select/Select';
 import { MultiSelect } from '@/components/ui/Multiselect/Multiselect';
 import { Spinner } from '@/components/ui/Spinner/Spinner';
-import { StatCard } from './components/StatCard/StatCard';
-import { DashboardCharts } from './components/DashboardCharts/DashboardCharts';
-import { RankingsSection } from './components/RankingsSection/RankingsSection';
+import { ConteudoDoPainel } from '@/components/painel/ConteudoDoPainel/ConteudoDoPainel';
+import { ModalExportarPainel } from '@/components/painel/ModalExportarPainel/ModalExportarPainel';
 import styles from './page.module.scss';
 
 const OPCOES_SELECT_PERIODO = OPCOES_PERIODO.map((periodo) => ({
@@ -39,19 +40,21 @@ export default function DashboardPage() {
 }
 
 function PainelOperacional({ companyId }: { companyId: string | null }) {
+  const { company } = useAppAuth();
   const [periodo, setPeriodo] = useState<Periodo>(30);
-  const [caminhaoId, setCaminhaoId] = useState<string[]>([]);
+  const [caminhaoIds, setCaminhaoIds] = useState<string[]>([]);
   const [operadorIds, setOperadorIds] = useState<string[]>([]);
+  const [metricas, setMetricas] = useState<MetricasDosRankings>(METRICAS_PADRAO);
+  const [exportarAberto, setExportarAberto] = useState(false);
 
   const { itens: caminhoes } = useCaminhoes(companyId);
   const { itens: operadores } = useOperadores(companyId);
-  const { companyIds } = useCompanyGroup(companyId);
-  const { ocorrencias, isLoading: isLoadingOcorrencias } = useOcorrencias(companyIds);
+  const ocorrenciasAbertas = useOcorrenciasAbertas(companyId);
   const contextoFaixa = useContextoFaixa(companyId);
   const { data, isLoading, isError, isAtualizando } = useDashboardStats(
     companyId,
     periodo,
-    caminhaoId.length === 0 ? null : caminhaoId[0] ?? null,
+    caminhaoIds,
     operadorIds,
     contextoFaixa
   );
@@ -60,7 +63,6 @@ function PainelOperacional({ companyId }: { companyId: string | null }) {
   const opcoesSelectOperador = (operadores ?? []).map((o) => ({ value: o.id, label: o.nome }));
 
   const periodoLabel = labelPeriodo(periodo);
-  const ocorrenciasAbertas = ocorrencias.filter((o) => o.status !== 'encerrada').length;
 
   if (isLoading) {
     return (
@@ -83,81 +85,84 @@ function PainelOperacional({ companyId }: { companyId: string | null }) {
   }
 
   const { faixaEmpresa } = contextoFaixa;
-  const densidadeDentroDaFaixa =
-    data.densidadeMediaPeriodo !== null &&
-    data.densidadeMediaPeriodo >= faixaEmpresa.min &&
-    data.densidadeMediaPeriodo <= faixaEmpresa.max;
+  const blocos = blocosVisiveisDoPainel({ umbs: caminhaoIds.length, operadores: operadorIds.length });
+
+  const montarDadosDoRelatorio = (tema: TemaDoRelatorio) => {
+    const agora = new Date();
+    const nomesUmbs = caminhoes.filter((c) => caminhaoIds.includes(c.id)).map((c) => c.tag ?? c.placa);
+    const nomesOperadores = operadores.filter((o) => operadorIds.includes(o.id)).map((o) => o.nome);
+    return {
+      tema,
+      empresa: empresaDoRelatorio(company),
+      periodoLabel,
+      periodoDescricao: descreverIntervalo(inicioDoPeriodo(periodo, agora), agora),
+      filtros: [
+        descreverFiltro('UMB', nomesUmbs),
+        descreverFiltro('Operadores', nomesOperadores),
+      ].filter((filtro): filtro is string => filtro !== null),
+      estatisticas: data,
+      faixa: faixaEmpresa,
+      ocorrenciasAbertas,
+      metricas,
+      blocos,
+      geradoEm: agora.toISOString(),
+    };
+  };
+
+  const filtros = (
+    <div className={styles.filtros}>        
+      <div className={styles.filtrosLeft}>
+        <Select
+          value={String(periodo)}
+          onValueChange={(value) => setPeriodo(periodoDoValor(value))}
+          options={OPCOES_SELECT_PERIODO}
+          size="sm"
+          label='Período'
+        />
+        <MultiSelect
+          values={caminhaoIds}
+          onValuesChange={setCaminhaoIds}
+          options={opcoesSelectUmb}
+          placeholder="Todas"
+          size="sm"
+          label='UMB'
+        />
+      </div>
+      <MultiSelect
+        values={operadorIds}
+        onValuesChange={setOperadorIds}
+        options={opcoesSelectOperador}
+        placeholder="Todos"
+        size="sm"
+        label='Operadores'
+      />
+      {isAtualizando && (
+        <span className={styles.atualizando} aria-label="Atualizando período">
+          <Spinner size="sm" />
+        </span>
+      )}
+      <div className={styles.exportar}>
+        <Button variant="ghost" icon={<Download size={16} />} onClick={() => setExportarAberto(true)} disabled={isAtualizando}>
+          Exportar PDF
+        </Button>
+      </div>
+    </div>
+  );
 
   return (
     <div className={styles.container}>
-      <div className={styles.grid}>
-        <StatCard icon={<Flame size={22} />} label={`Fogos (${periodoLabel})`} value={data.totalFogosPeriodo} color="var(--accent)" />
-        <StatCard icon={<Weight size={22} />} label={`Kg aplicados (${periodoLabel})`} value={data.kgAplicadoPeriodo.toFixed(0)} sub="kg" color="var(--data)" />
-        <StatCard
-          icon={<Gauge size={22} />}
-          label={`Densidade média (${periodoLabel})`}
-          value={data.densidadeMediaPeriodo !== null ? data.densidadeMediaPeriodo.toFixed(2) : '—'}
-          sub={data.densidadeMediaPeriodo !== null ? 'g/cm³' : undefined}
-          color={densidadeDentroDaFaixa ? 'var(--ok)' : 'var(--crit)'}
-        />
-        <StatCard
-          icon={<AlertTriangle size={22} />}
-          label="Ocorrências abertas"
-          value={isLoadingOcorrencias ? '—' : ocorrenciasAbertas}
-          color={ocorrenciasAbertas > 0 ? 'var(--crit)' : 'var(--ok)'}
-        />
-      </div>
-      <div className={styles.filtros}>
-        <div className={styles.filtrosLeft}>
-          <Select
-            value={String(periodo)}
-            onValueChange={(value) => setPeriodo(periodoDoValor(value))}
-            options={OPCOES_SELECT_PERIODO}
-            size="sm"
-            label='Período'
-          />
-          <MultiSelect
-            values={caminhaoId}
-            onValuesChange={setCaminhaoId}
-            options={opcoesSelectUmb}
-            placeholder="Todas"
-            size="sm"
-            label='UMB'
-          />
-        </div>
-        <MultiSelect
-          values={operadorIds}
-          onValuesChange={setOperadorIds}
-          options={opcoesSelectOperador}
-          placeholder="Todos"
-          size="sm"
-          label='Operadores'
-        />
-        {isAtualizando && (
-          <span className={styles.atualizando} aria-label="Atualizando período">
-            <Spinner size="sm" />
-          </span>
-        )}
-      </div>
-
-      <RankingsSection
-        rankingUmb={data.rankingUmb}
-        mostrarUmb={caminhaoId.length === 0}
-        rankingOperadores={data.rankingOperadores}
-        mostrarOperadores={operadorIds.length === 0}
-      />
-
-      <DashboardCharts
+      <ConteudoDoPainel
+        estatisticas={data}
         periodoLabel={periodoLabel}
-        fogosAgrupados={data.fogosAgrupados}
-        granularidadeGrafico={data.granularidadeGrafico}
-        licencasAtivas={data.licencasAtivas}
-        licencasExpirando={data.licencasExpirando}
-        licencasDisponiveis={data.licencasDisponiveis}
-        fogosConformesPeriodo={data.fogosConformesPeriodo}
-        fogosAlertaPeriodo={data.fogosAlertaPeriodo}
-        fogosNaoConformes={data.fogosNaoConformes}
+        faixa={faixaEmpresa}
+        ocorrenciasAbertas={ocorrenciasAbertas}
+        metricas={metricas}
+        onMetricasChange={setMetricas}
+        blocos={blocos}
+        entreCardsERankings={filtros}
       />
+
+      {exportarAberto && <ModalExportarPainel montarDados={montarDadosDoRelatorio} onFechar={() => setExportarAberto(false)} />}
     </div>
   );
 }

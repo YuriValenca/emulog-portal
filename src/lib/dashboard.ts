@@ -20,6 +20,13 @@ export interface RankingItem {
 
 export type MetricaRanking = 'totalFogos' | 'kgAplicado';
 
+export interface MetricasDosRankings {
+  umb: MetricaRanking;
+  operadores: MetricaRanking;
+}
+
+export const METRICAS_PADRAO: MetricasDosRankings = { umb: 'totalFogos', operadores: 'totalFogos' };
+
 export interface FogoNaoConforme {
   id: string;
   nomeProjeto: string;
@@ -53,10 +60,38 @@ export interface EstatisticasDeLicencas {
   licencasTotal: number;
 }
 
+export interface FiltrosAplicadosNoPainel {
+  umbs: number;
+  operadores: number;
+  clientes?: number;
+  produtos?: number;
+}
+
+export interface BlocosDoPainel {
+  rankingUmb: boolean;
+  rankingOperadores: boolean;
+  ocorrencias: boolean;
+  licencas: boolean;
+}
+
+// Licenças e ocorrências abertas são da empresa toda: só o período não as invalida, um filtro de fogo sim.
+// Ranking com um único item filtrado é só aquele item, então some.
+export function blocosVisiveisDoPainel({ umbs, operadores, clientes = 0, produtos = 0 }: FiltrosAplicadosNoPainel): BlocosDoPainel {
+  const filtraFogos = umbs + operadores + clientes + produtos > 0;
+  return {
+    rankingUmb: umbs !== 1,
+    rankingOperadores: operadores !== 1,
+    ocorrencias: !filtraFogos,
+    licencas: !filtraFogos,
+  };
+}
+
+export type EstatisticasDoPainel = EstatisticasDeFogos & EstatisticasDeLicencas;
+
 export interface FiltrosDeFogos {
   inicio: Date | null;
   fim?: Date | null;
-  caminhaoId: string | null;
+  caminhaoIds: string[];
   operadorIds: string[];
 }
 
@@ -98,12 +133,12 @@ function rotuloAgrupamento(chave: string, granularidade: GranularidadeGrafico): 
 
 const kgAplicadoDoFogo = (projeto: Projeto) => paraKg(projeto.informacoesOperacao?.kgAplicado) ?? 0;
 
-export function filtrarFogos(projetos: Projeto[], { inicio, fim, caminhaoId, operadorIds }: FiltrosDeFogos): Projeto[] {
+export function filtrarFogos(projetos: Projeto[], { inicio, fim, caminhaoIds, operadorIds }: FiltrosDeFogos): Projeto[] {
   return projetos.filter((projeto) => {
     const dataCriacao = dataDoFogo(projeto.dataCriacao);
     if (inicio && dataCriacao < inicio) return false;
     if (fim && dataCriacao > fim) return false;
-    if (caminhaoId && projeto.informacoesOperacao?.caminhao?.id !== caminhaoId) return false;
+    if (caminhaoIds.length > 0 && !caminhaoIds.includes(projeto.informacoesOperacao?.caminhao?.id ?? '')) return false;
     if (operadorIds.length > 0 && !projeto.informacoesOperacao?.equipe?.some((membro) => operadorIds.includes(membro.id))) return false;
     return true;
   });
@@ -204,6 +239,10 @@ export function ordenarRanking(ranking: RankingItem[], metrica: MetricaRanking):
   return [...ranking].sort((a, b) => b[metrica] - a[metrica]);
 }
 
+// Um fogo filtrado por operador traz a equipe inteira: o ranking fica só com quem foi selecionado
+const soOsSelecionados = (ranking: RankingItem[], ids: string[]) =>
+  ids.length === 0 ? ranking : ranking.filter((item) => ids.includes(item.id));
+
 export function calcularEstatisticasDeFogos(
   projetos: Projeto[],
   filtros: FiltrosDeFogos,
@@ -218,8 +257,8 @@ export function calcularEstatisticasDeFogos(
     ...calcularConformidadeDensidade(fogos, contextoFaixa),
     fogosAgrupados: calcularAgrupamentos(fogos, granularidadeGrafico),
     granularidadeGrafico,
-    rankingUmb: calcularRanking(fogos, itensCaminhaoDoProjeto),
-    rankingOperadores: calcularRanking(fogos, itensOperadoresDoProjeto),
+    rankingUmb: soOsSelecionados(calcularRanking(fogos, itensCaminhaoDoProjeto), filtros.caminhaoIds),
+    rankingOperadores: soOsSelecionados(calcularRanking(fogos, itensOperadoresDoProjeto), filtros.operadorIds),
   };
 }
 

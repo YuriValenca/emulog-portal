@@ -10,7 +10,7 @@ import { inicioDoPeriodo, type Periodo } from '@/lib/periodo';
 export function useDashboardStats(
   companyId: string | null,
   periodo: Periodo,
-  caminhaoId: string | null,
+  caminhaoIds: string[],
   operadorIds: string[],
   contextoFaixa: ContextoFaixa
 ) {
@@ -23,13 +23,13 @@ export function useDashboardStats(
     return {
       ...calcularEstatisticasDeFogos(
         projetosQuery.data,
-        { inicio: inicioDoPeriodo(periodo, agora), caminhaoId, operadorIds },
+        { inicio: inicioDoPeriodo(periodo, agora), caminhaoIds, operadorIds },
         contextoFaixa,
         agora
       ),
       ...calcularEstatisticasDeLicencas(licencasQuery.data, agora),
     };
-  }, [projetosQuery.data, licencasQuery.data, periodo, contextoFaixa, caminhaoId, operadorIds]);
+  }, [projetosQuery.data, licencasQuery.data, periodo, contextoFaixa, caminhaoIds, operadorIds]);
 
   return {
     data,

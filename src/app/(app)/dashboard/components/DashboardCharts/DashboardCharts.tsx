@@ -6,6 +6,7 @@ import {
 } from 'recharts';
 import type { FogoPorPeriodo, FogoNaoConforme, GranularidadeGrafico } from '@/lib/dashboard';
 import clsx from 'clsx';
+import { BlocoAnimado } from '@/components/painel/BlocoAnimado/BlocoAnimado';
 import styles from './DashboardCharts.module.scss';
 
 interface DashboardChartsProps {
@@ -18,6 +19,7 @@ interface DashboardChartsProps {
   fogosConformesPeriodo: number;
   fogosAlertaPeriodo: number;
   fogosNaoConformes: FogoNaoConforme[];
+  mostrarLicencas?: boolean;
   modoRelatorio?: boolean;
 }
 
@@ -63,6 +65,51 @@ function renderFatiaColorida(props: FatiaColorida) {
   );
 }
 
+const RADIANOS = Math.PI / 180;
+const PERCENTUAL_MINIMO_ROTULO = 0.06;
+
+interface RotuloDaFatiaProps {
+  cx: number;
+  cy: number;
+  midAngle: number;
+  innerRadius: number;
+  outerRadius: number;
+  value: number;
+  percent: number;
+}
+
+function renderRotuloDaFatia({ cx, cy, midAngle, innerRadius, outerRadius, value, percent }: RotuloDaFatiaProps) {
+  if (percent < PERCENTUAL_MINIMO_ROTULO) return null;
+  const raio = (innerRadius + outerRadius) / 2;
+  return (
+    <text
+      x={cx + raio * Math.cos(-midAngle * RADIANOS)}
+      y={cy + raio * Math.sin(-midAngle * RADIANOS)}
+      fill="#FFFFFF"
+      fontSize={12}
+      fontWeight={600}
+      textAnchor="middle"
+      dominantBaseline="central"
+    >
+      {value}
+    </text>
+  );
+}
+
+function Legenda({ itens }: { itens: { nome: string; valor: number; cor: string }[] }) {
+  return (
+    <div className={styles.legend}>
+      {itens.map((item) => (
+        <span key={item.nome} className={styles.legendItem}>
+          <span className={styles.dot} style={{ background: item.cor }} />
+          {item.nome}
+          <span className={styles.legendValor}>{item.valor}</span>
+        </span>
+      ))}
+    </div>
+  );
+}
+
 export function DashboardCharts({
   periodoLabel,
   fogosAgrupados,
@@ -73,6 +120,7 @@ export function DashboardCharts({
   fogosConformesPeriodo,
   fogosAlertaPeriodo,
   fogosNaoConformes,
+  mostrarLicencas = true,
   modoRelatorio = false,
 }: DashboardChartsProps) {
   const licencasData = [
@@ -90,7 +138,7 @@ export function DashboardCharts({
 
   return (
     <>
-      <div className={styles.row}>
+      <div className={clsx(styles.row, styles.rowLinhaELicencas)}>
         <div className={styles.panel}>
           <span className={styles.title}>
             Fogos e Kg aplicado {LABEL_GRANULARIDADE[granularidadeGrafico]} ({periodoLabel})
@@ -111,38 +159,35 @@ export function DashboardCharts({
           </div>
         </div>
 
-        <div className={styles.panel}>
-          <span className={styles.title}>Licenças</span>
-          <div className={styles.chartBox}>
-            {licencasData.length === 0 ? (
-              <p className={styles.empty}>Nenhuma licença cadastrada.</p>
-            ) : (
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={licencasData}
-                    dataKey="valor"
-                    nameKey="nome"
-                    innerRadius="60%"
-                    outerRadius="85%"
-                    paddingAngle={2}
-                    shape={renderFatiaColorida as never}
-                    isAnimationActive={!modoRelatorio}
-                  />
-                  <Tooltip contentStyle={tooltipStyle} labelStyle={{ color: CORES.texto }} />
-                </PieChart>
-              </ResponsiveContainer>
-            )}
+        <BlocoAnimado visivel={mostrarLicencas} className={styles.painelRecolhivel}>
+          <div className={styles.panel}>
+            <span className={styles.title}>Licenças</span>
+            <div className={styles.chartBox}>
+              {licencasData.length === 0 ? (
+                <p className={styles.empty}>Nenhuma licença cadastrada.</p>
+              ) : (
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={licencasData}
+                      dataKey="valor"
+                      nameKey="nome"
+                      innerRadius="60%"
+                      outerRadius="85%"
+                      paddingAngle={2}
+                      shape={renderFatiaColorida as never}
+                      label={renderRotuloDaFatia as never}
+                      labelLine={false}
+                      isAnimationActive={!modoRelatorio}
+                    />
+                    <Tooltip contentStyle={tooltipStyle} labelStyle={{ color: CORES.texto }} />
+                  </PieChart>
+                </ResponsiveContainer>
+              )}
+            </div>
+            <Legenda itens={licencasData} />
           </div>
-          <div className={styles.legend}>
-            {licencasData.map((item) => (
-              <span key={item.nome} className={styles.legendItem}>
-                <span className={styles.dot} style={{ background: item.cor }} />
-                {item.nome}
-              </span>
-            ))}
-          </div>
-        </div>
+        </BlocoAnimado>
       </div>
 
       <div className={styles.row}>
@@ -163,6 +208,8 @@ export function DashboardCharts({
                       outerRadius="85%"
                       paddingAngle={2}
                       shape={renderFatiaColorida as never}
+                      label={renderRotuloDaFatia as never}
+                      labelLine={false}
                       isAnimationActive={!modoRelatorio}
                     />
                     <Tooltip contentStyle={tooltipStyle} labelStyle={{ color: CORES.texto }} />
@@ -197,14 +244,7 @@ export function DashboardCharts({
               )}
             </div>
           </div>
-          <div className={styles.legend}>
-            {conformidadeData.map((item) => (
-              <span key={item.nome} className={styles.legendItem}>
-                <span className={styles.dot} style={{ background: item.cor }} />
-                {item.nome}
-              </span>
-            ))}
-          </div>
+          <Legenda itens={conformidadeData} />
         </div>
       </div>
     </>

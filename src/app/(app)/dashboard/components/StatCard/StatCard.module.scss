@@ -1,4 +1,5 @@
 .card {
+  break-inside: avoid;
   background: var(--surface);
   border: 1px solid var(--border);
   border-top-width: 3px;

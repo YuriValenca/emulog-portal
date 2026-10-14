@@ -1,0 +1,83 @@
+.temas {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--spacing-small);
+}
+
+.tema {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-tiny);
+  padding: var(--spacing-small);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface-2);
+  cursor: pointer;
+  transition: border-color 0.15s ease;
+
+  &:hover {
+    border-color: var(--border-hover);
+  }
+
+  &:has(.radio:focus-visible) {
+    outline: 2px solid var(--brand);
+    outline-offset: 2px;
+  }
+}
+
+.temaMarcado {
+  border-color: var(--brand);
+  background: var(--brand-soft);
+
+  &:hover {
+    border-color: var(--brand);
+  }
+}
+
+.radio {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.miniatura {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px;
+  margin-bottom: var(--spacing-xsmall);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background: var(--bg);
+}
+
+.miniaturaCards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+}
+
+.miniaturaCard {
+  height: 14px;
+  border-radius: 3px;
+  background: var(--surface);
+  border-top: 2px solid var(--accent);
+}
+
+.miniaturaGrafico {
+  height: 36px;
+  border-radius: 3px;
+  background: linear-gradient(to top right, transparent 48%, var(--data) 49%, var(--data) 52%, transparent 53%), var(--surface);
+}
+
+.temaTitulo {
+  font-size: var(--font-size-default);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text);
+}
+
+.temaDescricao {
+  font-size: var(--font-size-small);
+  color: var(--text-muted);
+}

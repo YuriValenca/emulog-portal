@@ -10,8 +10,12 @@ import { useFogosDoRelatorio, type IntervaloDoRelatorio } from '@/hooks/relatori
 import { Input } from '@/components/ui/Input/Input';
 import { MultiSelect } from '@/components/ui/Multiselect/Multiselect';
 import { Spinner } from '@/components/ui/Spinner/Spinner';
+import { Tabs } from '@/components/ui/Tabs/Tabs';
+import { blocosVisiveisDoPainel } from '@/lib/dashboard';
+import { descreverFiltro } from '@/lib/relatorios/painel';
 import type { Projeto } from '@/schemas/projeto';
 import { RelatoriosDeFogos } from './components/RelatoriosDeFogos';
+import { AbaPainel } from './components/AbaPainel';
 import styles from './page.module.scss';
 
 const DIAS_PADRAO = 30;
@@ -46,6 +50,9 @@ function passaFiltros(projeto: Projeto, filtros: FiltrosDeFogo): boolean {
 const opcoes = <T extends { id: string }>(itens: T[], rotulo: (item: T) => string) =>
   itens.map((item) => ({ value: item.id, label: rotulo(item) }));
 
+const nomesSelecionados = <T extends { id: string }>(itens: T[], ids: string[], rotulo: (item: T) => string) =>
+  itens.filter((item) => ids.includes(item.id)).map(rotulo);
+
 export default function RelatoriosPage() {
   const { companyId, isSuperadmin } = useAppAuth();
   const { itens: caminhoes } = useCaminhoes(companyId);
@@ -58,6 +65,13 @@ export default function RelatoriosPage() {
 
   const { fogos, isLoading, isError, intervaloValido } = useFogosDoRelatorio(companyId, intervalo);
   const visiveis = useMemo(() => fogos.filter((fogo) => passaFiltros(fogo, filtros)), [fogos, filtros]);
+
+  const descricaoDosFiltros = [
+    descreverFiltro('UMB', nomesSelecionados(caminhoes, filtros.caminhaoIds, (c) => c.tag ?? c.placa)),
+    descreverFiltro('Operadores', nomesSelecionados(operadores, filtros.operadorIds, (o) => o.nome)),
+    descreverFiltro('Clientes', nomesSelecionados(clientes, filtros.clienteIds, (c) => c.nome)),
+    descreverFiltro('Produtos', nomesSelecionados(produtos, filtros.produtoIds, (p) => p.nome)),
+  ].filter((filtro): filtro is string => filtro !== null);
 
   const alterarFiltro = (campo: keyof FiltrosDeFogo) => (ids: string[]) => setFiltros((atuais) => ({ ...atuais, [campo]: ids }));
 
@@ -114,7 +128,31 @@ export default function RelatoriosPage() {
           <Spinner />
         </div>
       ) : (
-        <RelatoriosDeFogos fogos={visiveis} />
+        <Tabs
+          items={[
+            { value: 'fogos', label: 'Fogos', content: <RelatoriosDeFogos fogos={visiveis} /> },
+            {
+              value: 'painel',
+              label: 'Painel',
+              content: (
+                <AbaPainel
+                  companyId={companyId}
+                  fogos={visiveis}
+                  intervalo={intervalo}
+                  filtros={descricaoDosFiltros}
+                  caminhaoIds={filtros.caminhaoIds}
+                  operadorIds={filtros.operadorIds}
+                  blocos={blocosVisiveisDoPainel({
+                    umbs: filtros.caminhaoIds.length,
+                    operadores: filtros.operadorIds.length,
+                    clientes: filtros.clienteIds.length,
+                    produtos: filtros.produtoIds.length,
+                  })}
+                />
+              ),
+            },
+          ]}
+        />
       )}
     </div>
   );

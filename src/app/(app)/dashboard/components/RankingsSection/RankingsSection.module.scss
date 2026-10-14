@@ -7,7 +7,12 @@
   margin-bottom: var(--spacing-large);
 }
 
+.row:empty {
+  display: none;
+}
+
 .card {
+  break-inside: avoid;
   background: var(--surface-2);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
