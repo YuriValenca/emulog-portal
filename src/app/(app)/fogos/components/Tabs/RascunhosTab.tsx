@@ -6,6 +6,7 @@ import { Pagination } from '@/components/ui/Pagination/Pagination';
 import { useRascunhos } from '@/hooks/fogos/useRascunhos';
 import { useUsuarios } from '@/hooks/cadastro/useUsuarios';
 import { useContextoFaixa } from '@/hooks/useContextoFaixa';
+import { useRegrasDeteccao } from '@/hooks/ocorrencias/useRegrasDeteccao';
 import { useAgora } from '@/hooks/useAgora';
 import { useContagemFotos } from '@/hooks/fogos/useMidias';
 import type { FiltrosState } from '../FiltrosFogos/FiltrosFogos';
@@ -50,6 +51,7 @@ export default function RascunhosTab({ companyId, filtros, page, onPageChange }:
   );
 
   const contextoFaixa = useContextoFaixa(companyId);
+  const { regras } = useRegrasDeteccao(companyId);
 
   const totalPaginas = Math.max(1, Math.ceil(filtrados.length / filtros.pageSize));
   const pagina = filtrados.slice((page - 1) * filtros.pageSize, page * filtros.pageSize);
@@ -91,6 +93,7 @@ export default function RascunhosTab({ companyId, filtros, page, onPageChange }:
       <RascunhosTable
         rascunhos={pagina}
         contextoFaixa={contextoFaixa}
+        regras={regras}
         nomePorUid={nomePorUid}
         agora={agora}
         fotosPorRascunho={fotosPorRascunho}

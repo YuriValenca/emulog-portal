@@ -38,8 +38,17 @@
   background: var(--surface-2);
 }
 
-.dono {
+.secundario {
   color: var(--text-muted);
+}
+
+.numero {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.critico {
+  color: var(--crit);
 }
 
 .desdeAtualizacao {

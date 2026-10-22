@@ -9,6 +9,7 @@ import { useCaminhoes } from '@/hooks/cadastro/useCaminhoes';
 import { useOperadores } from '@/hooks/cadastro/useOperadores';
 import { useProdutos } from '@/hooks/cadastro/useProdutos';
 import { useContextoFaixa } from '@/hooks/useContextoFaixa';
+import { useRegrasDeteccao } from '@/hooks/ocorrencias/useRegrasDeteccao';
 import { Button } from '@/components/ui/Button/Button';
 import { Pagination } from '@/components/ui/Pagination/Pagination';
 import { useToast } from '@/components/ui/Toast/Toast';
@@ -42,6 +43,7 @@ export default function ConcluidosTab({ companyId, filtros, page, onPageChange }
   const [modalCriarAberto, setModalCriarAberto] = useState(false);
 
   const contextoFaixa = useContextoFaixa(companyId);
+  const { regras } = useRegrasDeteccao(companyId);
 
   const { projetos, totalFiltrado, totalPaginas, isLoadingMeta, isLoadingPagina, isError, error } = useProjetosList(companyIds, {
     busca: filtros.busca,
@@ -85,7 +87,7 @@ export default function ConcluidosTab({ companyId, filtros, page, onPageChange }
       ) : isLoadingMeta || isLoadingPagina ? (
         <div className={styles.loading}>Carregando fogos...</div>
       ) : (
-        <FogosTable projetos={projetos} contextoFaixa={contextoFaixa} onSelect={setSelecionado} onDelete={setProjetoParaExcluir} />
+        <FogosTable projetos={projetos} contextoFaixa={contextoFaixa} regras={regras} onSelect={setSelecionado} onDelete={setProjetoParaExcluir} />
       )}
 
       <Pagination page={page} totalPages={totalPaginas} onPageChange={onPageChange} />
