@@ -13,6 +13,19 @@
   width: fit-content;
 }
 
+.cabecalho {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--spacing-small);
+  margin-bottom: var(--spacing-default);
+
+  .list {
+    margin-bottom: 0;
+  }
+}
+
 .listLarguraTotal {
   display: flex;
   width: 100%;

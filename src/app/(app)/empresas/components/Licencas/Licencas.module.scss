@@ -1,0 +1,92 @@
+.resumo {
+  margin: 0 0 var(--spacing-small);
+  font-size: var(--font-size-small);
+  color: var(--text-muted);
+}
+
+.chave {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.aparelho {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.acoes {
+  text-align: right;
+}
+
+.chaveNaModal {
+  margin: 0;
+  padding: var(--spacing-xsmall) var(--spacing-small);
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  font-family: var(--font-mono);
+  font-size: 13px;
+}
+
+.vazio {
+  font-size: 13px;
+  color: var(--text-muted);
+  padding: var(--spacing-small) 0;
+}
+
+.carregando {
+  display: flex;
+  justify-content: center;
+  padding: var(--spacing-large) 0;
+}
+
+.checkbox {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--brand);
+  cursor: pointer;
+}
+
+.linha {
+  cursor: pointer;
+
+  &:hover {
+    background: var(--surface-2);
+  }
+}
+
+.barraSelecao {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--spacing-small);
+  margin-bottom: var(--spacing-small);
+}
+
+.selecionadas {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-small);
+  font-size: var(--font-size-small);
+  color: var(--text);
+}
+
+.limpar {
+  border: none;
+  background: none;
+  padding: 0;
+  font: inherit;
+  color: var(--text-muted);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.acoesEmLote {
+  display: flex;
+  gap: var(--spacing-xsmall);
+}

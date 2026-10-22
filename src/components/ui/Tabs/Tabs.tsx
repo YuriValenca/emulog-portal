@@ -17,9 +17,20 @@ interface TabsProps {
   value?: string;
   onValueChange?: (value: string) => void;
   larguraTotal?: boolean;
+  acaoDoCabecalho?: ReactNode;
 }
 
-export function Tabs({ items, defaultValue, value, onValueChange, larguraTotal = false }: TabsProps) {
+export function Tabs({ items, defaultValue, value, onValueChange, larguraTotal = false, acaoDoCabecalho }: TabsProps) {
+  const lista = (
+    <RadixTabs.List className={clsx(styles.list, larguraTotal && styles.listLarguraTotal)}>
+      {items.map((item) => (
+        <RadixTabs.Trigger key={item.value} value={item.value} className={styles.trigger}>
+          {item.label}
+        </RadixTabs.Trigger>
+      ))}
+    </RadixTabs.List>
+  );
+
   return (
     <RadixTabs.Root
       className={styles.root}
@@ -27,13 +38,14 @@ export function Tabs({ items, defaultValue, value, onValueChange, larguraTotal =
       value={value}
       onValueChange={onValueChange}
     >
-      <RadixTabs.List className={clsx(styles.list, larguraTotal && styles.listLarguraTotal)}>
-        {items.map((item) => (
-          <RadixTabs.Trigger key={item.value} value={item.value} className={styles.trigger}>
-            {item.label}
-          </RadixTabs.Trigger>
-        ))}
-      </RadixTabs.List>
+      {acaoDoCabecalho ? (
+        <div className={styles.cabecalho}>
+          {lista}
+          {acaoDoCabecalho}
+        </div>
+      ) : (
+        lista
+      )}
 
       {items.map((item) => (
         <RadixTabs.Content key={item.value} value={item.value} className={styles.content}>

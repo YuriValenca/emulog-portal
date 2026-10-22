@@ -100,7 +100,9 @@ export function AppAuthProvider({ children }: { children: React.ReactNode }) {
       return { authUser, authStatus: 'unauthenticated', debugError: null, ...empty };
     }
 
-    if (userQuery.isLoading || (companyId && companyQuery.isLoading) || (isSuperadmin && companiesQuery.isLoading)) {
+    // A empresa do superadmin é só a selecionada: trocar de empresa não pode desmontar o app inteiro.
+    const aguardandoEmpresa = !isSuperadmin && companyId && companyQuery.isLoading;
+    if (userQuery.isLoading || aguardandoEmpresa || (isSuperadmin && companiesQuery.isLoading)) {
       return { authUser, authStatus: 'loading', debugError: null, ...empty };
     }
 
@@ -216,6 +218,7 @@ export function AppAuthProvider({ children }: { children: React.ReactNode }) {
     companiesQuery.isLoading,
     companiesQuery.isError,
     companyId,
+    isSuperadmin,
   ]);
 
   return <AppAuthContext.Provider value={value}>{children}</AppAuthContext.Provider>;
