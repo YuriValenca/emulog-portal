@@ -1,0 +1,28 @@
+.gatilho {
+  display: inline-flex;
+}
+
+.conteudo {
+  max-width: 280px;
+  padding: 6px 10px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: var(--font-size-small);
+  line-height: 1.4;
+  white-space: normal;
+  z-index: 100;
+  animation: tooltipFadeIn 0.12s ease;
+}
+
+@keyframes tooltipFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}

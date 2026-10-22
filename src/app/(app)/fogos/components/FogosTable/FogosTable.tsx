@@ -2,13 +2,13 @@
 
 import { Eye, Trash2 } from 'lucide-react';
 import clsx from 'clsx';
-import { StatusPill } from '@/components/ui/StatusPill/StatusPill';
 import { ActionsMenu } from '@/components/ui/ActionsMenu/ActionsMenu';
 import { diffPercent, densidadeInicialFinalMedia, conclusaoEmOutroDia, formatarKg } from '@/lib/fogoUtils';
-import { statusConformidade, type ContextoFaixa } from '@/lib/densidade';
+import { motivoDoAlerta, statusConformidade, type ContextoFaixa } from '@/lib/densidade';
 import type { RegraDeteccao } from '@/schemas/regraDeteccao';
 import type { Projeto } from '@/types';
 import { PillDiferenca } from '../PillDiferenca/PillDiferenca';
+import { PillConformidade } from '../PillConformidade/PillConformidade';
 import styles from './FogosTable.module.scss';
 
 interface FogosTableProps {
@@ -44,7 +44,6 @@ export default function FogosTable({ projetos, contextoFaixa, regras, onSelect, 
             const dif = info ? diffPercent(info.kgPrevisto, info.kgAplicado) : null;
             const { final } = densidadeInicialFinalMedia(projeto);
             const status = statusConformidade(projeto, contextoFaixa);
-            const statusLabel = status === 'ok' ? 'Conforme' : status === 'crit' ? 'Alerta' : '—';
             const conclusao = conclusaoEmOutroDia(projeto);
 
             return (
@@ -70,7 +69,7 @@ export default function FogosTable({ projetos, contextoFaixa, regras, onSelect, 
                   {final !== null ? final.toFixed(2) : '—'}
                 </td>
                 <td>
-                  <StatusPill label={statusLabel} tone={status} />
+                  <PillConformidade status={status} motivo={status === 'crit' ? motivoDoAlerta(projeto, contextoFaixa) : null} />
                 </td>
                 <td>
                   <ActionsMenu

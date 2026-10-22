@@ -3,7 +3,7 @@ import type { ProjetoRascunho } from '@/schemas/projetoRascunho';
 import type { RegraDeteccao } from '@/schemas/regraDeteccao';
 import type { OcorrenciaTipo } from '@/schemas/ocorrencia';
 import { diffPercent } from './fogoUtils';
-import { densidadesForaDaFaixa, faixaDoProjeto, type ContextoFaixa } from './densidade';
+import { densidadesForaDaFaixa, faixaDoProjeto, resumoForaDaFaixa, type ContextoFaixa } from './densidade';
 import { avaliarRegra } from './avaliarRegra';
 
 export interface OcorrenciaDetectada {
@@ -23,11 +23,9 @@ function detectarDensidadeForaDaFaixa(projeto: Projeto, contexto: ContextoFaixa)
   const fora = densidadesForaDaFaixa(projeto.amostras ?? [], faixa);
   if (fora.length === 0) return null;
 
-  const amostras = fora.length === 1 ? '1 amostra' : `${fora.length} amostras`;
-
   return {
     tipo: 'densidade_fora_da_faixa',
-    descricao: `Fogo "${nomeDoFogo(projeto)}": ${amostras} com densidade final fora da faixa ${faixa.origem} (${faixa.min.toFixed(2)}–${faixa.max.toFixed(2)}).`,
+    descricao: `Fogo "${nomeDoFogo(projeto)}": ${resumoForaDaFaixa(fora.length, faixa)}.`,
     valorReferencia: null,
     regraId: null,
   };

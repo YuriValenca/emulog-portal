@@ -101,6 +101,18 @@ export function densidadesForaDaFaixa(amostras: AmostraItem[], faixa: FaixaDensi
   return ultimasDensidadesDoProjeto(amostras).filter((d) => d < faixa.min || d > faixa.max);
 }
 
+export function resumoForaDaFaixa(quantidade: number, faixa: FaixaResolvida): string {
+  const amostras = quantidade === 1 ? '1 amostra' : `${quantidade} amostras`;
+  return `${amostras} com densidade final fora da faixa ${faixa.origem} (${faixa.min.toFixed(2)}–${faixa.max.toFixed(2)})`;
+}
+
+export function motivoDoAlerta(projeto: FogoAvaliavel, contexto: ContextoFaixa): string | null {
+  const faixa = faixaDoProjeto(projeto, contexto);
+  const fora = densidadesForaDaFaixa(projeto.amostras ?? [], faixa);
+  if (fora.length === 0) return null;
+  return `${resumoForaDaFaixa(fora.length, faixa)}: ${fora.map((d) => d.toFixed(2)).join(' · ')}`;
+}
+
 export function statusConformidade(projeto: FogoAvaliavel, contexto: ContextoFaixa): StatusConformidade {
   const amostras = projeto.amostras ?? [];
   if (ultimasDensidadesDoProjeto(amostras).length === 0) return 'neutral';

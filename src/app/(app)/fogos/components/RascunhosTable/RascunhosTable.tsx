@@ -2,13 +2,13 @@
 
 import { Eye } from 'lucide-react';
 import clsx from 'clsx';
-import { StatusPill } from '@/components/ui/StatusPill/StatusPill';
 import { ActionsMenu } from '@/components/ui/ActionsMenu/ActionsMenu';
 import { diffPercent, densidadeInicialFinalMedia, formatarKg } from '@/lib/fogoUtils';
-import { statusConformidade, type ContextoFaixa } from '@/lib/densidade';
+import { motivoDoAlerta, statusConformidade, type ContextoFaixa } from '@/lib/densidade';
 import type { ProjetoRascunho } from '@/schemas/projetoRascunho';
 import type { RegraDeteccao } from '@/schemas/regraDeteccao';
 import { PillDiferenca } from '../PillDiferenca/PillDiferenca';
+import { PillConformidade } from '../PillConformidade/PillConformidade';
 import styles from './RascunhosTable.module.scss';
 
 const MS_DIA = 24 * 60 * 60 * 1000;
@@ -60,7 +60,6 @@ export default function RascunhosTable({
             const dif = diffPercent(info?.kgPrevisto, info?.kgAplicado);
             const { final } = densidadeInicialFinalMedia(rascunho);
             const status = statusConformidade(rascunho, contextoFaixa);
-            const statusLabel = status === 'ok' ? 'Conforme' : status === 'crit' ? 'Alerta' : '—';
             const atualizacao = rascunho.dataAtualizacao.toDate();
 
             return (
@@ -85,7 +84,7 @@ export default function RascunhosTable({
                 <td className={styles.numero}>{rascunho.furos ? rascunho.furos.itens.length : '—'}</td>
                 <td className={styles.numero}>{fotosPorRascunho.get(rascunho.id) ?? '—'}</td>
                 <td>
-                  <StatusPill label={statusLabel} tone={status} />
+                  <PillConformidade status={status} motivo={status === 'crit' ? motivoDoAlerta(rascunho, contextoFaixa) : null} />
                 </td>
                 <td>
                   <ActionsMenu
