@@ -168,7 +168,7 @@ export default function OcorrenciasPage() {
         <Button variant="ghost" icon={<Settings size={16} />} onClick={novaAutomacao.abrir}>
           Nova automação
         </Button>
-        <Button variant="accent" icon={<Plus size={16} />} onClick={novaOcorrencia.abrir}>
+        <Button variant="brand" icon={<Plus size={16} />} onClick={novaOcorrencia.abrir}>
           Nova ocorrência
         </Button>
       </div>

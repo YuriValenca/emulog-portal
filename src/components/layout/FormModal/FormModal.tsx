@@ -63,7 +63,7 @@ export function FormModal({
             <Button
               type={formId ? 'submit' : 'button'}
               form={formId}
-              variant="ok"
+              variant="brand"
               onClick={onAcao}
               loading={salvando}
               disabled={desabilitado}

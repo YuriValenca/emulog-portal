@@ -29,7 +29,7 @@ export default function EmpresasPage() {
     <div className={styles.container}>
       <div className={styles.header}>
         <h2 className={styles.title}>Empresas cadastradas</h2>
-        <Button variant="accent" icon={<Plus size={16} />} onClick={abrirCriacao}>
+        <Button variant="brand" icon={<Plus size={16} />} onClick={abrirCriacao}>
           Nova empresa
         </Button>
       </div>

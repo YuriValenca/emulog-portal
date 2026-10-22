@@ -81,7 +81,7 @@ export function LoginForm() {
       {firebaseError && <p className={styles.formError}>{firebaseError}</p>}
 
       <Button
-        variant="ok"
+        variant="brand"
         loading={submitting}
         onClick={() => {
           handleSubmit(onSubmit)();

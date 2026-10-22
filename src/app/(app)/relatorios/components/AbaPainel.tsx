@@ -71,7 +71,7 @@ export function AbaPainel({ companyId, fogos, intervalo, filtros, caminhaoIds, o
         <span className={styles.instrucao}>
           O painel abaixo usa as datas e os filtros do topo da página e sai igual no PDF.
         </span>
-        <Button variant="accent" icon={<Download size={16} />} onClick={() => setExportarAberto(true)}>
+        <Button variant="brand" icon={<Download size={16} />} onClick={() => setExportarAberto(true)}>
           Exportar PDF
         </Button>
       </div>

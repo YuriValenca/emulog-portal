@@ -77,7 +77,7 @@ export default function ConcluidosTab({ companyId, filtros, page, onPageChange }
         <span className={styles.resumo}>
           {totalFiltrado} fogo{totalFiltrado !== 1 ? 's' : ''} encontrado{totalFiltrado !== 1 ? 's' : ''}
         </span>
-        <Button variant="accent" icon={<Plus size={16} />} onClick={() => setModalCriarAberto(true)}>
+        <Button variant="brand" icon={<Plus size={16} />} onClick={() => setModalCriarAberto(true)}>
           Novo fogo
         </Button>
       </div>

@@ -48,7 +48,7 @@ export function ModalExportarPainel({ montarDados, onFechar }: ModalExportarPain
       description="O PDF sai igual ao painel, com os filtros aplicados agora e as listas completas."
       width={520}
       footer={
-        <Button variant="accent" icon={<Download size={16} />} onClick={baixar} loading={exportando}>
+        <Button variant="brand" icon={<Download size={16} />} onClick={baixar} loading={exportando}>
           Baixar PDF
         </Button>
       }

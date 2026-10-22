@@ -87,7 +87,7 @@ export function CadastroPanel<T>({
     <Panel
       title={title}
       action={
-        <Button variant="accent" icon={<Plus size={16} />} onClick={onNovo}>
+        <Button variant="brand" icon={<Plus size={16} />} onClick={onNovo}>
           {actionLabel}
         </Button>
       }

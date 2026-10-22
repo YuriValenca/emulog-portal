@@ -118,7 +118,7 @@ export default function VencimentosPage() {
           <Button variant="ghost" icon={<Settings size={16} />} onClick={() => setModalConfigAberto(true)}>
             Configurar alertas
           </Button>
-          <Button variant="accent" icon={<Plus size={16} />} onClick={() => setModalCriarAberto(true)}>
+          <Button variant="brand" icon={<Plus size={16} />} onClick={() => setModalCriarAberto(true)}>
             Novo vencimento
           </Button>
         </div>

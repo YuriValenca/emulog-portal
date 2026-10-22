@@ -146,7 +146,7 @@ export function ModalGerarRelatorio({ fogos, onFechar }: ModalGerarRelatorioProp
             <Button variant="ghost" icon={<ArrowLeft size={16} />} onClick={() => setPrevia(null)}>
               Voltar
             </Button>
-            <Button variant="accent" icon={<Download size={16} />} onClick={() => baixar(previa.arquivo)}>
+            <Button variant="brand" icon={<Download size={16} />} onClick={() => baixar(previa.arquivo)}>
               Baixar PDF
             </Button>
           </>
@@ -169,7 +169,7 @@ export function ModalGerarRelatorio({ fogos, onFechar }: ModalGerarRelatorioProp
           <Button variant="ghost" icon={<Eye size={16} />} onClick={preVisualizar} loading={gerando === 'previa'} disabled={!podeGerar}>
             Pré-visualizar
           </Button>
-          <Button variant="accent" icon={<Download size={16} />} onClick={gerarEBaixar} loading={gerando === 'baixar'} disabled={!podeGerar}>
+          <Button variant="brand" icon={<Download size={16} />} onClick={gerarEBaixar} loading={gerando === 'baixar'} disabled={!podeGerar}>
             Baixar PDF
           </Button>
         </>

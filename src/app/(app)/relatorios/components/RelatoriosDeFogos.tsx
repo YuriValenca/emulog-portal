@@ -38,7 +38,7 @@ function BarraDeSelecao({ quantidade, onLimpar, onGerar }: BarraDeSelecaoProps) 
           </button>
         </span>
       )}
-      <Button variant="accent" icon={<FileDown size={16} />} onClick={onGerar} disabled={quantidade === 0}>
+      <Button variant="brand" icon={<FileDown size={16} />} onClick={onGerar} disabled={quantidade === 0}>
         Gerar relatório
       </Button>
     </div>

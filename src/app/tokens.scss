@@ -9,9 +9,13 @@
   --text: #E7EBEE;
   --text-muted: #8C99A3;
 
-  --brand: #1F6452;
-  --brand-on-dark: color-mix(in srgb, var(--brand) 55%, var(--text));
+  --brand: #2F9C7C;
+  --brand-on-dark: color-mix(in srgb, var(--brand) 65%, white);
   --brand-soft: color-mix(in srgb, var(--brand) 16%, transparent);
+
+  --cor-empresa: var(--brand);
+  --cor-empresa-on-dark: color-mix(in srgb, var(--cor-empresa) 55%, var(--text));
+  --cor-empresa-soft: color-mix(in srgb, var(--cor-empresa) 16%, transparent);
 
   --accent: #FF9621;
   --accent-soft: color-mix(in srgb, var(--accent) 14%, transparent);
@@ -76,6 +80,7 @@
   --text-muted: #5F6C75;
 
   --brand-on-dark: var(--brand);
+  --cor-empresa-on-dark: var(--cor-empresa);
 
   color-scheme: light;
   background: var(--bg);
