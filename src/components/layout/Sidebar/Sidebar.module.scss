@@ -72,8 +72,8 @@
 }
 
 .navItemActive {
-  background: var(--accent-soft);
-  color: var(--accent);
+  background: var(--cor-empresa-soft);
+  color: var(--cor-empresa-on-dark);
 }
 
 .navItemDisabled {
@@ -104,8 +104,8 @@
   width: 28px;
   height: 28px;
   border-radius: var(--radius-50);
-  background: var(--data-soft);
-  color: var(--data);
+  background: var(--cor-empresa-soft);
+  color: var(--cor-empresa-on-dark);
   display: flex;
   align-items: center;
   justify-content: center;

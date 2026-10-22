@@ -8,6 +8,7 @@ import { useAppAuth } from '@/hooks/useAppAuth';
 import { useCompanyGroup } from '@/hooks/fogos/useCompanyGroup';
 import { useOcorrencias } from '@/hooks/ocorrencias/useOcorrencias';
 import { useOcorrenciasAutoScan } from '@/hooks/ocorrencias/useOcorrenciasAutoScan';
+import { useCorDaEmpresa } from '@/hooks/useCorDaEmpresa';
 import { useOcorrenciasNaoVistas, useMarcarOcorrenciasVisitadas } from '@/hooks/ocorrencias/useOcorrenciasNaoVistas';
 import { ScanProgressCard } from '@/components/layout/ScanProgressCard/ScanProgressCard';
 import Sidebar from '@/components/layout/Sidebar/Sidebar';
@@ -57,6 +58,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { companyIds } = useCompanyGroup(companyId);
   const { ocorrencias } = useOcorrencias(companyIds);
   const scanState = useOcorrenciasAutoScan(companyId);
+  useCorDaEmpresa(company?.primaryColor);
   const temOcorrenciasNaoVistas = useOcorrenciasNaoVistas(ocorrencias, appUser);
   const marcarVisitadas = useMarcarOcorrenciasVisitadas();
 
