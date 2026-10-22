@@ -104,7 +104,16 @@ function TickEixoNome({ x = 0, y = 0, payload }: TickEixoProps) {
 const METRICAS: Record<MetricaRanking, { rotulo: string; titulo: string; nomeNoTooltip: string; margemDireita: number }> = {
   totalFogos: { rotulo: 'Fogos', titulo: 'Fogos por', nomeNoTooltip: 'Fogos', margemDireita: 24 },
   kgAplicado: { rotulo: 'Kg', titulo: 'Kg aplicado por', nomeNoTooltip: 'Kg aplicado', margemDireita: 88 },
+  totalAlertas: { rotulo: 'Alertas', titulo: 'Fogos em alerta por', nomeNoTooltip: 'Fogos em alerta', margemDireita: 24 },
 };
+
+const SEGMENTOS_DE_ALERTA = [
+  { dataKey: 'alertasDensidade', nome: 'Densidade', cor: 'var(--data)' },
+  { dataKey: 'alertasKg', nome: 'Kg', cor: 'var(--accent)' },
+  { dataKey: 'alertasDensidadeEKg', nome: 'Densidade e Kg', cor: 'var(--crit)' },
+] as const;
+
+const ESTILO_DO_ROTULO = { fill: 'var(--text)', fontSize: 12 };
 
 const formatarValor = (valor: number, metrica: MetricaRanking) =>
   metrica === 'kgAplicado' ? `${formatarKg(Math.round(valor))} kg` : String(valor);
@@ -132,6 +141,61 @@ function SeletorDeMetrica({ metrica, onChange }: SeletorDeMetricaProps) {
   );
 }
 
+function LegendaDeAlertas() {
+  return (
+    <ul className={styles.legenda}>
+      {SEGMENTOS_DE_ALERTA.map((segmento) => (
+        <li key={segmento.dataKey} className={styles.itemLegenda}>
+          <span className={styles.marcadorLegenda} style={{ background: segmento.cor }} />
+          {segmento.nome}
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+// Recharts só reconhece `Bar` como filho direto do gráfico, então isto devolve elementos, não um componente.
+function barrasDeAlerta(animar: boolean) {
+  return SEGMENTOS_DE_ALERTA.map((segmento, indice) => {
+    const ultimo = indice === SEGMENTOS_DE_ALERTA.length - 1;
+    return (
+      <Bar
+        key={segmento.dataKey}
+        dataKey={segmento.dataKey}
+        name={segmento.nome}
+        stackId="alertas"
+        fill={segmento.cor}
+        stroke="var(--surface-2)"
+        strokeWidth={2}
+        radius={ultimo ? [0, 4, 4, 0] : 0}
+        barSize={16}
+        isAnimationActive={animar}
+      >
+        {ultimo && <LabelList dataKey="totalAlertas" position="right" {...ESTILO_DO_ROTULO} />}
+      </Bar>
+    );
+  });
+}
+
+function barraSimples(metrica: MetricaRanking, animar: boolean) {
+  return (
+    <Bar dataKey={metrica} fill="var(--data)" radius={[0, 4, 4, 0]} barSize={16} isAnimationActive={animar}>
+      <LabelList
+        dataKey={metrica}
+        position="right"
+        {...ESTILO_DO_ROTULO}
+        formatter={(value) => formatarValor(Number(value), metrica)}
+      />
+    </Bar>
+  );
+}
+
+function rotuloDoTooltip(item: RankingItem | undefined, metrica: MetricaRanking): string {
+  if (!item) return '';
+  if (metrica !== 'totalAlertas') return item.label;
+  return `${item.label} · ${item.totalAlertas} de ${item.totalFogos} fogos`;
+}
+
 interface RankingCardProps {
   entidade: string;
   items: RankingItem[];
@@ -143,6 +207,7 @@ interface RankingCardProps {
 export function RankingCard({ entidade, items, metrica, onMetricaChange, modoRelatorio = false }: RankingCardProps) {
   const { dados, altura, larguraEixo } = usePreparoDados(items);
   const { titulo, nomeNoTooltip, margemDireita } = METRICAS[metrica];
+  const emAlertas = metrica === 'totalAlertas';
 
   return (
     <div className={styles.card}>
@@ -150,6 +215,7 @@ export function RankingCard({ entidade, items, metrica, onMetricaChange, modoRel
         <p className={styles.cardTitle}>{`${titulo} ${entidade}`}</p>
         {!modoRelatorio && onMetricaChange && <SeletorDeMetrica metrica={metrica} onChange={onMetricaChange} />}
       </div>
+      {emAlertas && <LegendaDeAlertas />}
       <div style={{ width: '100%', height: altura }}>
         <ResponsiveContainer>
           <BarChart data={dados} layout="vertical" barCategoryGap="20%" margin={{ top: 0, right: margemDireita, bottom: 0, left: 0 }}>
@@ -164,8 +230,10 @@ export function RankingCard({ entidade, items, metrica, onMetricaChange, modoRel
             />
             <Tooltip
               cursor={{ fill: 'var(--surface)' }}
-              formatter={(value) => [formatarValor(Number(value), metrica), nomeNoTooltip]}
-              labelFormatter={(_, payload) => payload?.[0]?.payload?.label ?? ''}
+              formatter={(value, nome) =>
+                emAlertas ? [String(value), String(nome)] : [formatarValor(Number(value), metrica), nomeNoTooltip]
+              }
+              labelFormatter={(_, payload) => rotuloDoTooltip(payload?.[0]?.payload, metrica)}
               contentStyle={{
                 background: 'var(--surface-2)',
                 border: '1px solid var(--border)',
@@ -175,15 +243,7 @@ export function RankingCard({ entidade, items, metrica, onMetricaChange, modoRel
               labelStyle={{ color: 'var(--text)' }}
               itemStyle={{ color: 'var(--text)' }}
             />
-            <Bar dataKey={metrica} fill="var(--data)" radius={[0, 4, 4, 0]} barSize={16} isAnimationActive={!modoRelatorio}>
-              <LabelList
-                dataKey={metrica}
-                position="right"
-                fill="var(--text)"
-                fontSize={12}
-                formatter={(value) => formatarValor(Number(value), metrica)}
-              />
-            </Bar>
+            {emAlertas ? barrasDeAlerta(!modoRelatorio) : barraSimples(metrica, !modoRelatorio)}
           </BarChart>
         </ResponsiveContainer>
       </div>

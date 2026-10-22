@@ -10,13 +10,17 @@ const LIMITE_TEXTO = 300;
 
 const COR_HEX = /^#[0-9a-fA-F]{3,8}$/;
 
-const metricaSchema = z.enum(['totalFogos', 'kgAplicado']);
+const metricaSchema = z.enum(['totalFogos', 'kgAplicado', 'totalAlertas']);
 
 const rankingItemSchema = z.object({
   id: z.string(),
   label: z.string().max(LIMITE_TEXTO),
   totalFogos: z.number(),
   kgAplicado: z.number(),
+  totalAlertas: z.number(),
+  alertasDensidade: z.number(),
+  alertasKg: z.number(),
+  alertasDensidadeEKg: z.number(),
 });
 
 const estatisticasSchema = z.object({
@@ -34,6 +38,7 @@ const estatisticasSchema = z.object({
       densidadeMedia: z.number().nullable(),
     })
   ),
+  totalAlertasPeriodo: z.number(),
   fogosAgrupados: z.array(z.object({ rotulo: z.string().max(LIMITE_TEXTO), totalFogos: z.number(), kgAplicado: z.number() })),
   granularidadeGrafico: z.enum(['diaria', 'semanal', 'mensal']),
   rankingUmb: z.array(rankingItemSchema),

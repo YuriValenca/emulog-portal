@@ -1,6 +1,9 @@
 import { densidadeMediaDoProjeto, statusConformidade, type ContextoFaixa } from '@/lib/densidade';
 import { statusExpiracaoLicenca } from '@/lib/licenca';
+import { diffPercent } from '@/lib/fogoUtils';
+import { diferencaKgExcedida } from '@/lib/avaliarRegra';
 import { paraKg } from '@/helpers/parseNumbers';
+import type { RegraDeteccao } from '@/schemas/regraDeteccao';
 import type { License, Projeto } from '@/types';
 
 export type GranularidadeGrafico = 'diaria' | 'semanal' | 'mensal';
@@ -16,9 +19,21 @@ export interface RankingItem {
   label: string;
   totalFogos: number;
   kgAplicado: number;
+  totalAlertas: number;
+  alertasDensidade: number;
+  alertasKg: number;
+  alertasDensidadeEKg: number;
 }
 
-export type MetricaRanking = 'totalFogos' | 'kgAplicado';
+export type MetricaRanking = 'totalFogos' | 'kgAplicado' | 'totalAlertas';
+
+type MotivoDoAlerta = 'densidade' | 'kg' | 'densidadeEKg';
+
+const CAMPO_DO_MOTIVO: Record<MotivoDoAlerta, 'alertasDensidade' | 'alertasKg' | 'alertasDensidadeEKg'> = {
+  densidade: 'alertasDensidade',
+  kg: 'alertasKg',
+  densidadeEKg: 'alertasDensidadeEKg',
+};
 
 export interface MetricasDosRankings {
   umb: MetricaRanking;
@@ -47,6 +62,7 @@ export interface EstatisticasDeFogos {
   fogosConformesPeriodo: number;
   fogosAlertaPeriodo: number;
   fogosNaoConformes: FogoNaoConforme[];
+  totalAlertasPeriodo: number;
   fogosAgrupados: FogoPorPeriodo[];
   granularidadeGrafico: GranularidadeGrafico;
   rankingUmb: RankingItem[];
@@ -220,14 +236,45 @@ function itensOperadoresDoProjeto(projeto: Projeto): RefRanking[] {
   return (projeto.informacoesOperacao?.equipe ?? []).map((membro) => ({ id: membro.id, label: membro.nome }));
 }
 
-function calcularRanking(projetos: Projeto[], extrairRefs: (projeto: Projeto) => RefRanking[]): RankingItem[] {
+function motivoDoAlerta(projeto: Projeto, contextoFaixa: ContextoFaixa, regras: RegraDeteccao[]): MotivoDoAlerta | null {
+  const densidadeFora = statusConformidade(projeto, contextoFaixa) === 'crit';
+  const info = projeto.informacoesOperacao;
+  const dif = info ? diffPercent(info.kgPrevisto, info.kgAplicado) : null;
+  const kgFora = dif !== null && diferencaKgExcedida(dif, regras);
+
+  if (densidadeFora && kgFora) return 'densidadeEKg';
+  if (densidadeFora) return 'densidade';
+  return kgFora ? 'kg' : null;
+}
+
+const itemVazio = (ref: RefRanking): RankingItem => ({
+  id: ref.id,
+  label: ref.label,
+  totalFogos: 0,
+  kgAplicado: 0,
+  totalAlertas: 0,
+  alertasDensidade: 0,
+  alertasKg: 0,
+  alertasDensidadeEKg: 0,
+});
+
+function calcularRanking(
+  projetos: Projeto[],
+  extrairRefs: (projeto: Projeto) => RefRanking[],
+  motivoPorFogo: Map<string, MotivoDoAlerta | null>
+): RankingItem[] {
   const mapa = new Map<string, RankingItem>();
 
   projetos.forEach((projeto) => {
+    const motivo = motivoPorFogo.get(projeto.id) ?? null;
     extrairRefs(projeto).forEach((ref) => {
-      const atual = mapa.get(ref.id) ?? { id: ref.id, label: ref.label, totalFogos: 0, kgAplicado: 0 };
+      const atual = mapa.get(ref.id) ?? itemVazio(ref);
       atual.totalFogos += 1;
       atual.kgAplicado += kgAplicadoDoFogo(projeto);
+      if (motivo) {
+        atual.totalAlertas += 1;
+        atual[CAMPO_DO_MOTIVO[motivo]] += 1;
+      }
       mapa.set(ref.id, atual);
     });
   });
@@ -247,18 +294,21 @@ export function calcularEstatisticasDeFogos(
   projetos: Projeto[],
   filtros: FiltrosDeFogos,
   contextoFaixa: ContextoFaixa,
+  regras: RegraDeteccao[],
   agora: Date = new Date()
 ): EstatisticasDeFogos {
   const fogos = filtrarFogos(projetos, filtros);
   const granularidadeGrafico = granularidadeDoIntervalo(filtros.inicio, filtros.fim ?? agora);
+  const motivoPorFogo = new Map(fogos.map((fogo) => [fogo.id, motivoDoAlerta(fogo, contextoFaixa, regras)]));
 
   return {
     ...calcularTotais(fogos),
     ...calcularConformidadeDensidade(fogos, contextoFaixa),
+    totalAlertasPeriodo: [...motivoPorFogo.values()].filter(Boolean).length,
     fogosAgrupados: calcularAgrupamentos(fogos, granularidadeGrafico),
     granularidadeGrafico,
-    rankingUmb: soOsSelecionados(calcularRanking(fogos, itensCaminhaoDoProjeto), filtros.caminhaoIds),
-    rankingOperadores: soOsSelecionados(calcularRanking(fogos, itensOperadoresDoProjeto), filtros.operadorIds),
+    rankingUmb: soOsSelecionados(calcularRanking(fogos, itensCaminhaoDoProjeto, motivoPorFogo), filtros.caminhaoIds),
+    rankingOperadores: soOsSelecionados(calcularRanking(fogos, itensOperadoresDoProjeto, motivoPorFogo), filtros.operadorIds),
   };
 }
 

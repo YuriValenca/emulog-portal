@@ -6,6 +6,7 @@ import { useAppAuth } from '@/hooks/useAppAuth';
 import { useContextoFaixa } from '@/hooks/useContextoFaixa';
 import { useLicencas } from '@/hooks/useLicencas';
 import { useOcorrenciasAbertas } from '@/hooks/ocorrencias/useOcorrenciasAbertas';
+import { useRegrasDeteccao } from '@/hooks/ocorrencias/useRegrasDeteccao';
 import { fimDoDia, inicioDoDia, type IntervaloDoRelatorio } from '@/hooks/relatorios/useFogosDoRelatorio';
 import { Button } from '@/components/ui/Button/Button';
 import { ConteudoDoPainel } from '@/components/painel/ConteudoDoPainel/ConteudoDoPainel';
@@ -34,6 +35,7 @@ export function AbaPainel({ companyId, fogos, intervalo, filtros, caminhaoIds, o
   const contextoFaixa = useContextoFaixa(companyId);
   const { data: licencas } = useLicencas(companyId);
   const ocorrenciasAbertas = useOcorrenciasAbertas(companyId);
+  const { regras } = useRegrasDeteccao(companyId);
   const [metricas, setMetricas] = useState<MetricasDosRankings>(METRICAS_PADRAO);
   const [exportarAberto, setExportarAberto] = useState(false);
 
@@ -43,10 +45,10 @@ export function AbaPainel({ companyId, fogos, intervalo, filtros, caminhaoIds, o
   // Os fogos já chegam filtrados pela página; UMBs e operadores voltam aqui só para limitar os rankings
   const estatisticas = useMemo(
     () => ({
-      ...calcularEstatisticasDeFogos(fogos, { inicio, fim, caminhaoIds, operadorIds }, contextoFaixa, fim),
+      ...calcularEstatisticasDeFogos(fogos, { inicio, fim, caminhaoIds, operadorIds }, contextoFaixa, regras, fim),
       ...calcularEstatisticasDeLicencas(licencas ?? []),
     }),
-    [fogos, inicio, fim, caminhaoIds, operadorIds, contextoFaixa, licencas]
+    [fogos, inicio, fim, caminhaoIds, operadorIds, contextoFaixa, regras, licencas]
   );
 
   const montarDadosDoRelatorio = (tema: TemaDoRelatorio) => ({

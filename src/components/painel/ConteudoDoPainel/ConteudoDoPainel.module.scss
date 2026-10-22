@@ -10,28 +10,28 @@
   gap: var(--spacing-default);
 }
 
-.cardRecolhivel {
+.cardAlternado {
   display: grid;
-  overflow: hidden;
+  min-width: 0;
 }
 
-// A coluna que sai encolhe até 0fr (o navegador anima o grid com o mesmo número de colunas), e a margem
-// negativa engole o gap dela; depois que o card desmonta, o grid volta a ter só as colunas que sobraram
+.face {
+  grid-area: 1 / 1;
+  min-width: 0;
+  transition: opacity var(--duracao-bloco) ease;
+
+  > * {
+    height: 100%;
+  }
+}
+
+.faceOculta {
+  opacity: 0;
+  pointer-events: none;
+}
+
 @media (min-width: 900px) {
   .cards {
     grid-template-columns: repeat(4, 1fr);
-    transition: grid-template-columns var(--duracao-bloco) ease;
-  }
-
-  .cards:not(:has(> .cardRecolhivel)) {
-    grid-template-columns: repeat(3, 1fr);
-  }
-
-  .cards:has(> [data-recolhido]) {
-    grid-template-columns: repeat(3, 1fr) 0fr;
-  }
-
-  .cards > [data-recolhido] {
-    margin-left: calc(-1 * var(--spacing-default));
   }
 }

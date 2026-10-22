@@ -35,6 +35,29 @@
   margin-bottom: var(--spacing-xsmall);
 }
 
+.legenda {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-nano) var(--spacing-small);
+  margin: 0 0 var(--spacing-xsmall);
+  padding: 0;
+  list-style: none;
+  font-size: var(--font-size-tooltip);
+  color: var(--text-muted);
+}
+
+.itemLegenda {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-nano);
+}
+
+.marcadorLegenda {
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+}
+
 .seletor {
   display: inline-flex;
   padding: var(--spacing-nano);

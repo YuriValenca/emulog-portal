@@ -3,6 +3,7 @@
 import { useMemo } from 'react';
 import { useProjetosPeriodo } from './useProjetosPeriodo';
 import { useLicencas } from './useLicencas';
+import { useRegrasDeteccao } from './ocorrencias/useRegrasDeteccao';
 import { calcularEstatisticasDeFogos, calcularEstatisticasDeLicencas } from '@/lib/dashboard';
 import type { ContextoFaixa } from '@/lib/densidade';
 import { inicioDoPeriodo, type Periodo } from '@/lib/periodo';
@@ -16,6 +17,7 @@ export function useDashboardStats(
 ) {
   const projetosQuery = useProjetosPeriodo(companyId, periodo);
   const licencasQuery = useLicencas(companyId);
+  const { regras } = useRegrasDeteccao(companyId);
 
   const data = useMemo(() => {
     if (!projetosQuery.data || !licencasQuery.data) return undefined;
@@ -25,11 +27,12 @@ export function useDashboardStats(
         projetosQuery.data,
         { inicio: inicioDoPeriodo(periodo, agora), caminhaoIds, operadorIds },
         contextoFaixa,
+        regras,
         agora
       ),
       ...calcularEstatisticasDeLicencas(licencasQuery.data, agora),
     };
-  }, [projetosQuery.data, licencasQuery.data, periodo, contextoFaixa, caminhaoIds, operadorIds]);
+  }, [projetosQuery.data, licencasQuery.data, periodo, contextoFaixa, regras, caminhaoIds, operadorIds]);
 
   return {
     data,

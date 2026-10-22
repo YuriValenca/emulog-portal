@@ -1,14 +1,14 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import { AlertTriangle, Flame, Gauge, Weight } from 'lucide-react';
+import clsx from 'clsx';
+import { AlertTriangle, Flame, Gauge, ShieldAlert, Weight } from 'lucide-react';
 // TODO: mover StatCard, RankingsSection e DashboardCharts para components/painel, já que três rotas usam
 import { StatCard } from '@/app/(app)/dashboard/components/StatCard/StatCard';
 import { RankingsSection } from '@/app/(app)/dashboard/components/RankingsSection/RankingsSection';
 import { DashboardCharts } from '@/app/(app)/dashboard/components/DashboardCharts/DashboardCharts';
 import type { BlocosDoPainel, EstatisticasDoPainel, MetricasDosRankings } from '@/lib/dashboard';
 import type { FaixaDensidade } from '@/lib/densidade';
-import { BlocoAnimado } from '../BlocoAnimado/BlocoAnimado';
 import styles from './ConteudoDoPainel.module.scss';
 
 interface CardsDoPainelProps {
@@ -22,6 +22,7 @@ interface CardsDoPainelProps {
 function CardsDoPainel({ estatisticas, periodoLabel, faixa, ocorrenciasAbertas, mostrarOcorrencias }: CardsDoPainelProps) {
   const media = estatisticas.densidadeMediaPeriodo;
   const densidadeDentroDaFaixa = media !== null && media >= faixa.min && media <= faixa.max;
+  const alertas = estatisticas.totalAlertasPeriodo;
 
   return (
     <div className={styles.cards}>
@@ -40,14 +41,26 @@ function CardsDoPainel({ estatisticas, periodoLabel, faixa, ocorrenciasAbertas, 
         sub={media !== null ? 'g/cm³' : undefined}
         color={densidadeDentroDaFaixa ? 'var(--ok)' : 'var(--crit)'}
       />
-      <BlocoAnimado visivel={mostrarOcorrencias} className={styles.cardRecolhivel}>
-        <StatCard
-          icon={<AlertTriangle size={22} />}
-          label="Ocorrências abertas"
-          value={ocorrenciasAbertas ?? '—'}
-          color={ocorrenciasAbertas ? 'var(--crit)' : 'var(--ok)'}
-        />
-      </BlocoAnimado>
+      {/* Ocorrências são da empresa toda; com filtro de fogo, o mesmo lugar mostra os alertas do recorte */}
+      <div className={styles.cardAlternado}>
+        <div className={clsx(styles.face, !mostrarOcorrencias && styles.faceOculta)} aria-hidden={!mostrarOcorrencias}>
+          <StatCard
+            icon={<AlertTriangle size={22} />}
+            label="Ocorrências abertas"
+            value={ocorrenciasAbertas ?? '—'}
+            color={ocorrenciasAbertas ? 'var(--crit)' : 'var(--ok)'}
+          />
+        </div>
+        <div className={clsx(styles.face, mostrarOcorrencias && styles.faceOculta)} aria-hidden={mostrarOcorrencias}>
+          <StatCard
+            icon={<ShieldAlert size={22} />}
+            label={`Fogos em alerta (${periodoLabel})`}
+            value={alertas}
+            denominador={estatisticas.totalFogosPeriodo}
+            color={alertas > 0 ? 'var(--crit)' : 'var(--ok)'}
+          />
+        </div>
+      </div>
     </div>
   );
 }

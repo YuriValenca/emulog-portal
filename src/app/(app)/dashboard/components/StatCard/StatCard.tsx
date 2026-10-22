@@ -6,10 +6,11 @@ interface StatCardProps {
   label: string;
   value: string | number;
   sub?: string;
+  denominador?: number;
   color: string;
 }
 
-export function StatCard({ icon, label, value, sub, color }: StatCardProps) {
+export function StatCard({ icon, label, value, sub, denominador, color }: StatCardProps) {
   return (
     <div className={styles.card} style={{ borderTopColor: color }}>
       <div className={styles.header}>
@@ -17,7 +18,10 @@ export function StatCard({ icon, label, value, sub, color }: StatCardProps) {
         <span className={styles.label}>{label}</span>
       </div>
       <div className={styles.value}>
-        <span className={styles.valueText}>{value}</span>
+        <span className={styles.valueText}>
+          {value}
+          {denominador !== undefined && <span className={styles.denominador}>/{denominador}</span>}
+        </span>
         {sub && <span className={styles.sub}>({sub})</span>}
       </div>
     </div>
