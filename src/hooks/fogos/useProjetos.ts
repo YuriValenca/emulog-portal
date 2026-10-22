@@ -123,6 +123,7 @@ interface AmostraManualInput {
 
 interface CreateProjetoInput {
   nomeProjeto: string;
+  cliente: { id: string; nome: string } | null;
   companyId: string;
   uidUsuario: string;
   data: string;
@@ -176,6 +177,7 @@ async function criarProjetoManual(input: CreateProjetoInput): Promise<ProjetoCri
 
   const dadosDoProjeto = {
     nomeProjeto: input.nomeProjeto.trim(),
+    cliente: input.cliente,
     dataCriacao,
     uidUsuario: input.uidUsuario,
     companyId: input.companyId,

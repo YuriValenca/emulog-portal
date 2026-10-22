@@ -15,7 +15,7 @@ import { useToast } from '@/components/ui/Toast/Toast';
 import { useCreateProjeto } from '@/hooks/fogos/useProjetos';
 import { paraKg } from '@/helpers/parseNumbers';
 import { formatarKg } from '@/lib/fogoUtils';
-import type { Produto, Caminhao, Operador } from '@/types';
+import type { Produto, Caminhao, Operador, Cliente } from '@/types';
 import { SecaoAmostras, isAmostraCompleta, type TipoDensidade } from './SecaoAmostras';
 import { SecaoFurosFormulario } from './SecaoFurosFormulario';
 import { SecaoFotosFormulario } from './SecaoFotosFormulario';
@@ -41,6 +41,7 @@ const kgDigitadoSchema = z.string().optional().refine(
 );
 
 const formSchema = z.object({
+  clienteId: z.string().optional(),
   nomeProjeto: z.string().min(1, 'Nome obrigatório'),
   data: z.string().min(1, 'Data obrigatória'),
   amostras: z.array(amostraSchema).min(1),
@@ -66,6 +67,7 @@ type FormValues = z.infer<typeof formSchema>;
 const amostraVazia = () => ({ densidadeInicial: null, densidadeFinal: null });
 
 const defaultFormValues: FormValues = {
+  clienteId: '',
   nomeProjeto: '',
   data: '',
   amostras: [amostraVazia()],
@@ -93,10 +95,11 @@ interface CriarFogoModalProps {
   produtos: Produto[];
   caminhoes: Caminhao[];
   operadores: Operador[];
+  clientes: Cliente[];
 }
 
 export default function CriarFogoModal({
-  open, onClose, companyId, uidUsuario, produtos, caminhoes, operadores,
+  open, onClose, companyId, uidUsuario, produtos, caminhoes, operadores, clientes,
 }: CriarFogoModalProps) {
   const { criarProjeto, isCriando } = useCreateProjeto();
   const { toast } = useToast();
@@ -123,6 +126,9 @@ export default function CriarFogoModal({
   const amostrasValues = useWatch({ control, name: 'amostras' });
   const caminhaoIdValue = useWatch({ control, name: 'caminhaoId' });
   const produtoIdValue = useWatch({ control, name: 'produtoId' });
+  const clienteIdValue = useWatch({ control, name: 'clienteId' });
+
+  const clientesAtivos = clientes.filter((c) => c.ativo);
 
   const maxDate = new Date().toISOString().split('T')[0];
 
@@ -152,10 +158,11 @@ export default function CriarFogoModal({
   };
 
   const pendenciasFuros = pendenciasDosFuros(furos);
+  const clientePreenchido = Boolean(clienteIdValue);
   const nomePreenchido = Boolean(nomeProjeto?.trim());
   const dataPreenchida = Boolean(dataValue);
   const densidadesCompletas = amostrasValues.every(isAmostraCompleta);
-  const podeSalvar = nomePreenchido && dataPreenchida && densidadesCompletas && pendenciasFuros.length === 0;
+  const podeSalvar = clientePreenchido && nomePreenchido && dataPreenchida && densidadesCompletas && pendenciasFuros.length === 0;
 
   const handleClear = () => {
     reset(defaultFormValues);
@@ -170,6 +177,7 @@ export default function CriarFogoModal({
   const montarFogo = (values: FormValues) => {
     const caminhao = caminhoes.find((c) => c.id === values.caminhaoId);
     const produto = produtos.find((p) => p.id === values.produtoId);
+    const cliente = clientesAtivos.find((c) => c.id === values.clienteId);
     const equipe = equipeIds
       .map((id) => operadores.find((o) => o.id === id))
       .filter((o): o is Operador => Boolean(o))
@@ -177,6 +185,7 @@ export default function CriarFogoModal({
 
     return {
       nomeProjeto: values.nomeProjeto,
+      cliente: cliente ? { id: cliente.id, nome: cliente.nome } : null,
       companyId,
       uidUsuario,
       data: values.data,
@@ -216,6 +225,9 @@ export default function CriarFogoModal({
 
   const dicaParaSalvar = !podeSalvar && (
     <>
+      {!clientePreenchido && (clientesAtivos.length === 0
+        ? 'Cadastre um cliente em Cadastros › Clientes. '
+        : 'Selecione um cliente. ')}
       {!nomePreenchido && 'Informe o nome do fogo. '}
       {!dataPreenchida && 'Informe a data. '}
       {!densidadesCompletas && 'Confirme a densidade inicial e final de cada amostra. '}
@@ -247,6 +259,15 @@ export default function CriarFogoModal({
       >
         <form id={FORM_ID} ref={setPortalContainer} onSubmit={handleSubmit(onSubmit)} className={styles.form}>
           <Input label="Nome do fogo" {...register('nomeProjeto')} errorMessage={errors.nomeProjeto?.message} />
+
+          <Select
+            label='Selecione o cliente'
+            value={clienteIdValue ?? ''}
+            placeholder={clientesAtivos.length === 0 ? 'Nenhum cliente ativo cadastrado' : 'Cliente'}
+            disabled={clientesAtivos.length === 0}
+            onValueChange={(value) => setValue('clienteId', value)}
+            options={clientesAtivos.map((c) => ({ value: c.id, label: c.nome }))}
+          />
 
           <div className={styles.row}>
             <Input

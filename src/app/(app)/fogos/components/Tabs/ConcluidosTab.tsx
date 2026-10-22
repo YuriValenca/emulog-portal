@@ -8,6 +8,7 @@ import { useProjetosList, useDeleteProjeto } from '@/hooks/fogos/useProjetos';
 import { useCaminhoes } from '@/hooks/cadastro/useCaminhoes';
 import { useOperadores } from '@/hooks/cadastro/useOperadores';
 import { useProdutos } from '@/hooks/cadastro/useProdutos';
+import { useClientes } from '@/hooks/cadastro/useClientes';
 import { useContextoFaixa } from '@/hooks/useContextoFaixa';
 import { useRegrasDeteccao } from '@/hooks/ocorrencias/useRegrasDeteccao';
 import { Button } from '@/components/ui/Button/Button';
@@ -36,6 +37,7 @@ export default function ConcluidosTab({ companyId, filtros, page, onPageChange }
   const { itens: caminhoes } = useCaminhoes(companyId);
   const { itens: operadores } = useOperadores(companyId);
   const { itens: produtos } = useProdutos(companyId);
+  const { itens: clientes } = useClientes(companyId);
   const { deletarProjeto, isDeletando } = useDeleteProjeto();
 
   const [projetoParaExcluir, setProjetoParaExcluir] = useState<Projeto | null>(null);
@@ -123,6 +125,7 @@ export default function ConcluidosTab({ companyId, filtros, page, onPageChange }
           produtos={produtos}
           caminhoes={caminhoes}
           operadores={operadores}
+          clientes={clientes}
         />
       )}
     </>
