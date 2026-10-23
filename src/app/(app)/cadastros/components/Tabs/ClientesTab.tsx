@@ -1,15 +1,17 @@
 'use client';
 
+import { useState } from 'react';
 import { Pencil, Trash2 } from 'lucide-react';
 import { Input } from '@/components/ui/Input/Input';
 import { Switch } from '@/components/ui/Switch/Switch';
 import { Button } from '@/components/ui/Button/Button';
+import { useToast } from '@/components/ui/Toast/Toast';
 import { useClientes } from '@/hooks/cadastro/useClientes';
 import { useCadastroForm } from '@/hooks/cadastro/useCadastroForm';
 import { CadastroPanel } from '../CadastroPanel/CadastroPanel';
 import type { Cliente } from '@/schemas/cliente';
 import styles from './CadastrosTab.module.scss';
-import { formatCNPJ } from '@/helpers/formatCNPJ';
+import { formatCNPJ, isValidCNPJ, unmaskCNPJ } from '@/helpers/formatCNPJ';
 
 interface ClientesTabProps {
   companyId: string | null;
@@ -23,15 +25,27 @@ interface ClienteFormValues {
 
 const initialValues: ClienteFormValues = { nome: '', cnpj: '', endereco: '' };
 
+const TAMANHO_CNPJ = 14;
+
+function erroDoCnpj(cnpj: string): string | null {
+  return cnpj.trim() && !isValidCNPJ(cnpj) ? 'CNPJ inválido.' : null;
+}
+
+function validarCliente(values: ClienteFormValues): string | null {
+  if (!values.nome.trim()) return 'Informe o nome do cliente.';
+  return erroDoCnpj(values.cnpj);
+}
+
 export function ClientesTab({ companyId }: ClientesTabProps) {
+  const { toast } = useToast();
   const { itens: clientes, isLoading, criar: criarCliente, isCriando, editar: editarCliente, isEditando, excluir: excluirCliente } =
     useClientes(companyId);
 
   const { modalOpen, editando, values, setValues, erro, salvando, abrir, fechar, handleSalvar } =
     useCadastroForm<Cliente, ClienteFormValues>({
       initialValues,
-      toFormValues: (c) => ({ nome: c.nome, cnpj: c.cnpj ?? '', endereco: c.endereco ?? '' }),
-      validate: (v) => (!v.nome.trim() ? 'Informe o nome do cliente.' : null),
+      toFormValues: (c) => ({ nome: c.nome, cnpj: formatCNPJ(c.cnpj ?? ''), endereco: c.endereco ?? '' }),
+      validate: validarCliente,
       criar: (v) =>
         criarCliente({
           nome: v.nome.trim(),
@@ -52,15 +66,31 @@ export function ClientesTab({ companyId }: ClientesTabProps) {
       errorMessage: () => 'Não foi possível salvar o cliente. Tente novamente.',
     });
 
-  const handleToggleAtivo = (c: Cliente) => {
-    editarCliente({ id: c.id, nome: c.nome, cnpj: c.cnpj, endereco: c.endereco, ativo: !c.ativo });
+  const [cnpjTocado, setCnpjTocado] = useState(false);
+  const cnpjCompleto = unmaskCNPJ(values.cnpj).length >= TAMANHO_CNPJ;
+  const erroCnpj = cnpjTocado || cnpjCompleto ? erroDoCnpj(values.cnpj) : null;
+
+  const abrirModal = (cliente: Cliente | null) => {
+    setCnpjTocado(false);
+    abrir(cliente);
+  };
+
+  const handleToggleAtivo = async (c: Cliente) => {
+    try {
+      await editarCliente({ id: c.id, nome: c.nome, cnpj: c.cnpj, endereco: c.endereco, ativo: !c.ativo });
+    } catch {
+      toast({
+        title: c.ativo ? 'Não foi possível desativar' : 'Não foi possível ativar',
+        description: `"${c.nome}" continua como estava. Tente novamente.`,
+      });
+    }
   };
 
   return (
     <CadastroPanel<Cliente>
       title="Clientes"
       actionLabel="Novo cliente"
-      onNovo={() => abrir(null)}
+      onNovo={() => abrirModal(null)}
       isLoading={isLoading}
       items={clientes}
       emptyMessage="Nenhum cliente cadastrado."
@@ -87,7 +117,7 @@ export function ClientesTab({ companyId }: ClientesTabProps) {
           </td>
           <td className={styles.actionsCell}>
             <div className={styles.actionsRow}>
-              <Button variant="ghost" onClick={() => abrir(c)}>
+              <Button variant="ghost" onClick={() => abrirModal(c)}>
                 <Pencil size={14} />
               </Button>
               <Button variant="cancel" onClick={() => pedirExclusao(c)}>
@@ -104,7 +134,7 @@ export function ClientesTab({ companyId }: ClientesTabProps) {
         rotuloAcao: editando ? 'Salvar alterações' : 'Cadastrar cliente',
         onAcao: handleSalvar,
         salvando,
-        desabilitado: !values.nome.trim(),
+        desabilitado: !values.nome.trim() || Boolean(erroDoCnpj(values.cnpj)),
         erro,
       }}
     >
@@ -119,7 +149,10 @@ export function ClientesTab({ companyId }: ClientesTabProps) {
         id="cliente-cnpj"
         label="CNPJ (opcional)"
         value={values.cnpj}
-        onChange={(e) => setValues({ ...values, cnpj: e.target.value })}
+        onChange={(e) => setValues({ ...values, cnpj: formatCNPJ(e.target.value) })}
+        onBlur={() => setCnpjTocado(true)}
+        error={Boolean(erroCnpj)}
+        errorMessage={erroCnpj ?? undefined}
         disabled={salvando}
       />
       <Input
