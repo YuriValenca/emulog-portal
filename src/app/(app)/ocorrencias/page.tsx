@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Plus, Settings, Trash2 } from 'lucide-react';
 import { useAppAuth } from '@/hooks/useAppAuth';
+import { hojeLocal } from '@/helpers/dataLocal';
 import { useCompanyGroup } from '@/hooks/fogos/useCompanyGroup';
 import { useOcorrencias } from '@/hooks/ocorrencias/useOcorrencias';
 import { useRegrasDeteccao } from '@/hooks/ocorrencias/useRegrasDeteccao';
@@ -22,7 +23,7 @@ import { FormModal } from '@/components/layout/FormModal/FormModal';
 import ConfigurarAutomacoesModal from './components/ConfigurarAutomacoesModal/ConfigurarAutomacoesModal';
 import {
   METRICA_CONFIG, METRICA_OPTIONS, OPCOES_POR_PAGINA, OPERADOR_OPTIONS, STATUS_OPTIONS, TIPO_OPTIONS,
-  categoriaOcorrencia, dataLocalISO, dentroDoPeriodoDoFogo, erroDaNovaOcorrencia, erroDosValoresAutomacao,
+  categoriaOcorrencia, dentroDoPeriodoDoFogo, erroDaNovaOcorrencia, erroDosValoresAutomacao,
   lerNumeroDigitado, tipoLabel, tipoTone,
 } from './opcoes';
 import { useFiltrosOcorrencias, useFormNovaAutomacao, useFormNovaOcorrencia } from './stores';
@@ -77,7 +78,7 @@ export default function OcorrenciasPage() {
     paginaAtual * filtros.porPagina
   );
   const totalEncontradas = ocorrenciasFiltradas.length;
-  const hoje = dataLocalISO(new Date());
+  const hoje = hojeLocal();
 
   const configMetrica = METRICA_CONFIG[novaAutomacao.metrica];
   const operador = configMetrica.operadorFixo ?? novaAutomacao.operadorEscolhido;

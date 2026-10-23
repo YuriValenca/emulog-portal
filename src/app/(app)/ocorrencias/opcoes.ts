@@ -1,4 +1,5 @@
 import { PAGE_SIZE_OPTIONS } from '@/hooks/fogos/useProjetos';
+import { dataLocalISO } from '@/helpers/dataLocal';
 import type { Ocorrencia, OcorrenciaStatus, OcorrenciaTipo } from '@/types';
 import type { RegraMetrica, RegraOperador } from '@/schemas/regraDeteccao';
 
@@ -41,12 +42,6 @@ export function tipoTone(o: Ocorrencia): Tom {
 
 export function categoriaOcorrencia(o: Ocorrencia): 'fogo' | 'geral' {
   return o.projetoId ? 'fogo' : 'geral';
-}
-
-const doisDigitos = (n: number) => String(n).padStart(2, '0');
-
-export function dataLocalISO(data: Date): string {
-  return `${data.getFullYear()}-${doisDigitos(data.getMonth() + 1)}-${doisDigitos(data.getDate())}`;
 }
 
 export function dentroDoPeriodoDoFogo(o: Ocorrencia, inicio: string, fim: string): boolean {
