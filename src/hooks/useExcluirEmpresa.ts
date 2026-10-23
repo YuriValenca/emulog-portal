@@ -15,7 +15,7 @@ export type BloqueioExclusao = 'founding' | 'tem_fogos' | 'tem_filiais';
 
 export const MENSAGEM_BLOQUEIO: Record<BloqueioExclusao, string> = {
   founding: 'Empresa fundadora não pode ser excluída.',
-  tem_fogos: 'A empresa tem fogos registrados. Para tirá-la de uso, desligue o switch "Ativa".',
+  tem_fogos: 'A empresa tem fogos registrados. Para tirá-la de uso, desligue o switch "Ativa" e revogue as licenças na aba Licenças.',
   tem_filiais: 'A empresa é matriz de outras empresas. Desvincule as filiais antes de excluir.',
 };
 

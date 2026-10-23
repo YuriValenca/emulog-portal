@@ -116,6 +116,19 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     );
   }
 
+  if (authStatus === 'company-inactive') {
+    return (
+      <div className={styles.stateScreen}>
+        <h1 className={styles.stateTitle}>Empresa inativa</h1>
+        <p className={styles.stateBody}>
+          O acesso desta empresa ao portal está suspenso.
+          Contate a Emulog para reativá-lo.
+        </p>
+        <StateActions onLogout={handleLogout} />
+      </div>
+    );
+  }
+
   if (authStatus === 'config-error') {
     return (
       <div className={styles.stateScreen}>

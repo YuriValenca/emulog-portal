@@ -16,7 +16,14 @@ type AuthStatus =
   | 'authenticated'
   | 'forbidden'
   | 'module-disabled'
+  | 'company-inactive'
   | 'config-error';
+
+function bloqueioDaEmpresa(company: Company | null): AuthStatus | null {
+  if (company && !company.active && !company.founding) return 'company-inactive';
+  if (!getCompanyModules(company).portal) return 'module-disabled';
+  return null;
+}
 
 type AppAuthValue = {
   authUser: ReturnType<typeof useAuthUser>;
@@ -175,12 +182,12 @@ export function AppAuthProvider({ children }: { children: React.ReactNode }) {
       };
     }
 
-    const modules = getCompanyModules(company);
+    const bloqueio = bloqueioDaEmpresa(company);
 
-    if (!modules.portal) {
+    if (bloqueio) {
       return {
         authUser,
-        authStatus: 'module-disabled',
+        authStatus: bloqueio,
         debugError: null,
         appUser: user,
         company,
