@@ -5,6 +5,7 @@ import { Select } from '@/components/ui/Select/Select';
 import { MultiSelect } from '@/components/ui/Multiselect/Multiselect';
 import { Search } from 'lucide-react';
 import { PAGE_SIZE_OPTIONS } from '@/hooks/fogos/useProjetos';
+import { hojeLocal } from '@/helpers/dataLocal';
 import type { Produto, Caminhao } from '@/types';
 import styles from './FiltrosFogos.module.scss';
 
@@ -25,7 +26,7 @@ interface FiltrosFogosProps {
 }
 
 export default function FiltrosFogos({ filtros, onChange, produtos, caminhoes }: FiltrosFogosProps) {
-  const hoje = new Date().toISOString().split('T')[0];
+  const hoje = hojeLocal();
 
   const update = (patch: Partial<FiltrosState>) => onChange({ ...filtros, ...patch });
 

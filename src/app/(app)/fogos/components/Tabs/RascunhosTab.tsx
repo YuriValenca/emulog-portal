@@ -9,6 +9,7 @@ import { useContextoFaixa } from '@/hooks/useContextoFaixa';
 import { useRegrasDeteccao } from '@/hooks/ocorrencias/useRegrasDeteccao';
 import { useAgora } from '@/hooks/useAgora';
 import { useContagemFotos } from '@/hooks/fogos/useMidias';
+import { inicioDoDia, fimDoDia } from '@/helpers/dataLocal';
 import type { FiltrosState } from '../FiltrosFogos/FiltrosFogos';
 import RascunhosTable from '../RascunhosTable/RascunhosTable';
 import FogoDetailModal from '../FogoDetailModal/FogoDetailModal';
@@ -27,8 +28,8 @@ function passaFiltros(rascunho: ProjetoRascunho, filtros: FiltrosState): boolean
   if (busca && !(rascunho.nomeProjeto ?? '').toLowerCase().includes(busca)) return false;
 
   const criacao = rascunho.dataCriacao.toDate();
-  if (filtros.dataInicio && criacao < new Date(filtros.dataInicio)) return false;
-  if (filtros.dataFim && criacao > new Date(filtros.dataFim)) return false;
+  if (filtros.dataInicio && criacao < inicioDoDia(filtros.dataInicio)) return false;
+  if (filtros.dataFim && criacao > fimDoDia(filtros.dataFim)) return false;
 
   if (filtros.produtoIds.length > 0
     && !filtros.produtoIds.includes(rascunho.informacoesOperacao?.produto?.id ?? '')) return false;

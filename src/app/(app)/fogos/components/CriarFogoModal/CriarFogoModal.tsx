@@ -15,6 +15,7 @@ import { useToast } from '@/components/ui/Toast/Toast';
 import { useCreateProjeto } from '@/hooks/fogos/useProjetos';
 import { paraKg } from '@/helpers/parseNumbers';
 import { formatarKg } from '@/lib/fogoUtils';
+import { hojeLocal } from '@/helpers/dataLocal';
 import type { Produto, Caminhao, Operador, Cliente } from '@/types';
 import { SecaoAmostras, isAmostraCompleta, type TipoDensidade } from './SecaoAmostras';
 import { SecaoFurosFormulario } from './SecaoFurosFormulario';
@@ -52,8 +53,7 @@ const formSchema = z.object({
   produtoId: z.string().optional(),
   informacoesGerais: z.string().optional(),
 }).superRefine((data, ctx) => {
-  const hoje = new Date().toISOString().split('T')[0];
-  if (data.data && data.data > hoje) {
+  if (data.data && data.data > hojeLocal()) {
     ctx.addIssue({
       code: 'custom',
       message: 'Data não pode ser no futuro',
@@ -130,7 +130,7 @@ export default function CriarFogoModal({
 
   const clientesAtivos = clientes.filter((c) => c.ativo);
 
-  const maxDate = new Date().toISOString().split('T')[0];
+  const maxDate = hojeLocal();
 
   const pedirConfirmacao = (amostraIndex: number, tipo: TipoDensidade, numero: number) => {
     const amostraAtual = amostrasValues[amostraIndex];
