@@ -133,8 +133,26 @@ export default function OcorrenciasPage() {
 
   const handleConfirmarExclusaoRegra = async () => {
     if (!regraParaExcluir || !companyId) return;
-    await excluirRegra(regraParaExcluir);
-    setRegraParaExcluir(null);
+    try {
+      await excluirRegra(regraParaExcluir);
+      setRegraParaExcluir(null);
+    } catch {
+      toast({
+        title: 'Não foi possível excluir a automação',
+        description: 'A automação e as ocorrências dela continuam. Tente novamente.',
+      });
+    }
+  };
+
+  const mudarStatusOcorrencia = async (ocorrencia: Ocorrencia, status: OcorrenciaStatus) => {
+    try {
+      await atualizarStatus({ id: ocorrencia.id, status });
+    } catch {
+      toast({
+        title: 'Não foi possível mudar o status',
+        description: 'A ocorrência continua com o status anterior. Tente novamente.',
+      });
+    }
   };
 
   const confirmarExclusaoOcorrencia = async () => {
@@ -264,7 +282,7 @@ export default function OcorrenciasPage() {
                   <td>
                     <Select
                       value={o.status}
-                      onValueChange={(value) => atualizarStatus({ id: o.id, status: value as OcorrenciaStatus })}
+                      onValueChange={(value) => mudarStatusOcorrencia(o, value as OcorrenciaStatus)}
                       options={STATUS_OPTIONS}
                       size="sm"
                     />

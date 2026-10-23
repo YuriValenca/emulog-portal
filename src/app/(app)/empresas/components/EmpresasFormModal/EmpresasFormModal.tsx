@@ -73,6 +73,7 @@ export default function EmpresaFormModal({ visible, onClose, empresaEditando, em
 
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [logoError, setLogoError] = useState<string | null>(null);
+  const [erroAoSalvar, setErroAoSalvar] = useState<string | null>(null);
 
   const { register, handleSubmit, control, reset, watch, setValue, formState: { errors } } = useForm<EmpresaFormFields>({
     resolver: zodResolver(empresaFormSchema),
@@ -93,6 +94,7 @@ export default function EmpresaFormModal({ visible, onClose, empresaEditando, em
   useEffect(() => {
     if (!visible) return;
     setLogoError(null);
+    setErroAoSalvar(null);
     if (empresaEditando) {
       const modules = getCompanyModules(empresaEditando);
       reset({
@@ -160,10 +162,17 @@ export default function EmpresaFormModal({ visible, onClose, empresaEditando, em
       modulePortal: fields.modulePortal,
     };
 
+    setErroAoSalvar(null);
     if (isEditing && empresaEditando) {
-      updateEmpresa.mutate({ id: empresaEditando.id, values }, { onSuccess: onClose });
+      updateEmpresa.mutate(
+        { id: empresaEditando.id, values },
+        { onSuccess: onClose, onError: () => setErroAoSalvar('Não foi possível salvar as alterações. Tente novamente.') }
+      );
     } else {
-      createEmpresa.mutate(values, { onSuccess: onClose });
+      createEmpresa.mutate(
+        values,
+        { onSuccess: onClose, onError: () => setErroAoSalvar('Não foi possível criar a empresa. Tente novamente.') }
+      );
     }
   };
 
@@ -176,6 +185,7 @@ export default function EmpresaFormModal({ visible, onClose, empresaEditando, em
       rotuloAcao={isEditing ? 'Salvar alterações' : 'Criar empresa'}
       onAcao={handleSubmit(onSubmit)}
       salvando={saving}
+      erro={erroAoSalvar}
       complementoRodape={
         empresaEditando && !isFounding && (
           <ExcluirEmpresa empresa={empresaEditando} disabled={saving} onExcluida={onClose} />

@@ -18,6 +18,7 @@ import { ActionsMenu } from '@/components/ui/ActionsMenu/ActionsMenu';
 import { Tabs } from '@/components/ui/Tabs/Tabs';
 import { Input } from '@/components/ui/Input/Input';
 import { ConfirmModal } from '@/components/ui/ConfirmModal/ConfirmModal';
+import { useToast } from '@/components/ui/Toast/Toast';
 import { FormModal } from '@/components/layout/FormModal/FormModal';
 import CriarVencimentoModal from './components/CriarVencimentoModal/CriarVencimentoModal';
 import ConfigurarAlertaModal from './components/ConfigurarAlertaModal/ConfigurarAlertaModal';
@@ -42,6 +43,7 @@ function itemLabel(v: Vencimento): string {
 export default function VencimentosPage() {
   const { companyId, appUser, company, isSuperadmin } = useAppAuth();
   const agora = useAgora();
+  const { toast } = useToast();
   const { companyIds } = useCompanyGroup(companyId);
   const { itens: caminhoes } = useCaminhoes(companyId);
   const { itens: operadores } = useOperadores(companyId);
@@ -78,6 +80,8 @@ export default function VencimentosPage() {
     try {
       await editarDataVencimento({ id: vencimentoParaRenovar.id, dataVencimento: new Date(ano, mes - 1, dia, 23, 59, 0) });
       setVencimentoParaRenovar(null);
+    } catch {
+      toast({ title: 'Não foi possível renovar', description: 'O vencimento continua com a data anterior. Tente novamente.' });
     } finally {
       setRenovando(false);
     }
@@ -89,8 +93,26 @@ export default function VencimentosPage() {
     try {
       await excluirVencimento(vencimentoParaExcluir.id);
       setVencimentoParaExcluir(null);
+    } catch {
+      toast({ title: 'Não foi possível excluir', description: 'O vencimento continua na lista. Tente novamente.' });
     } finally {
       setExcluindo(false);
+    }
+  };
+
+  const resolver = async (vencimento: Vencimento) => {
+    try {
+      await marcarResolvido(vencimento.id);
+    } catch {
+      toast({ title: 'Não foi possível marcar como resolvido', description: 'O vencimento continua ativo. Tente novamente.' });
+    }
+  };
+
+  const reabrir = async (vencimento: Vencimento) => {
+    try {
+      await reabrirVencimento(vencimento.id);
+    } catch {
+      toast({ title: 'Não foi possível reabrir', description: 'O vencimento continua resolvido. Tente novamente.' });
     }
   };
 
@@ -182,13 +204,13 @@ export default function VencimentosPage() {
                           aba === 'ativos'
                             ? [
                                 { key: 'renovar', label: 'Renovar', icon: <RefreshCcw size={14} />, onClick: () => abrirRenovacao(v) },
-                                { key: 'resolver', label: 'Marcar resolvido', icon: <Check size={14} />, onClick: () => marcarResolvido(v.id) },
+                                { key: 'resolver', label: 'Marcar resolvido', icon: <Check size={14} />, onClick: () => resolver(v) },
                                 ...(isSuperadmin
                                   ? [{ key: 'excluir', label: 'Excluir', icon: <Trash2 size={14} />, variant: 'danger' as const, onClick: () => setVencimentoParaExcluir(v) }]
                                   : []),
                               ]
                             : [
-                                { key: 'reabrir', label: 'Reabrir', icon: <RotateCcw size={14} />, onClick: () => reabrirVencimento(v.id) },
+                                { key: 'reabrir', label: 'Reabrir', icon: <RotateCcw size={14} />, onClick: () => reabrir(v) },
                                 ...(isSuperadmin
                                   ? [{ key: 'excluir', label: 'Excluir', icon: <Trash2 size={14} />, variant: 'danger' as const, onClick: () => setVencimentoParaExcluir(v) }]
                                   : []),
