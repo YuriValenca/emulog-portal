@@ -6,6 +6,7 @@ import { MultiSelect } from '@/components/ui/Multiselect/Multiselect';
 import { Search } from 'lucide-react';
 import { PAGE_SIZE_OPTIONS } from '@/hooks/fogos/useProjetos';
 import { hojeLocal } from '@/helpers/dataLocal';
+import { rotuloCaminhao } from '@/helpers/rotuloCaminhao';
 import type { Produto, Caminhao } from '@/types';
 import styles from './FiltrosFogos.module.scss';
 
@@ -90,7 +91,7 @@ export default function FiltrosFogos({ filtros, onChange, produtos, caminhoes }:
       <MultiSelect
         values={filtros.caminhaoIds}
         onValuesChange={(v) => update({ caminhaoIds: v })}
-        options={caminhoes.map((c) => ({ value: c.id, label: c.tag ?? c.placa }))}
+        options={caminhoes.map((c) => ({ value: c.id, label: rotuloCaminhao(c) }))}
         placeholder="Todas"
         size="sm"
         label="UMB"

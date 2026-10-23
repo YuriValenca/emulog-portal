@@ -3,6 +3,7 @@
 import { useMemo, useState } from 'react';
 import { useAppAuth } from '@/hooks/useAppAuth';
 import { useCaminhoes } from '@/hooks/cadastro/useCaminhoes';
+import { rotuloCaminhao } from '@/helpers/rotuloCaminhao';
 import { useOperadores } from '@/hooks/cadastro/useOperadores';
 import { useClientes } from '@/hooks/cadastro/useClientes';
 import { useProdutos } from '@/hooks/cadastro/useProdutos';
@@ -67,7 +68,7 @@ export default function RelatoriosPage() {
   const visiveis = useMemo(() => fogos.filter((fogo) => passaFiltros(fogo, filtros)), [fogos, filtros]);
 
   const descricaoDosFiltros = [
-    descreverFiltro('UMB', nomesSelecionados(caminhoes, filtros.caminhaoIds, (c) => c.tag ?? c.placa)),
+    descreverFiltro('UMB', nomesSelecionados(caminhoes, filtros.caminhaoIds, rotuloCaminhao)),
     descreverFiltro('Operadores', nomesSelecionados(operadores, filtros.operadorIds, (o) => o.nome)),
     descreverFiltro('Clientes', nomesSelecionados(clientes, filtros.clienteIds, (c) => c.nome)),
     descreverFiltro('Produtos', nomesSelecionados(produtos, filtros.produtoIds, (p) => p.nome)),
@@ -112,7 +113,7 @@ export default function RelatoriosPage() {
           size="sm"
         />
         <MultiSelect label="UMB" placeholder="Todas" values={filtros.caminhaoIds} onValuesChange={alterarFiltro('caminhaoIds')}
-          options={opcoes(caminhoes, (c) => c.tag ?? c.placa)} size="sm" width={180} />
+          options={opcoes(caminhoes, rotuloCaminhao)} size="sm" width={180} />
         <MultiSelect label="Operadores" placeholder="Todos" values={filtros.operadorIds} onValuesChange={alterarFiltro('operadorIds')}
           options={opcoes(operadores, (o) => o.nome)} size="sm" width={180} searchable />
         <MultiSelect label="Cliente" placeholder="Todos" values={filtros.clienteIds} onValuesChange={alterarFiltro('clienteIds')}

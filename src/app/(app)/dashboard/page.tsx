@@ -9,6 +9,7 @@ import { useAppAuth } from '@/hooks/useAppAuth';
 import { useDashboardStats } from '@/hooks/useDashboardStats';
 import { useContextoFaixa } from '@/hooks/useContextoFaixa';
 import { useCaminhoes } from '@/hooks/cadastro/useCaminhoes';
+import { rotuloCaminhao } from '@/helpers/rotuloCaminhao';
 import { useOperadores } from '@/hooks/cadastro/useOperadores';
 import { useOcorrenciasAbertas } from '@/hooks/ocorrencias/useOcorrenciasAbertas';
 import { Button } from '@/components/ui/Button/Button';
@@ -59,7 +60,7 @@ function PainelOperacional({ companyId }: { companyId: string | null }) {
     contextoFaixa
   );
 
-  const opcoesSelectUmb = (caminhoes ?? []).map((c) => ({ value: c.id, label: c.tag ?? c.placa }));
+  const opcoesSelectUmb = (caminhoes ?? []).map((c) => ({ value: c.id, label: rotuloCaminhao(c) }));
   const opcoesSelectOperador = (operadores ?? []).map((o) => ({ value: o.id, label: o.nome }));
 
   const periodoLabel = labelPeriodo(periodo);
@@ -89,7 +90,7 @@ function PainelOperacional({ companyId }: { companyId: string | null }) {
 
   const montarDadosDoRelatorio = (tema: TemaDoRelatorio) => {
     const agora = new Date();
-    const nomesUmbs = caminhoes.filter((c) => caminhaoIds.includes(c.id)).map((c) => c.tag ?? c.placa);
+    const nomesUmbs = caminhoes.filter((c) => caminhaoIds.includes(c.id)).map(rotuloCaminhao);
     const nomesOperadores = operadores.filter((o) => operadorIds.includes(o.id)).map((o) => o.nome);
     return {
       tema,

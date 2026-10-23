@@ -6,6 +6,7 @@ import { Select } from '@/components/ui/Select/Select';
 import { Input } from '@/components/ui/Input/Input';
 import { Textarea } from '@/components/ui/Textarea/Textarea';
 import { useVencimentos } from '@/hooks/vencimentos/useVencimentos';
+import { rotuloCaminhao } from '@/helpers/rotuloCaminhao';
 import type { Caminhao, Operador, VencimentoTipo } from '@/types';
 import styles from './CriarVencimentoModal.module.scss';
 
@@ -107,7 +108,7 @@ export default function CriarVencimentoModal({
           <Select
             value={caminhaoId}
             onValueChange={setCaminhaoId}
-            options={caminhoes.map((c) => ({ value: c.id, label: c.tag ?? c.placa }))}
+            options={caminhoes.map((c) => ({ value: c.id, label: rotuloCaminhao(c) }))}
             placeholder="Selecionar UMB"
             disabled={isCriando}
           />

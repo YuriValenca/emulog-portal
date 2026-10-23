@@ -16,6 +16,7 @@ import { useCreateProjeto } from '@/hooks/fogos/useProjetos';
 import { paraKg } from '@/helpers/parseNumbers';
 import { formatarKg } from '@/lib/fogoUtils';
 import { hojeLocal } from '@/helpers/dataLocal';
+import { rotuloCaminhao } from '@/helpers/rotuloCaminhao';
 import type { Produto, Caminhao, Operador, Cliente } from '@/types';
 import { SecaoAmostras, isAmostraCompleta, type TipoDensidade } from './SecaoAmostras';
 import { SecaoFurosFormulario } from './SecaoFurosFormulario';
@@ -300,7 +301,7 @@ export default function CriarFogoModal({
               value={caminhaoIdValue ?? ''}
               placeholder="UMB"
               onValueChange={(value) => setValue('caminhaoId', value)}
-              options={caminhoes.map((c) => ({ value: c.id, label: c.tag ?? c.placa }))}
+              options={caminhoes.map((c) => ({ value: c.id, label: rotuloCaminhao(c) }))}
             />
             <Select
               value={produtoIdValue ?? ''}

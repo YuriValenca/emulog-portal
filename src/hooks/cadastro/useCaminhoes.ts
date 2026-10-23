@@ -1,4 +1,5 @@
 import { caminhaoSchema, type Caminhao } from '@/schemas/caminhao';
+import { rotuloCaminhao } from '@/helpers/rotuloCaminhao';
 import { criarHookCadastro } from './criarHookCadastro';
 
 interface NovaUmbInput {
@@ -17,8 +18,6 @@ function camposCaminhao(input: { placa: string; tag: string }) {
   const placa = input.placa.trim().toUpperCase();
   return { placa, tag: input.tag.trim(), descricao: `Caminhão — ${placa}` };
 }
-
-const rotuloCaminhao = (c: Caminhao) => c.tag ?? c.placa;
 
 export const useCaminhoes = criarHookCadastro<Caminhao, NovaUmbInput, EditarUmbInput>({
   colecao: 'caminhoes',
