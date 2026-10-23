@@ -1,5 +1,5 @@
 import { densidadeMediaDoProjeto, statusConformidade, type ContextoFaixa } from '@/lib/densidade';
-import { statusExpiracaoLicenca } from '@/lib/licenca';
+import { statusExibidoLicenca, statusExpiracaoLicenca } from '@/lib/licenca';
 import { diffPercent } from '@/lib/fogoUtils';
 import { diferencaKgExcedida } from '@/lib/avaliarRegra';
 import { paraKg } from '@/helpers/parseNumbers';
@@ -318,11 +318,10 @@ export function calcularEstatisticasDeLicencas(licencas: License[], agora: Date 
   let licencasDisponiveis = 0;
 
   licencas.forEach((licenca) => {
-    if (licenca.status === 'active') {
-      licencasAtivas += 1;
-      if (statusExpiracaoLicenca(licenca, agora) === 'expirando') licencasExpirando += 1;
-    }
-    if (licenca.status === 'available') licencasDisponiveis += 1;
+    const status = statusExibidoLicenca(licenca, agora);
+    if (status === 'active' && statusExpiracaoLicenca(licenca, agora) === 'expirando') licencasExpirando += 1;
+    else if (status === 'active') licencasAtivas += 1;
+    if (status === 'available') licencasDisponiveis += 1;
   });
 
   return { licencasAtivas, licencasExpirando, licencasDisponiveis, licencasTotal: licencas.length };
