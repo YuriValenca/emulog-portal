@@ -28,16 +28,35 @@ interface MetaResult {
   items: ProjetoMeta[];
 }
 
-function passaFiltros(item: ProjetoMeta, filtros: Pick<ProjetosFiltros, 'busca' | 'dataInicio' | 'dataFim'>) {
-  const busca = filtros.busca ?? '';
-  const passaBusca = busca ? item.nomeProjeto?.toLowerCase().includes(busca.toLowerCase()) : true;
+type FiltrosDeMeta = Pick<ProjetosFiltros, 'busca' | 'dataInicio' | 'dataFim'>;
+
+function passaFiltros(item: Pick<ProjetoMeta, 'nomeProjeto' | 'dataCriacao'>, filtros: FiltrosDeMeta) {
+  const busca = (filtros.busca ?? '').trim().toLowerCase();
+  const passaBusca = busca ? item.nomeProjeto.toLowerCase().includes(busca) : true;
   const data = item.dataCriacao.toDate();
   const passaInicio = filtros.dataInicio ? data >= filtros.dataInicio : true;
   const passaFim = filtros.dataFim ? data <= filtros.dataFim : true;
   return passaBusca && passaInicio && passaFim;
 }
 
-async function fetchMetaFull(companyIds: string[], filtros: Pick<ProjetosFiltros, 'busca' | 'dataInicio' | 'dataFim'>): Promise<MetaResult> {
+function passaFiltrosDeOperacao(projeto: Projeto, produtoIds: string[], caminhaoIds: string[]) {
+  const passaProduto = produtoIds.length > 0
+    ? produtoIds.includes(projeto.informacoesOperacao?.produto?.id ?? '')
+    : true;
+  const passaCaminhao = caminhaoIds.length > 0
+    ? caminhaoIds.includes(projeto.informacoesOperacao?.caminhao?.id ?? '')
+    : true;
+  return passaProduto && passaCaminhao;
+}
+
+const maisRecentePrimeiro = (a: { dataCriacao: Timestamp }, b: { dataCriacao: Timestamp }) =>
+  b.dataCriacao.toMillis() - a.dataCriacao.toMillis();
+
+function paginar<T>(itens: T[], page: number, pageSize: number): T[] {
+  return itens.slice((page - 1) * pageSize, page * pageSize);
+}
+
+async function fetchMetas(companyIds: string[]): Promise<MetaResult> {
   const idChunks = chunk(companyIds, 30);
   const results = await Promise.all(
     idChunks.map(async (ids) => {
@@ -51,11 +70,25 @@ async function fetchMetaFull(companyIds: string[], filtros: Pick<ProjetosFiltros
     })
   );
 
-  const mesclada = results
-    .flat()
-    .sort((a, b) => b.dataCriacao.toMillis() - a.dataCriacao.toMillis());
+  return { items: results.flat().sort(maisRecentePrimeiro) };
+}
 
-  return { items: mesclada.filter((item) => passaFiltros(item, filtros)) };
+// Produto e UMB só existem no fogo completo, não no meta: filtrar por eles lê todos os fogos da empresa
+async function fetchProjetosCompletos(companyIds: string[]): Promise<Projeto[]> {
+  const idChunks = chunk(companyIds, 30);
+  const results = await Promise.all(
+    idChunks.map(async (ids) => {
+      const snap = await getDocs(query(collection(db, 'projetos'), where('companyId', 'in', ids)));
+      return snap.docs.flatMap((d) => {
+        const parsed = projetoSchema.safeParse({ id: d.id, ...d.data() });
+        if (parsed.success) return [parsed.data];
+        console.error('[fetchProjetosCompletos] projeto com formato inválido:', d.id, parsed.error.flatten());
+        return [];
+      });
+    })
+  );
+
+  return results.flat().sort(maisRecentePrimeiro);
 }
 
 async function fetchProjetosByIds(ids: string[]): Promise<Projeto[]> {
@@ -78,17 +111,33 @@ async function fetchProjetosByIds(ids: string[]): Promise<Projeto[]> {
 export function useProjetosList(companyIds: string[], filtros: ProjetosFiltros = {}) {
   const { busca, dataInicio, dataFim, produtoIds = [], caminhaoIds = [], page = 1, pageSize = DEFAULT_PAGE_SIZE } = filtros;
 
+  const filtrosDeMeta: FiltrosDeMeta = { busca, dataInicio, dataFim };
+  const filtraPorOperacao = produtoIds.length > 0 || caminhaoIds.length > 0;
+
   const metaQuery = useQuery({
-    queryKey: ['projetosMeta', companyIds, busca ?? '', dataInicio?.toISOString() ?? '', dataFim?.toISOString() ?? ''],
-    queryFn: () => fetchMetaFull(companyIds, { busca, dataInicio, dataFim }),
-    enabled: companyIds.length > 0,
+    queryKey: ['projetosMeta', companyIds],
+    queryFn: () => fetchMetas(companyIds),
+    enabled: companyIds.length > 0 && !filtraPorOperacao,
   });
 
-  const metaFiltrada = metaQuery.data?.items ?? [];
-  const totalFiltrado = metaFiltrada.length;
+  const completosQuery = useQuery({
+    queryKey: ['projetosCompletos', companyIds],
+    queryFn: () => fetchProjetosCompletos(companyIds),
+    enabled: companyIds.length > 0 && filtraPorOperacao,
+  });
+
+  const metasFiltradas = filtraPorOperacao
+    ? []
+    : (metaQuery.data?.items ?? []).filter((item) => passaFiltros(item, filtrosDeMeta));
+  const completosFiltrados = filtraPorOperacao
+    ? (completosQuery.data ?? []).filter(
+      (p) => passaFiltros(p, filtrosDeMeta) && passaFiltrosDeOperacao(p, produtoIds, caminhaoIds)
+    )
+    : [];
+
+  const totalFiltrado = filtraPorOperacao ? completosFiltrados.length : metasFiltradas.length;
   const totalPaginas = Math.max(1, Math.ceil(totalFiltrado / pageSize));
-  const metaPagina = metaFiltrada.slice((page - 1) * pageSize, page * pageSize);
-  const idsPagina = metaPagina.map((m) => m.id);
+  const idsPagina = paginar(metasFiltradas, page, pageSize).map((m) => m.id);
 
   const paginaQuery = useQuery({
     queryKey: ['projetosPagina', idsPagina],
@@ -96,22 +145,22 @@ export function useProjetosList(companyIds: string[], filtros: ProjetosFiltros =
     enabled: idsPagina.length > 0,
   });
 
-  const projetosOrdenados = idsPagina
-    .map((id) => paginaQuery.data?.find((p) => p.id === id))
-    .filter((p): p is Projeto => Boolean(p))
-    .filter((p) => (produtoIds.length > 0 ? produtoIds.includes(p.informacoesOperacao?.produto?.id ?? '') : true))
-    .filter((p) => (caminhaoIds.length > 0 ? caminhaoIds.includes(p.informacoesOperacao?.caminhao?.id ?? '') : true));
+  const projetos = filtraPorOperacao
+    ? paginar(completosFiltrados, page, pageSize)
+    : idsPagina
+      .map((id) => paginaQuery.data?.find((p) => p.id === id))
+      .filter((p): p is Projeto => Boolean(p));
 
   return {
-    projetos: projetosOrdenados,
+    projetos,
     totalFiltrado,
     totalPaginas,
     page,
     pageSize,
-    isLoadingMeta: metaQuery.isLoading,
+    isLoadingMeta: metaQuery.isLoading || completosQuery.isLoading,
     isLoadingPagina: paginaQuery.isLoading,
-    isError: metaQuery.isError || paginaQuery.isError,
-    error: metaQuery.error ?? paginaQuery.error,
+    isError: metaQuery.isError || completosQuery.isError || paginaQuery.isError,
+    error: metaQuery.error ?? completosQuery.error ?? paginaQuery.error,
   };
 }
 
@@ -222,13 +271,9 @@ export function useCreateProjeto() {
     onSuccess: ({ meta: novoMeta }) => {
       queryClient.setQueriesData<MetaResult>({ queryKey: ['projetosMeta'] }, (old) => {
         if (!old) return old;
-        return {
-          ...old,
-          items: [novoMeta, ...old.items].sort(
-            (a, b) => b.dataCriacao.toMillis() - a.dataCriacao.toMillis()
-          ),
-        };
+        return { ...old, items: [novoMeta, ...old.items].sort(maisRecentePrimeiro) };
       });
+      queryClient.invalidateQueries({ queryKey: ['projetosCompletos'] });
 
       // Uma escrita, três consumidores em lugares diferentes: `projetosMeta` já foi
       // atualizado acima; `projetosPeriodo` alimenta o dashboard e costuma estar inativo,
@@ -295,6 +340,9 @@ export function useDeleteProjeto() {
         if (!old) return old;
         return { ...old, items: old.items.filter((item) => item.id !== idRemovido) };
       });
+      queryClient.setQueriesData<Projeto[]>({ queryKey: ['projetosCompletos'] }, (old) =>
+        old?.filter((projeto) => projeto.id !== idRemovido)
+      );
 
       queryClient.invalidateQueries({
         queryKey: ['projetosPeriodo'],

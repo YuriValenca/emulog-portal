@@ -11,6 +11,8 @@ import { useProdutos } from '@/hooks/cadastro/useProdutos';
 import { useClientes } from '@/hooks/cadastro/useClientes';
 import { useContextoFaixa } from '@/hooks/useContextoFaixa';
 import { useRegrasDeteccao } from '@/hooks/ocorrencias/useRegrasDeteccao';
+import { useDebouncedValue } from '@/helpers/useDebouncedValue';
+import { inicioDoDia, fimDoDia } from '@/helpers/dataLocal';
 import { Button } from '@/components/ui/Button/Button';
 import { Pagination } from '@/components/ui/Pagination/Pagination';
 import { useToast } from '@/components/ui/Toast/Toast';
@@ -47,10 +49,11 @@ export default function ConcluidosTab({ companyId, filtros, page, onPageChange }
   const contextoFaixa = useContextoFaixa(companyId);
   const { regras } = useRegrasDeteccao(companyId);
 
+  const buscaAdiada = useDebouncedValue(filtros.busca, 300);
   const { projetos, totalFiltrado, totalPaginas, isLoadingMeta, isLoadingPagina, isError, error } = useProjetosList(companyIds, {
-    busca: filtros.busca,
-    dataInicio: filtros.dataInicio ? new Date(filtros.dataInicio) : undefined,
-    dataFim: filtros.dataFim ? new Date(filtros.dataFim) : undefined,
+    busca: buscaAdiada,
+    dataInicio: filtros.dataInicio ? inicioDoDia(filtros.dataInicio) : undefined,
+    dataFim: filtros.dataFim ? fimDoDia(filtros.dataFim) : undefined,
     produtoIds: filtros.produtoIds,
     caminhaoIds: filtros.caminhaoIds,
     page,
