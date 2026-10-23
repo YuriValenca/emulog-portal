@@ -5,7 +5,7 @@ import { create } from 'zustand';
 import { useQueryClient } from '@tanstack/react-query';
 import {
   collection, doc, setDoc, getDoc, getDocs, updateDoc, deleteDoc, writeBatch,
-  query, where, Timestamp, type DocumentReference,
+  query, where, Timestamp, type DocumentReference, type QueryDocumentSnapshot,
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase/client';
 import { chunk } from '@/lib/chunk';
@@ -233,6 +233,14 @@ async function buscarOcorrenciasEncerradasExpiradas(companyIds: string[]) {
   });
 }
 
+// Encerrada de licença só sai depois da renovação: apagada antes, o scan seguinte a recria como aberta.
+// `null` = licenças não carregaram, então nenhuma de licença é apagada nesta rodada.
+function podeApagarEncerrada(docSnap: QueryDocumentSnapshot, licencasAindaDetectadas: Set<string> | null) {
+  const dados = docSnap.data();
+  if (dados.tipo !== 'licenca') return true;
+  return licencasAindaDetectadas !== null && !licencasAindaDetectadas.has(dados.licenseId);
+}
+
 async function apagarUmAUm(refs: DocumentReference[]) {
   for (const ref of refs) {
     try {
@@ -313,6 +321,7 @@ export function useOcorrenciasAutoScan(companyId: string | null) {
       );
 
       let licencasDetectadas: LicencaOcorrenciaDetectada[] = [];
+      let licencasAindaDetectadas: Set<string> | null = null;
       try {
         const licencasPorEmpresa = await Promise.all(
           companyIds.map(async (id) => ({ companyId: id, licencas: await fetchLicencas(id) }))
@@ -320,6 +329,7 @@ export function useOcorrenciasAutoScan(companyId: string | null) {
         licencasDetectadas = licencasPorEmpresa.flatMap(({ companyId: id, licencas }) =>
           detectarOcorrenciasDaLicenca(id, licencas)
         );
+        licencasAindaDetectadas = new Set(licencasDetectadas.map((detectada) => detectada.license.id));
       } catch (erro) {
         console.error('[autoScan] falha ao buscar licenças do grupo', { companyIds, erro });
       }
@@ -327,7 +337,8 @@ export function useOcorrenciasAutoScan(companyId: string | null) {
 
       let ocorrenciasParaApagar: Awaited<ReturnType<typeof buscarOcorrenciasEncerradasExpiradas>> = [];
       try {
-        ocorrenciasParaApagar = await buscarOcorrenciasEncerradasExpiradas(companyIds);
+        ocorrenciasParaApagar = (await buscarOcorrenciasEncerradasExpiradas(companyIds))
+          .filter((docSnap) => podeApagarEncerrada(docSnap, licencasAindaDetectadas));
       } catch (erro) {
         console.error('[autoScan] falha ao buscar ocorrências encerradas expiradas', { companyIds, erro });
       }
