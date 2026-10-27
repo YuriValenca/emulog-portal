@@ -191,7 +191,7 @@ export default function CriarFogoModal({
       uidUsuario,
       data: values.data,
       amostras: values.amostras.map((amostra, index) => ({
-        amostraId: index + 1,
+        amostraId: index,
         densidadeInicial: amostra.densidadeInicial,
         densidadeFinal: amostra.densidadeFinal,
       })),
