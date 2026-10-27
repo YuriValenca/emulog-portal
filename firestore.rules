@@ -53,6 +53,10 @@ service cloud.firestore {
       return sameCompany(targetCompanyId) || isParentOf(targetCompanyId);
     }
 
+    function tiposVencimentoValidos(tipos) {
+      return tipos is list && tipos.size() <= 50;
+    }
+
     function faixaDensidadeValida(faixa) {
       return faixa is map
         && faixa.keys().hasOnly(['min', 'max'])
@@ -69,8 +73,9 @@ service cloud.firestore {
         || (
           isCompanyAdmin()
           && sameCompany(companyId)
-          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['alertaVencimento', 'faixaDensidade'])
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['alertaVencimento', 'faixaDensidade', 'tiposVencimento'])
           && (!('faixaDensidade' in request.resource.data) || faixaDensidadeValida(request.resource.data.faixaDensidade))
+          && (!('tiposVencimento' in request.resource.data) || tiposVencimentoValidos(request.resource.data.tiposVencimento))
         );
       allow delete: if isSuperadmin();
 
@@ -230,7 +235,12 @@ service cloud.firestore {
           && sameCompanyOrGroup(resource.data.companyId)
           && request.resource.data.companyId == resource.data.companyId
         );
-      allow delete: if isSuperadmin();
+      allow delete: if isSuperadmin()
+        || (
+          isCompanyAdmin()
+          && sameCompany(resource.data.companyId)
+          && resource.data.tipo == 'personalizado'
+        );
     }
 
     match /calibragens/{id} {
