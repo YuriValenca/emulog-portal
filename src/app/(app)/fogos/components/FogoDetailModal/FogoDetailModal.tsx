@@ -6,7 +6,7 @@ import { Modal } from '@/components/ui/Modal/Modal';
 import { Tabs } from '@/components/ui/Tabs/Tabs';
 import { Table } from '@/components/ui/Table/Table';
 import { diffPercent, densidadeInicialFinalMedia, densidadesAmostra, conclusaoEmOutroDia, formatarKg } from '@/lib/fogoUtils';
-import { isAmostraGrupo, valorVazio, horaDaPesagem, numeroDaAmostra } from '@/lib/amostras';
+import { isAmostraGrupo, valorVazio, horaDaPesagem, numeroDaAmostra, numeroOuNull } from '@/lib/amostras';
 import { situacaoCalibragem, type SituacaoCalibragem } from '@/lib/calibragem';
 import { faixaDoProjeto } from '@/lib/densidade';
 import { useContextoFaixa } from '@/hooks/useContextoFaixa';
@@ -71,14 +71,17 @@ function CartaoAmostra({ amostra, index }: { amostra: AmostraItem; index: number
               </tr>
             </thead>
             <tbody>
-              {pesagens.map((p, i) => (
-                <tr key={i}>
-                  <td>{i + 1}</td>
-                  <td>{p.peso} g</td>
-                  <td>{p.densidade ? `${p.densidade} g/cm³` : '—'}</td>
-                  <td>{horaDaPesagem(p.timestamp)}</td>
-                </tr>
-              ))}
+              {pesagens.map((p, i) => {
+                const densidade = numeroOuNull(p.densidade);
+                return (
+                  <tr key={i}>
+                    <td>{i + 1}</td>
+                    <td>{p.peso} g</td>
+                    <td>{densidade ? `${densidade.toFixed(2)} g/cm³` : '—'}</td>
+                    <td>{horaDaPesagem(p.timestamp)}</td>
+                  </tr>
+                );
+              })}
             </tbody>
           </Table>
         </div>

@@ -1,4 +1,4 @@
-import { horaDaPesagem, isAmostraGrupo, numeroDaAmostra, valorVazio } from '@/lib/amostras';
+import { horaDaPesagem, isAmostraGrupo, numeroDaAmostra, numeroOuNull, valorVazio } from '@/lib/amostras';
 import { densidadesAmostra } from '@/lib/fogoUtils';
 import type { AmostraItem, InformacoesOperacao } from '@/schemas/projeto';
 
@@ -36,7 +36,7 @@ export function descreverAmostra(amostra: AmostraItem, indice: number): AmostraD
   if (isAmostraGrupo(amostra)) {
     const linhas = amostra.pesagens
       .filter((pesagem) => !valorVazio(pesagem.peso))
-      .map((pesagem, i) => `Pesagem ${i + 1}: ${pesagem.peso} g, ${pesagem.densidade} g/cm³, ${horaDaPesagem(pesagem.timestamp)}`);
+      .map((pesagem, i) => `Pesagem ${i + 1}: ${pesagem.peso} g, ${formatarDensidade(numeroOuNull(pesagem.densidade))}, ${horaDaPesagem(pesagem.timestamp)}`);
     return { titulo, linhas };
   }
 
