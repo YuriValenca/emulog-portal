@@ -38,9 +38,10 @@ const CAMPO_DO_MOTIVO: Record<MotivoDoAlerta, 'alertasDensidade' | 'alertasKg' |
 export interface MetricasDosRankings {
   umb: MetricaRanking;
   operadores: MetricaRanking;
+  clientes: MetricaRanking;
 }
 
-export const METRICAS_PADRAO: MetricasDosRankings = { umb: 'totalFogos', operadores: 'totalFogos' };
+export const METRICAS_PADRAO: MetricasDosRankings = { umb: 'totalFogos', operadores: 'totalFogos', clientes: 'totalFogos' };
 
 export interface FogoNaoConforme {
   id: string;
@@ -67,6 +68,7 @@ export interface EstatisticasDeFogos {
   granularidadeGrafico: GranularidadeGrafico;
   rankingUmb: RankingItem[];
   rankingOperadores: RankingItem[];
+  rankingClientes: RankingItem[];
 }
 
 export interface EstatisticasDeLicencas {
@@ -86,6 +88,7 @@ export interface FiltrosAplicadosNoPainel {
 export interface BlocosDoPainel {
   rankingUmb: boolean;
   rankingOperadores: boolean;
+  rankingClientes: boolean;
   ocorrencias: boolean;
   licencas: boolean;
 }
@@ -97,6 +100,7 @@ export function blocosVisiveisDoPainel({ umbs, operadores, clientes = 0, produto
   return {
     rankingUmb: umbs !== 1,
     rankingOperadores: operadores !== 1,
+    rankingClientes: clientes !== 1,
     ocorrencias: !filtraFogos,
     licencas: !filtraFogos,
   };
@@ -236,6 +240,10 @@ function itensOperadoresDoProjeto(projeto: Projeto): RefRanking[] {
   return (projeto.informacoesOperacao?.equipe ?? []).map((membro) => ({ id: membro.id, label: membro.nome }));
 }
 
+function itensClienteDoProjeto(projeto: Projeto): RefRanking[] {
+  return projeto.cliente ? [{ id: projeto.cliente.id, label: projeto.cliente.nome }] : [];
+}
+
 function motivoDoAlerta(projeto: Projeto, contextoFaixa: ContextoFaixa, regras: RegraDeteccao[]): MotivoDoAlerta | null {
   const densidadeFora = statusConformidade(projeto, contextoFaixa) === 'crit';
   const info = projeto.informacoesOperacao;
@@ -309,6 +317,7 @@ export function calcularEstatisticasDeFogos(
     granularidadeGrafico,
     rankingUmb: soOsSelecionados(calcularRanking(fogos, itensCaminhaoDoProjeto, motivoPorFogo), filtros.caminhaoIds),
     rankingOperadores: soOsSelecionados(calcularRanking(fogos, itensOperadoresDoProjeto, motivoPorFogo), filtros.operadorIds),
+    rankingClientes: calcularRanking(fogos, itensClienteDoProjeto, motivoPorFogo),
   };
 }
 

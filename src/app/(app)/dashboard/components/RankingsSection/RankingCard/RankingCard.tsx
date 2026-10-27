@@ -1,19 +1,25 @@
 'use client';
 
 import { useMemo } from 'react';
-import { Bar, BarChart, LabelList, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import { Bar, BarChart, LabelList, ResponsiveContainer, Tooltip, XAxis, YAxis, type LabelProps } from 'recharts';
 import clsx from 'clsx';
 import type { MetricaRanking, RankingItem } from '@/lib/dashboard';
 import { formatarKg } from '@/lib/fogoUtils';
 import styles from '../RankingsSection.module.scss';
 
-const MAX_NOMES_LABEL = 2;
 const ALTURA_POR_ITEM = 26;
 const ALTURA_MINIMA = ALTURA_POR_ITEM * 2;
 const LARGURA_EIXO_MINIMA = 48;
-const LARGURA_EIXO_MAXIMA = 110;
 const PADDING_EIXO = 16;
 const FONTE_MEDICAO = '500 12px sans-serif';
+
+export type TipoDeRotulo = 'pessoa' | 'nomeLongo';
+
+// Pessoa fica nos dois primeiros nomes; nome de empresa não tem essa estrutura e precisa de mais espaço
+const REGRAS_DO_ROTULO: Record<TipoDeRotulo, { maxNomes: number; larguraMaxima: number }> = {
+  pessoa: { maxNomes: 2, larguraMaxima: 110 },
+  nomeLongo: { maxNomes: Infinity, larguraMaxima: 200 },
+};
 
 function limitarNomes(label: string, maxNomes: number): string {
   const partes = label.trim().split(/\s+/);
@@ -55,9 +61,9 @@ function truncarComElipse(contexto: CanvasRenderingContext2D | null, texto: stri
   return `${textoTruncado.trim()}…`;
 }
 
-function calcularLarguraEixo(larguras: number[]): number {
+function calcularLarguraEixo(larguras: number[], larguraMaxima: number): number {
   const maiorLargura = Math.max(...larguras, 0);
-  return Math.min(LARGURA_EIXO_MAXIMA, Math.max(LARGURA_EIXO_MINIMA, Math.ceil(maiorLargura) + PADDING_EIXO));
+  return Math.min(larguraMaxima, Math.max(LARGURA_EIXO_MINIMA, Math.ceil(maiorLargura) + PADDING_EIXO));
 }
 
 interface DadoPreparado extends RankingItem {
@@ -70,21 +76,22 @@ interface DadosPreparados {
   larguraEixo: number;
 }
 
-function usePreparoDados(items: RankingItem[]): DadosPreparados {
+function usePreparoDados(items: RankingItem[], tipoDeRotulo: TipoDeRotulo): DadosPreparados {
   return useMemo(() => {
     const contexto = obterContextoMedicao();
+    const { maxNomes, larguraMaxima } = REGRAS_DO_ROTULO[tipoDeRotulo];
 
     const dados = items.map((item) => {
-      const nomesLimitados = limitarNomes(item.label, MAX_NOMES_LABEL);
-      const labelEixo = truncarComElipse(contexto, nomesLimitados, LARGURA_EIXO_MAXIMA - PADDING_EIXO);
+      const nomesLimitados = limitarNomes(item.label, maxNomes);
+      const labelEixo = truncarComElipse(contexto, nomesLimitados, larguraMaxima - PADDING_EIXO);
       return { ...item, labelEixo };
     });
 
     const altura = Math.max(dados.length * ALTURA_POR_ITEM, ALTURA_MINIMA);
-    const larguraEixo = calcularLarguraEixo(dados.map((item) => medirLargura(contexto, item.labelEixo)));
+    const larguraEixo = calcularLarguraEixo(dados.map((item) => medirLargura(contexto, item.labelEixo)), larguraMaxima);
 
     return { dados, altura, larguraEixo };
-  }, [items]);
+  }, [items, tipoDeRotulo]);
 }
 
 interface TickEixoProps {
@@ -101,10 +108,10 @@ function TickEixoNome({ x = 0, y = 0, payload }: TickEixoProps) {
   );
 }
 
-const METRICAS: Record<MetricaRanking, { rotulo: string; titulo: string; nomeNoTooltip: string; margemDireita: number }> = {
-  totalFogos: { rotulo: 'Fogos', titulo: 'Fogos por', nomeNoTooltip: 'Fogos', margemDireita: 24 },
-  kgAplicado: { rotulo: 'Kg', titulo: 'Kg aplicado por', nomeNoTooltip: 'Kg aplicado', margemDireita: 88 },
-  totalAlertas: { rotulo: 'Alertas', titulo: 'Fogos em alerta por', nomeNoTooltip: 'Fogos em alerta', margemDireita: 24 },
+const METRICAS: Record<MetricaRanking, { rotulo: string; titulo: string; nomeNoTooltip: string }> = {
+  totalFogos: { rotulo: 'Fogos', titulo: 'Fogos por', nomeNoTooltip: 'Fogos' },
+  kgAplicado: { rotulo: 'Kg', titulo: 'Kg aplicado por', nomeNoTooltip: 'Kg aplicado' },
+  totalAlertas: { rotulo: 'Alertas', titulo: 'Fogos em alerta por', nomeNoTooltip: 'Fogos em alerta' },
 };
 
 const SEGMENTOS_DE_ALERTA = [
@@ -154,8 +161,29 @@ function LegendaDeAlertas() {
   );
 }
 
+type CampoDeAlerta = (typeof SEGMENTOS_DE_ALERTA)[number]['dataKey'];
+
+function ultimoSegmentoComValor(item: RankingItem): CampoDeAlerta | undefined {
+  return SEGMENTOS_DE_ALERTA.findLast((segmento) => item[segmento.dataKey] > 0)?.dataKey;
+}
+
+// O Recharts não desenha rótulo em segmento zerado: o total vai depois do último segmento que tem valor.
+// O `index` que ele passa conta só os segmentos desenhados daquela cor, então a linha vem pelo id (dataKey="id").
+function rotuloDoTotal(dados: RankingItem[], campo: CampoDeAlerta) {
+  return function RotuloDoTotal({ value, viewBox }: LabelProps) {
+    const item = dados.find((dado) => dado.id === value);
+    if (!item || ultimoSegmentoComValor(item) !== campo || !viewBox || !('width' in viewBox)) return null;
+    const { x = 0, y = 0, width = 0, height = 0 } = viewBox;
+    return (
+      <text x={x + width + 5} y={y + height / 2} dy={4} {...ESTILO_DO_ROTULO}>
+        {item.totalAlertas}
+      </text>
+    );
+  };
+}
+
 // Recharts só reconhece `Bar` como filho direto do gráfico, então isto devolve elementos, não um componente.
-function barrasDeAlerta(animar: boolean) {
+function barrasDeAlerta(dados: RankingItem[], animar: boolean) {
   return SEGMENTOS_DE_ALERTA.map((segmento, indice) => {
     const ultimo = indice === SEGMENTOS_DE_ALERTA.length - 1;
     return (
@@ -171,7 +199,7 @@ function barrasDeAlerta(animar: boolean) {
         barSize={16}
         isAnimationActive={animar}
       >
-        {ultimo && <LabelList dataKey="totalAlertas" position="right" {...ESTILO_DO_ROTULO} />}
+        <LabelList dataKey="id" content={rotuloDoTotal(dados, segmento.dataKey)} />
       </Bar>
     );
   });
@@ -190,6 +218,16 @@ function barraSimples(metrica: MetricaRanking, animar: boolean) {
   );
 }
 
+const ESPACO_ANTES_DO_VALOR = 5;
+const FOLGA_DO_VALOR = 4;
+
+/** Só o espaço que o maior número escrito depois da barra precisa. */
+function margemParaOsValores(dados: RankingItem[], metrica: MetricaRanking): number {
+  const contexto = obterContextoMedicao();
+  const larguras = dados.map((item) => medirLargura(contexto, formatarValor(item[metrica], metrica)));
+  return Math.ceil(Math.max(...larguras, 0)) + ESPACO_ANTES_DO_VALOR + FOLGA_DO_VALOR;
+}
+
 function rotuloDoTooltip(item: RankingItem | undefined, metrica: MetricaRanking): string {
   if (!item) return '';
   if (metrica !== 'totalAlertas') return item.label;
@@ -199,14 +237,18 @@ function rotuloDoTooltip(item: RankingItem | undefined, metrica: MetricaRanking)
 interface RankingCardProps {
   entidade: string;
   items: RankingItem[];
+  tipoDeRotulo?: TipoDeRotulo;
   metrica: MetricaRanking;
   onMetricaChange?: (metrica: MetricaRanking) => void;
   modoRelatorio?: boolean;
 }
 
-export function RankingCard({ entidade, items, metrica, onMetricaChange, modoRelatorio = false }: RankingCardProps) {
-  const { dados, altura, larguraEixo } = usePreparoDados(items);
-  const { titulo, nomeNoTooltip, margemDireita } = METRICAS[metrica];
+export function RankingCard({
+  entidade, items, tipoDeRotulo = 'pessoa', metrica, onMetricaChange, modoRelatorio = false,
+}: RankingCardProps) {
+  const { dados, altura, larguraEixo } = usePreparoDados(items, tipoDeRotulo);
+  const { titulo, nomeNoTooltip } = METRICAS[metrica];
+  const margemDireita = margemParaOsValores(dados, metrica);
   const emAlertas = metrica === 'totalAlertas';
 
   return (
@@ -216,10 +258,11 @@ export function RankingCard({ entidade, items, metrica, onMetricaChange, modoRel
         {!modoRelatorio && onMetricaChange && <SeletorDeMetrica metrica={metrica} onChange={onMetricaChange} />}
       </div>
       {emAlertas && <LegendaDeAlertas />}
-      <div style={{ width: '100%', height: altura }}>
-        <ResponsiveContainer>
+      <div className={styles.areaDoGrafico} style={{ minHeight: altura }}>
+        <ResponsiveContainer minHeight={altura}>
           <BarChart data={dados} layout="vertical" barCategoryGap="20%" margin={{ top: 0, right: margemDireita, bottom: 0, left: 0 }}>
-            <XAxis type="number" hide />
+            {/* Sem o domínio fixo, o Recharts arredonda o máximo (70 vira 80) e a maior barra não chega ao fim */}
+            <XAxis type="number" hide domain={[0, 'dataMax']} />
             <YAxis
               type="category"
               dataKey="labelEixo"
@@ -243,7 +286,7 @@ export function RankingCard({ entidade, items, metrica, onMetricaChange, modoRel
               labelStyle={{ color: 'var(--text)' }}
               itemStyle={{ color: 'var(--text)' }}
             />
-            {emAlertas ? barrasDeAlerta(!modoRelatorio) : barraSimples(metrica, !modoRelatorio)}
+            {emAlertas ? barrasDeAlerta(dados, !modoRelatorio) : barraSimples(metrica, !modoRelatorio)}
           </BarChart>
         </ResponsiveContainer>
       </div>

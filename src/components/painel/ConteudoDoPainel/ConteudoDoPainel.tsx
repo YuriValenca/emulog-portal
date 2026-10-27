@@ -99,6 +99,8 @@ export function ConteudoDoPainel({
         mostrarUmb={blocos.rankingUmb}
         rankingOperadores={estatisticas.rankingOperadores}
         mostrarOperadores={blocos.rankingOperadores}
+        rankingClientes={estatisticas.rankingClientes}
+        mostrarClientes={blocos.rankingClientes}
         metricas={metricas}
         onMetricasChange={onMetricasChange}
         modoRelatorio={modoRelatorio}
