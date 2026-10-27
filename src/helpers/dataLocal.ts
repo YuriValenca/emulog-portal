@@ -1,5 +1,11 @@
 // `new Date('aaaa-mm-dd')` e `toISOString` são UTC: em Brasília o dia vira às 21h.
 
+/** Datas em `aaaa-mm-dd`, como o input de data devolve; vazia é aceita e cada tela decide o que ela significa. */
+export interface IntervaloDigitado {
+  inicio: string;
+  fim: string;
+}
+
 const doisDigitos = (n: number) => String(n).padStart(2, '0');
 
 function partesDaData(valor: string): [number, number, number] {

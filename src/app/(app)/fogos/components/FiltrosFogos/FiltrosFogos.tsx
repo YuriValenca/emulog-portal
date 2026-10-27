@@ -1,11 +1,11 @@
 'use client';
 
-import { Input, DATA_MINIMA } from '@/components/ui/Input/Input';
+import { Input } from '@/components/ui/Input/Input';
+import { IntervaloDeDatas } from '@/components/ui/IntervaloDeDatas/IntervaloDeDatas';
 import { Select } from '@/components/ui/Select/Select';
 import { MultiSelect } from '@/components/ui/Multiselect/Multiselect';
 import { Search } from 'lucide-react';
 import { PAGE_SIZE_OPTIONS } from '@/hooks/fogos/useProjetos';
-import { hojeLocal } from '@/helpers/dataLocal';
 import { rotuloCaminhao } from '@/helpers/rotuloCaminhao';
 import type { Produto, Caminhao } from '@/types';
 import styles from './FiltrosFogos.module.scss';
@@ -27,25 +27,7 @@ interface FiltrosFogosProps {
 }
 
 export default function FiltrosFogos({ filtros, onChange, produtos, caminhoes }: FiltrosFogosProps) {
-  const hoje = hojeLocal();
-
   const update = (patch: Partial<FiltrosState>) => onChange({ ...filtros, ...patch });
-
-  const updateDataInicio = (value: string) => {
-    const patch: Partial<FiltrosState> = { dataInicio: value };
-    if (filtros.dataFim && value > filtros.dataFim) {
-      patch.dataFim = value;
-    }
-    update(patch);
-  };
-
-  const updateDataFim = (value: string) => {
-    const patch: Partial<FiltrosState> = { dataFim: value };
-    if (value >= DATA_MINIMA && filtros.dataInicio && value < filtros.dataInicio) {
-      patch.dataInicio = value;
-    }
-    update(patch);
-  };
 
   return (
     <div className={styles.container}>
@@ -57,29 +39,11 @@ export default function FiltrosFogos({ filtros, onChange, produtos, caminhoes }:
         onChange={(e) => update({ busca: e.target.value })}
         size='sm'
       />
-      <div className={styles.field}>
-        <span className={styles.label}>Data início</span>
-        <Input
-          type="date"
-          className={styles.dateInput}
-          value={filtros.dataInicio}
-          max={filtros.dataFim || hoje}
-          onChange={(e) => updateDataInicio(e.target.value)}
-          size='sm'
-        />
-      </div>
-      <div className={styles.field}>
-        <span className={styles.label}>Data fim</span>
-        <Input
-          type="date"
-          className={styles.dateInput}
-          value={filtros.dataFim}
-          min={filtros.dataInicio || undefined}
-          max={hoje}
-          onChange={(e) => updateDataFim(e.target.value)}
-          size='sm'
-        />
-      </div>
+      <IntervaloDeDatas
+        id="fogos-data"
+        intervalo={{ inicio: filtros.dataInicio, fim: filtros.dataFim }}
+        onChange={({ inicio, fim }) => update({ dataInicio: inicio, dataFim: fim })}
+      />
       <MultiSelect
         values={filtros.produtoIds}
         onValuesChange={(v) => update({ produtoIds: v })}

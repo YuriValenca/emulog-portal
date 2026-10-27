@@ -8,7 +8,8 @@ import { useOperadores } from '@/hooks/cadastro/useOperadores';
 import { useClientes } from '@/hooks/cadastro/useClientes';
 import { useProdutos } from '@/hooks/cadastro/useProdutos';
 import { useFogosDoRelatorio, type IntervaloDoRelatorio } from '@/hooks/relatorios/useFogosDoRelatorio';
-import { Input } from '@/components/ui/Input/Input';
+import { IntervaloDeDatas } from '@/components/ui/IntervaloDeDatas/IntervaloDeDatas';
+import { dataLocalISO } from '@/helpers/dataLocal';
 import { MultiSelect } from '@/components/ui/Multiselect/Multiselect';
 import { Spinner } from '@/components/ui/Spinner/Spinner';
 import { Tabs } from '@/components/ui/Tabs/Tabs';
@@ -21,14 +22,11 @@ import styles from './page.module.scss';
 
 const DIAS_PADRAO = 30;
 
-const doisDigitos = (n: number) => String(n).padStart(2, '0');
-const paraDataInput = (data: Date) => `${data.getFullYear()}-${doisDigitos(data.getMonth() + 1)}-${doisDigitos(data.getDate())}`;
-
 function intervaloPadrao(): IntervaloDoRelatorio {
   const hoje = new Date();
   const inicio = new Date(hoje);
   inicio.setDate(hoje.getDate() - DIAS_PADRAO);
-  return { inicio: paraDataInput(inicio), fim: paraDataInput(hoje) };
+  return { inicio: dataLocalISO(inicio), fim: dataLocalISO(hoje) };
 }
 
 interface FiltrosDeFogo {
@@ -93,25 +91,7 @@ export default function RelatoriosPage() {
   return (
     <div className={styles.container}>
       <div className={styles.filtros}>
-        <Input
-          id="relatorio-inicio"
-          type="date"
-          label="Fogos de"
-          value={intervalo.inicio}
-          max={intervalo.fim}
-          onChange={(e) => setIntervalo((atual) => ({ ...atual, inicio: e.target.value }))}
-          size="sm"
-        />
-        <Input
-          id="relatorio-fim"
-          type="date"
-          label="Até"
-          value={intervalo.fim}
-          min={intervalo.inicio}
-          max={paraDataInput(new Date())}
-          onChange={(e) => setIntervalo((atual) => ({ ...atual, fim: e.target.value }))}
-          size="sm"
-        />
+        <IntervaloDeDatas id="relatorio-data" intervalo={intervalo} onChange={setIntervalo} rotuloInicio="Fogos de" />
         <MultiSelect label="UMB" placeholder="Todas" values={filtros.caminhaoIds} onValuesChange={alterarFiltro('caminhaoIds')}
           options={opcoes(caminhoes, rotuloCaminhao)} size="sm" width={180} />
         <MultiSelect label="Operadores" placeholder="Todos" values={filtros.operadorIds} onValuesChange={alterarFiltro('operadorIds')}

@@ -4,7 +4,6 @@ import { useEffect, useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Eye, Plus, Settings, Trash2 } from 'lucide-react';
 import { useAppAuth } from '@/hooks/useAppAuth';
-import { hojeLocal } from '@/helpers/dataLocal';
 import { useCompanyGroup } from '@/hooks/fogos/useCompanyGroup';
 import { useOcorrencias } from '@/hooks/ocorrencias/useOcorrencias';
 import { useRegrasDeteccao } from '@/hooks/ocorrencias/useRegrasDeteccao';
@@ -13,6 +12,7 @@ import { Button } from '@/components/ui/Button/Button';
 import { Select } from '@/components/ui/Select/Select';
 import { Table } from '@/components/ui/Table/Table';
 import { Input } from '@/components/ui/Input/Input';
+import { IntervaloDeDatas } from '@/components/ui/IntervaloDeDatas/IntervaloDeDatas';
 import { Spinner } from '@/components/ui/Spinner/Spinner';
 import { StatusPill } from '@/components/ui/StatusPill/StatusPill';
 import { Textarea } from '@/components/ui/Textarea/Textarea';
@@ -86,7 +86,6 @@ export default function OcorrenciasPage() {
     paginaAtual * filtros.porPagina
   );
   const totalEncontradas = ocorrenciasFiltradas.length;
-  const hoje = hojeLocal();
 
   const configMetrica = METRICA_CONFIG[novaAutomacao.metrica];
   const operador = configMetrica.operadorFixo ?? novaAutomacao.operadorEscolhido;
@@ -231,24 +230,12 @@ export default function OcorrenciasPage() {
           size="sm"
           width={250}
         />
-        <Input
-          id="ocorrencias-data-inicio"
-          type="date"
-          label="Fogo de"
-          value={filtros.dataInicio}
-          max={filtros.dataFim || hoje}
-          onChange={(e) => filtros.mudarDataInicio(e.target.value)}
-          size="sm"
-        />
-        <Input
-          id="ocorrencias-data-fim"
-          type="date"
-          label="Fogo até"
-          value={filtros.dataFim}
-          min={filtros.dataInicio || undefined}
-          max={hoje}
-          onChange={(e) => filtros.mudarDataFim(e.target.value)}
-          size="sm"
+        <IntervaloDeDatas
+          id="ocorrencias-data"
+          intervalo={{ inicio: filtros.dataInicio, fim: filtros.dataFim }}
+          onChange={filtros.mudarIntervalo}
+          rotuloInicio="Fogo de"
+          rotuloFim="Fogo até"
         />
         <Select
           value={String(filtros.porPagina)}

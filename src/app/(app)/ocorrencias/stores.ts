@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { DEFAULT_PAGE_SIZE } from '@/hooks/fogos/useProjetos';
-import { DATA_MINIMA } from '@/components/ui/Input/Input';
+import type { IntervaloDigitado } from '@/helpers/dataLocal';
 import type { RegraMetrica, RegraOperador } from '@/schemas/regraDeteccao';
 
 interface FiltrosOcorrencias {
@@ -12,8 +12,7 @@ interface FiltrosOcorrencias {
   porPagina: number;
   mudarStatus: (status: string) => void;
   mudarTipo: (tipo: string) => void;
-  mudarDataInicio: (data: string) => void;
-  mudarDataFim: (data: string) => void;
+  mudarIntervalo: (intervalo: IntervaloDigitado) => void;
   mudarPorPagina: (porPagina: number) => void;
   irParaPagina: (pagina: number) => void;
 }
@@ -28,15 +27,7 @@ export const useFiltrosOcorrencias = create<FiltrosOcorrencias>((set) => ({
   porPagina: DEFAULT_PAGE_SIZE,
   mudarStatus: (status) => set({ status, pagina: 1 }),
   mudarTipo: (tipo) => set({ tipo, pagina: 1 }),
-  mudarDataInicio: (dataInicio) =>
-    set(({ dataFim }) => ({ dataInicio, dataFim: dataFim && dataInicio > dataFim ? dataInicio : dataFim, pagina: 1 })),
-  // O input de data dispara a cada dígito do ano: só puxa o início quando a data já é completa
-  mudarDataFim: (dataFim) =>
-    set(({ dataInicio }) => ({
-      dataFim,
-      dataInicio: dataFim >= DATA_MINIMA && dataInicio && dataFim < dataInicio ? dataFim : dataInicio,
-      pagina: 1,
-    })),
+  mudarIntervalo: ({ inicio, fim }) => set({ dataInicio: inicio, dataFim: fim, pagina: 1 }),
   mudarPorPagina: (porPagina) => set({ porPagina, pagina: 1 }),
   irParaPagina: (pagina) => set({ pagina }),
 }));
