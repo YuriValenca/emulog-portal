@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Plus, Settings, Trash2 } from 'lucide-react';
+import { Eye, Plus, Settings, Trash2 } from 'lucide-react';
 import { useAppAuth } from '@/hooks/useAppAuth';
 import { hojeLocal } from '@/helpers/dataLocal';
 import { useCompanyGroup } from '@/hooks/fogos/useCompanyGroup';
@@ -21,6 +21,10 @@ import { useToast } from '@/components/ui/Toast/Toast';
 import { ConfirmModal } from '@/components/ui/ConfirmModal/ConfirmModal';
 import { FormModal } from '@/components/layout/FormModal/FormModal';
 import ConfigurarAutomacoesModal from './components/ConfigurarAutomacoesModal/ConfigurarAutomacoesModal';
+import DetalheOcorrenciaModal from './components/DetalheOcorrenciaModal/DetalheOcorrenciaModal';
+import FogoDetailModal from '../fogos/components/FogoDetailModal/FogoDetailModal';
+import { temDetalhe } from '@/lib/detalheOcorrencia';
+import type { Projeto } from '@/schemas/projeto';
 import {
   METRICA_CONFIG, METRICA_OPTIONS, OPCOES_POR_PAGINA, OPERADOR_OPTIONS, STATUS_OPTIONS, TIPO_OPTIONS,
   categoriaOcorrencia, dentroDoPeriodoDoFogo, erroDaNovaOcorrencia, erroDosValoresAutomacao,
@@ -62,6 +66,10 @@ export default function OcorrenciasPage() {
   const [configurarModalOpen, setConfigurarModalOpen] = useState(false);
   const [regraParaExcluir, setRegraParaExcluir] = useState<RegraDeteccao | null>(null);
   const [ocorrenciaParaExcluir, setOcorrenciaParaExcluir] = useState<Ocorrencia | null>(null);
+  // Pelo id, e não pelo objeto: mudar o status no modal recarrega a lista e o modal acompanha
+  const [idDoDetalhe, setIdDoDetalhe] = useState<string | null>(null);
+  const [fogoAberto, setFogoAberto] = useState<Projeto | null>(null);
+  const ocorrenciaDoDetalhe = ocorrencias.find((o) => o.id === idDoDetalhe) ?? null;
 
   const ocorrenciasFiltradas = useMemo(() => {
     return ocorrencias.filter((o) => {
@@ -153,6 +161,16 @@ export default function OcorrenciasPage() {
         description: 'A ocorrência continua com o status anterior. Tente novamente.',
       });
     }
+  };
+
+  const apagarPeloDetalhe = (ocorrencia: Ocorrencia) => {
+    setIdDoDetalhe(null);
+    setOcorrenciaParaExcluir(ocorrencia);
+  };
+
+  const abrirFogoPeloDetalhe = (projeto: Projeto) => {
+    setIdDoDetalhe(null);
+    setFogoAberto(projeto);
   };
 
   const confirmarExclusaoOcorrencia = async () => {
@@ -268,7 +286,11 @@ export default function OcorrenciasPage() {
             </thead>
             <tbody>
               {ocorrenciasDaPagina.map((o) => (
-                <tr key={o.id}>
+                <tr
+                  key={o.id}
+                  className={temDetalhe(o) ? styles.linhaClicavel : undefined}
+                  onClick={temDetalhe(o) ? () => setIdDoDetalhe(o.id) : undefined}
+                >
                   <td>
                     <CategoriaTag categoria={categoriaOcorrencia(o)} />
                   </td>
@@ -279,7 +301,8 @@ export default function OcorrenciasPage() {
                   <td>{o.descricao || '—'}</td>
                   <td>{o.dataFogo ? o.dataFogo.toDate().toLocaleDateString('pt-BR') : '—'}</td>
                   <td>{o.criadoEm.toDate().toLocaleDateString('pt-BR')}</td>
-                  <td>
+                  {/* O clique no select e no menu não pode abrir o detalhe; o React propaga até de dentro do portal do Radix */}
+                  <td onClick={(e) => e.stopPropagation()}>
                     <Select
                       value={o.status}
                       onValueChange={(value) => mudarStatusOcorrencia(o, value as OcorrenciaStatus)}
@@ -287,10 +310,13 @@ export default function OcorrenciasPage() {
                       size="sm"
                     />
                   </td>
-                  <td>
+                  <td onClick={(e) => e.stopPropagation()}>
                     <ActionsMenu
                       ariaLabel={`Ações para ${tipoLabel(o)}`}
                       items={[
+                        ...(temDetalhe(o)
+                          ? [{ key: 'detalhes', label: 'Ver detalhes', icon: <Eye size={14} />, onClick: () => setIdDoDetalhe(o.id) }]
+                          : []),
                         {
                           key: 'apagar',
                           label: 'Apagar',
@@ -455,6 +481,17 @@ export default function OcorrenciasPage() {
         onConfirm={handleConfirmarExclusaoRegra}
         onCancel={() => setRegraParaExcluir(null)}
       />
+
+      <DetalheOcorrenciaModal
+        ocorrencia={ocorrenciaDoDetalhe}
+        regras={regras}
+        onClose={() => setIdDoDetalhe(null)}
+        onMudarStatus={mudarStatusOcorrencia}
+        onApagar={apagarPeloDetalhe}
+        onAbrirFogo={abrirFogoPeloDetalhe}
+      />
+
+      <FogoDetailModal projeto={fogoAberto} onClose={() => setFogoAberto(null)} />
 
       <ConfirmModal
         open={ocorrenciaParaExcluir !== null}

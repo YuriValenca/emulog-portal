@@ -108,6 +108,14 @@ async function fetchProjetosByIds(ids: string[]): Promise<Projeto[]> {
   return results.filter((p): p is Projeto => p !== null);
 }
 
+export function useProjeto(id: string | null) {
+  return useQuery({
+    queryKey: ['projeto', id],
+    queryFn: async () => (await fetchProjetosByIds([id!]))[0] ?? null,
+    enabled: id !== null,
+  });
+}
+
 export function useProjetosList(companyIds: string[], filtros: ProjetosFiltros = {}) {
   const { busca, dataInicio, dataFim, produtoIds = [], caminhaoIds = [], page = 1, pageSize = DEFAULT_PAGE_SIZE } = filtros;
 

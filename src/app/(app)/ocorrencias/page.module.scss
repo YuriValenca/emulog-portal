@@ -103,3 +103,11 @@
   background: var(--data-soft);
   color: var(--data);
 }
+
+tr.linhaClicavel td {
+  cursor: pointer;
+}
+
+.linhaClicavel:hover td {
+  background: var(--surface-2);
+}
