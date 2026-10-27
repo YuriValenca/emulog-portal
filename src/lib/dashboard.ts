@@ -133,22 +133,47 @@ export function granularidadeDoIntervalo(inicio: Date | null, fim: Date): Granul
   return dias <= DIAS_LIMITE_AGRUPAMENTO_DIARIO ? 'diaria' : 'semanal';
 }
 
-const doisDigitos = (n: number) => String(n).padStart(2, '0');
-
-// Chave em data local: `toISOString` é UTC e jogava fogos da noite para o dia seguinte.
-function chaveAgrupamento(dataCriacao: Date, granularidade: GranularidadeGrafico): string {
-  const ano = dataCriacao.getFullYear();
-  const mes = doisDigitos(dataCriacao.getMonth() + 1);
-  if (granularidade === 'mensal') return `${ano}-${mes}`;
-
-  const dia = new Date(ano, dataCriacao.getMonth(), dataCriacao.getDate());
+function inicioDoGrupo(data: Date, granularidade: GranularidadeGrafico): Date {
+  if (granularidade === 'mensal') return new Date(data.getFullYear(), data.getMonth(), 1);
+  const dia = new Date(data.getFullYear(), data.getMonth(), data.getDate());
   if (granularidade === 'semanal') dia.setDate(dia.getDate() - dia.getDay());
-  return `${dia.getFullYear()}-${doisDigitos(dia.getMonth() + 1)}-${doisDigitos(dia.getDate())}`;
+  return dia;
 }
 
-function rotuloAgrupamento(chave: string, granularidade: GranularidadeGrafico): string {
-  const [ano, mes, dia] = chave.split('-');
-  return granularidade === 'mensal' ? `${mes}/${ano}` : `${dia}/${mes}`;
+function inicioDoProximoGrupo(inicio: Date, granularidade: GranularidadeGrafico): Date {
+  if (granularidade === 'mensal') return new Date(inicio.getFullYear(), inicio.getMonth() + 1, 1);
+  const proximo = new Date(inicio);
+  proximo.setDate(proximo.getDate() + (granularidade === 'semanal' ? 7 : 1));
+  return proximo;
+}
+
+function ultimoDiaDoGrupo(inicio: Date, granularidade: GranularidadeGrafico): Date {
+  const ultimo = inicioDoProximoGrupo(inicio, granularidade);
+  ultimo.setDate(ultimo.getDate() - 1);
+  return ultimo;
+}
+
+const diaEMes = (data: Date) => data.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+const diaMesEAno = (data: Date) => data.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit' });
+
+const maisTarde = (a: Date, b: Date) => (a > b ? a : b);
+const maisCedo = (a: Date, b: Date) => (a < b ? a : b);
+
+/** As pontas do gráfico vão só até as datas do filtro; os grupos do meio mostram a semana ou o mês inteiro. */
+function rotuloDoGrupo(inicioDoGrupo: Date, granularidade: GranularidadeGrafico, inicio: Date, fim: Date): string {
+  if (granularidade === 'diaria') return diaEMes(inicioDoGrupo);
+  const formatar = granularidade === 'mensal' ? diaMesEAno : diaEMes;
+  const primeiroDia = maisTarde(inicioDoGrupo, inicio);
+  const ultimoDia = maisCedo(ultimoDiaDoGrupo(inicioDoGrupo, granularidade), fim);
+  return `${formatar(primeiroDia)} a ${formatar(ultimoDia)}`;
+}
+
+function gruposDoIntervalo(inicio: Date, fim: Date, granularidade: GranularidadeGrafico): Date[] {
+  const grupos: Date[] = [];
+  for (let grupo = inicioDoGrupo(inicio, granularidade); grupo <= fim; grupo = inicioDoProximoGrupo(grupo, granularidade)) {
+    grupos.push(grupo);
+  }
+  return grupos;
 }
 
 const kgAplicadoDoFogo = (projeto: Projeto) => paraKg(projeto.informacoesOperacao?.kgAplicado) ?? 0;
@@ -211,24 +236,27 @@ function calcularConformidadeDensidade(projetos: Projeto[], contextoFaixa: Conte
   return { densidadeMediaPeriodo, fogosConformesPeriodo, fogosAlertaPeriodo, fogosNaoConformes };
 }
 
-function calcularAgrupamentos(projetos: Projeto[], granularidade: GranularidadeGrafico): FogoPorPeriodo[] {
-  const agrupamentos = new Map<string, { totalFogos: number; kgAplicado: number }>();
+// Grupo sem fogo entra zerado para o gráfico começar e terminar nas pontas do intervalo
+function calcularAgrupamentos(projetos: Projeto[], granularidade: GranularidadeGrafico, inicio: Date | null, fim: Date): FogoPorPeriodo[] {
+  const datasDosFogos = projetos.map((projeto) => dataDoFogo(projeto.dataCriacao).getTime());
+  if (datasDosFogos.length === 0 && !inicio) return [];
+  const primeiraData = inicio ?? new Date(Math.min(...datasDosFogos));
+
+  const agrupamentos = new Map<number, FogoPorPeriodo>(
+    gruposDoIntervalo(primeiraData, fim, granularidade).map((grupo) => [
+      grupo.getTime(),
+      { rotulo: rotuloDoGrupo(grupo, granularidade, primeiraData, fim), totalFogos: 0, kgAplicado: 0 },
+    ])
+  );
 
   projetos.forEach((projeto) => {
-    const chave = chaveAgrupamento(dataDoFogo(projeto.dataCriacao), granularidade);
-    const atual = agrupamentos.get(chave) ?? { totalFogos: 0, kgAplicado: 0 };
-    atual.totalFogos += 1;
-    atual.kgAplicado += kgAplicadoDoFogo(projeto);
-    agrupamentos.set(chave, atual);
+    const grupo = agrupamentos.get(inicioDoGrupo(dataDoFogo(projeto.dataCriacao), granularidade).getTime());
+    if (!grupo) return;
+    grupo.totalFogos += 1;
+    grupo.kgAplicado += kgAplicadoDoFogo(projeto);
   });
 
-  return Array.from(agrupamentos.entries())
-    .sort(([a], [b]) => a.localeCompare(b))
-    .map(([chave, valores]) => ({
-      rotulo: rotuloAgrupamento(chave, granularidade),
-      totalFogos: valores.totalFogos,
-      kgAplicado: Math.round(valores.kgAplicado),
-    }));
+  return [...agrupamentos.values()].map((grupo) => ({ ...grupo, kgAplicado: Math.round(grupo.kgAplicado) }));
 }
 
 function itensCaminhaoDoProjeto(projeto: Projeto): RefRanking[] {
@@ -306,14 +334,15 @@ export function calcularEstatisticasDeFogos(
   agora: Date = new Date()
 ): EstatisticasDeFogos {
   const fogos = filtrarFogos(projetos, filtros);
-  const granularidadeGrafico = granularidadeDoIntervalo(filtros.inicio, filtros.fim ?? agora);
+  const fimDoGrafico = filtros.fim ?? agora;
+  const granularidadeGrafico = granularidadeDoIntervalo(filtros.inicio, fimDoGrafico);
   const motivoPorFogo = new Map(fogos.map((fogo) => [fogo.id, motivoDoAlerta(fogo, contextoFaixa, regras)]));
 
   return {
     ...calcularTotais(fogos),
     ...calcularConformidadeDensidade(fogos, contextoFaixa),
     totalAlertasPeriodo: [...motivoPorFogo.values()].filter(Boolean).length,
-    fogosAgrupados: calcularAgrupamentos(fogos, granularidadeGrafico),
+    fogosAgrupados: calcularAgrupamentos(fogos, granularidadeGrafico, filtros.inicio, fimDoGrafico),
     granularidadeGrafico,
     rankingUmb: soOsSelecionados(calcularRanking(fogos, itensCaminhaoDoProjeto, motivoPorFogo), filtros.caminhaoIds),
     rankingOperadores: soOsSelecionados(calcularRanking(fogos, itensOperadoresDoProjeto, motivoPorFogo), filtros.operadorIds),

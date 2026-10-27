@@ -96,6 +96,34 @@ function renderRotuloDaFatia({ cx, cy, midAngle, innerRadius, outerRadius, value
   );
 }
 
+const SEPARADOR_DO_INTERVALO = ' a ';
+const ALTURA_DA_LINHA_DO_EIXO = 14;
+
+const linhasDoRotulo = (rotulo: string) => {
+  const [inicio, fim] = rotulo.split(SEPARADOR_DO_INTERVALO);
+  return fim ? [inicio, 'a', fim] : [inicio];
+};
+
+// O Recharts mede o rótulo pelo tickFormatter para esconder os que se encostam: mede só a linha mais larga
+const linhaMaisLarga = (rotulo: string) =>
+  linhasDoRotulo(rotulo).reduce((maior, linha) => (linha.length > maior.length ? linha : maior));
+
+interface RotuloDoEixoProps {
+  x: number;
+  y: number;
+  payload: { value: string };
+}
+
+function RotuloDoEixo({ x, y, payload }: RotuloDoEixoProps) {
+  return (
+    <text x={x} y={y} textAnchor="middle" fill={CORES.textMuted} fontSize={12}>
+      {linhasDoRotulo(payload.value).map((linha, indice) => (
+        <tspan key={indice} x={x} dy={indice === 0 ? '0.71em' : ALTURA_DA_LINHA_DO_EIXO}>{linha}</tspan>
+      ))}
+    </text>
+  );
+}
+
 function Legenda({ itens }: { itens: { nome: string; valor: number; cor: string }[] }) {
   return (
     <div className={styles.legend}>
@@ -147,7 +175,18 @@ export function DashboardCharts({
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={fogosAgrupados}>
                 <CartesianGrid stroke={CORES.border} vertical={false} />
-                <XAxis dataKey="rotulo" stroke={CORES.textMuted} fontSize={12} tickLine={false} axisLine={false} />
+                <XAxis
+                  dataKey="rotulo"
+                  stroke={CORES.textMuted}
+                  fontSize={12}
+                  tickLine={false}
+                  axisLine={false}
+                  tick={RotuloDoEixo as never}
+                  tickFormatter={linhaMaisLarga}
+                  interval="equidistantPreserveStart"
+                  minTickGap={12}
+                  height={granularidadeGrafico === 'diaria' ? 30 : 30 + 2 * ALTURA_DA_LINHA_DO_EIXO}
+                />
                 <YAxis yAxisId="fogos" stroke={CORES.accent} fontSize={12} tickLine={false} axisLine={false} allowDecimals={false} />
                 <YAxis yAxisId="kg" orientation="right" stroke={CORES.data} fontSize={12} tickLine={false} axisLine={false} />
                 <Tooltip contentStyle={tooltipStyle} labelStyle={{ color: CORES.texto }} />
