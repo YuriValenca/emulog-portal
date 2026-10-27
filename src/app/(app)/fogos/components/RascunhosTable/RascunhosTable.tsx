@@ -4,7 +4,9 @@ import { Eye } from 'lucide-react';
 import clsx from 'clsx';
 import { ActionsMenu } from '@/components/ui/ActionsMenu/ActionsMenu';
 import { diffPercent, densidadeInicialFinalMedia, formatarKg } from '@/lib/fogoUtils';
-import { motivoDoAlerta, statusConformidade, type ContextoFaixa } from '@/lib/densidade';
+import {
+  amostrasForaDaFaixa, faixaDoProjeto, motivoDoAlerta, statusConformidade, valorForaDaFaixa, type ContextoFaixa,
+} from '@/lib/densidade';
 import type { ProjetoRascunho } from '@/schemas/projetoRascunho';
 import type { RegraDeteccao } from '@/schemas/regraDeteccao';
 import { PillDiferenca } from '../PillDiferenca/PillDiferenca';
@@ -47,7 +49,8 @@ export default function RascunhosTable({
             <th>Kg prev.</th>
             <th>Kg apl.</th>
             <th>Dif.</th>
-            <th>Dens. final</th>
+            <th>Dens. média</th>
+            <th>Fora da faixa</th>
             <th>Furos</th>
             <th>Fotos</th>
             <th>Status</th>
@@ -60,6 +63,8 @@ export default function RascunhosTable({
             const dif = diffPercent(info?.kgPrevisto, info?.kgAplicado);
             const { final } = densidadeInicialFinalMedia(rascunho);
             const status = statusConformidade(rascunho, contextoFaixa);
+            const mediaFora = final !== null && valorForaDaFaixa(final, faixaDoProjeto(rascunho, contextoFaixa));
+            const amostras = amostrasForaDaFaixa(rascunho, contextoFaixa);
             const atualizacao = rascunho.dataAtualizacao.toDate();
 
             return (
@@ -78,8 +83,11 @@ export default function RascunhosTable({
                 <td>
                   <PillDiferenca dif={dif} regras={regras} />
                 </td>
-                <td className={clsx(styles.numero, status === 'crit' && styles.critico)}>
+                <td className={clsx(styles.numero, mediaFora && styles.critico)}>
                   {final !== null ? final.toFixed(2) : '—'}
+                </td>
+                <td className={clsx(styles.numero, amostras.fora > 0 ? styles.critico : styles.secundario)}>
+                  {amostras.total > 0 ? `${amostras.fora}/${amostras.total}` : '—'}
                 </td>
                 <td className={styles.numero}>{rascunho.furos ? rascunho.furos.itens.length : '—'}</td>
                 <td className={styles.numero}>{fotosPorRascunho.get(rascunho.id) ?? '—'}</td>

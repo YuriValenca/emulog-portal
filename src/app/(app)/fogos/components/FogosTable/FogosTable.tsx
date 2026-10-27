@@ -4,7 +4,9 @@ import { Eye, Trash2 } from 'lucide-react';
 import clsx from 'clsx';
 import { ActionsMenu } from '@/components/ui/ActionsMenu/ActionsMenu';
 import { diffPercent, densidadeInicialFinalMedia, conclusaoEmOutroDia, formatarKg } from '@/lib/fogoUtils';
-import { motivoDoAlerta, statusConformidade, type ContextoFaixa } from '@/lib/densidade';
+import {
+  amostrasForaDaFaixa, faixaDoProjeto, motivoDoAlerta, statusConformidade, valorForaDaFaixa, type ContextoFaixa,
+} from '@/lib/densidade';
 import type { RegraDeteccao } from '@/schemas/regraDeteccao';
 import type { Projeto } from '@/types';
 import { PillDiferenca } from '../PillDiferenca/PillDiferenca';
@@ -33,7 +35,8 @@ export default function FogosTable({ projetos, contextoFaixa, regras, onSelect, 
             <th>Kg prev.</th>
             <th>Kg apl.</th>
             <th>Dif.</th>
-            <th>Dens. final</th>
+            <th>Dens. média</th>
+            <th>Fora da faixa</th>
             <th>Status</th>
             <th />
           </tr>
@@ -44,6 +47,8 @@ export default function FogosTable({ projetos, contextoFaixa, regras, onSelect, 
             const dif = info ? diffPercent(info.kgPrevisto, info.kgAplicado) : null;
             const { final } = densidadeInicialFinalMedia(projeto);
             const status = statusConformidade(projeto, contextoFaixa);
+            const mediaFora = final !== null && valorForaDaFaixa(final, faixaDoProjeto(projeto, contextoFaixa));
+            const amostras = amostrasForaDaFaixa(projeto, contextoFaixa);
             const conclusao = conclusaoEmOutroDia(projeto);
 
             return (
@@ -65,8 +70,11 @@ export default function FogosTable({ projetos, contextoFaixa, regras, onSelect, 
                 <td>
                   <PillDiferenca dif={dif} regras={regras} />
                 </td>
-                <td className={clsx(styles.numero, status === 'crit' && styles.critico)}>
+                <td className={clsx(styles.numero, mediaFora && styles.critico)}>
                   {final !== null ? final.toFixed(2) : '—'}
+                </td>
+                <td className={clsx(styles.numero, amostras.fora > 0 ? styles.critico : styles.secundario)}>
+                  {amostras.total > 0 ? `${amostras.fora}/${amostras.total}` : '—'}
                 </td>
                 <td>
                   <PillConformidade status={status} motivo={status === 'crit' ? motivoDoAlerta(projeto, contextoFaixa) : null} />

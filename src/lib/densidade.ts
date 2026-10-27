@@ -98,7 +98,18 @@ export function densidadeMediaDoProjeto(amostras: AmostraItem[]): number | null 
 }
 
 export function densidadesForaDaFaixa(amostras: AmostraItem[], faixa: FaixaDensidade): number[] {
-  return ultimasDensidadesDoProjeto(amostras).filter((d) => d < faixa.min || d > faixa.max);
+  return ultimasDensidadesDoProjeto(amostras).filter((d) => valorForaDaFaixa(d, faixa));
+}
+
+export function valorForaDaFaixa(valor: number, faixa: FaixaDensidade): boolean {
+  return valor < faixa.min || valor > faixa.max;
+}
+
+/** Quantas amostras do fogo terminaram fora da faixa dele, sobre as que têm densidade final. */
+export function amostrasForaDaFaixa(projeto: FogoAvaliavel, contexto: ContextoFaixa): { fora: number; total: number } {
+  const faixa = faixaDoProjeto(projeto, contexto);
+  const densidades = ultimasDensidadesDoProjeto(projeto.amostras ?? []);
+  return { fora: densidades.filter((d) => valorForaDaFaixa(d, faixa)).length, total: densidades.length };
 }
 
 export function resumoForaDaFaixa(quantidade: number, faixa: FaixaResolvida): string {
