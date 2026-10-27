@@ -6,7 +6,7 @@ import { Modal } from '@/components/ui/Modal/Modal';
 import { Tabs } from '@/components/ui/Tabs/Tabs';
 import { Table } from '@/components/ui/Table/Table';
 import { diffPercent, densidadeInicialFinalMedia, densidadesAmostra, conclusaoEmOutroDia, formatarKg } from '@/lib/fogoUtils';
-import { isAmostraGrupo, valorVazio, horaDaPesagem } from '@/lib/amostras';
+import { isAmostraGrupo, valorVazio, horaDaPesagem, numeroDaAmostra } from '@/lib/amostras';
 import { situacaoCalibragem, type SituacaoCalibragem } from '@/lib/calibragem';
 import { faixaDoProjeto } from '@/lib/densidade';
 import { useContextoFaixa } from '@/hooks/useContextoFaixa';
@@ -53,13 +53,13 @@ function descricaoDoFogo(projeto: FogoDetalhavel): string {
 }
 
 function CartaoAmostra({ amostra, index }: { amostra: AmostraItem; index: number }) {
-  const amostraId = 'amostraId' in amostra && typeof amostra.amostraId === 'number' ? amostra.amostraId : index;
+  const numero = numeroDaAmostra(amostra, index);
 
   if (isAmostraGrupo(amostra) && amostra.pesagens.length > 0) {
     const pesagens = amostra.pesagens.filter((p) => !valorVazio(p.peso));
     return (
       <div className={styles.amostraBox}>
-        <span className={styles.amostraTitulo}>Amostra {amostraId + 1}</span>
+        <span className={styles.amostraTitulo}>Amostra {numero}</span>
         <div className={styles.pesagensTable}>
           <Table columns={['10%', '30%', '30%', '30%']}>
             <thead>
@@ -89,7 +89,7 @@ function CartaoAmostra({ amostra, index }: { amostra: AmostraItem; index: number
   const { inicial, final } = densidadesAmostra(amostra);
   return (
     <div className={styles.amostraBox}>
-      <span className={styles.amostraTitulo}>Amostra {amostraId + 1}</span>
+      <span className={styles.amostraTitulo}>Amostra {numero}</span>
       <div className={styles.densidadeRow}>
         <span className={styles.densidadeLabel}>Inicial</span>
         <span className={styles.densidadeValue}>{inicial !== null ? `${inicial.toFixed(2)} g/cm³` : '—'}</span>

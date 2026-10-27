@@ -1,4 +1,4 @@
-import { horaDaPesagem, isAmostraGrupo, valorVazio } from '@/lib/amostras';
+import { horaDaPesagem, isAmostraGrupo, numeroDaAmostra, valorVazio } from '@/lib/amostras';
 import { densidadesAmostra } from '@/lib/fogoUtils';
 import type { AmostraItem, InformacoesOperacao } from '@/schemas/projeto';
 
@@ -31,8 +31,7 @@ export interface AmostraDescrita {
 const formatarDensidade = (valor: number | null) => (valor === null ? '—' : `${valor.toFixed(2)} g/cm³`);
 
 export function descreverAmostra(amostra: AmostraItem, indice: number): AmostraDescrita {
-  const id = 'amostraId' in amostra && typeof amostra.amostraId === 'number' ? amostra.amostraId : indice;
-  const titulo = `Amostra ${id + 1}`;
+  const titulo = `Amostra ${numeroDaAmostra(amostra, indice)}`;
 
   if (isAmostraGrupo(amostra)) {
     const linhas = amostra.pesagens

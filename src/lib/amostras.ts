@@ -46,6 +46,11 @@ export function isLegacyPesagemFlat(item: AmostraItem): item is LegacyPesagemFla
   return !isAmostraGrupo(item) && !isAmostraManual(item);
 }
 
+export function numeroDaAmostra(amostra: AmostraItem, indice: number): number {
+  const id = 'amostraId' in amostra && typeof amostra.amostraId === 'number' ? amostra.amostraId : indice;
+  return id + 1;
+}
+
 export function densidadesDaAmostraManual(amostra: AmostraManual): {
   inicial: number | null;
   final: number | null;
