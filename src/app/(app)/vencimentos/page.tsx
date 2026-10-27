@@ -1,14 +1,18 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { Check, Plus, RefreshCcw, RotateCcw, Settings, Trash2 } from 'lucide-react';
 import { useAppAuth } from '@/hooks/useAppAuth';
 import { useCompanyGroup } from '@/hooks/fogos/useCompanyGroup';
 import { useAgora } from '@/hooks/useAgora';
 import { useVencimentos } from '@/hooks/vencimentos/useVencimentos';
+import { contarVencimentosDoTipo, useTiposVencimento } from '@/hooks/vencimentos/useTiposVencimento';
 import { useCaminhoes } from '@/hooks/cadastro/useCaminhoes';
 import { useOperadores } from '@/hooks/cadastro/useOperadores';
-import { alertaParaTipo, urgenciaVencimento, formatarHorasRestantes } from '@/lib/vencimento';
+import {
+  alertaParaChave, chaveDoTipo, formatarHorasRestantes, opcoesDeTipo, rotuloDoTipo, urgenciaVencimento,
+} from '@/lib/vencimento';
 import { Button } from '@/components/ui/Button/Button';
 import { Select } from '@/components/ui/Select/Select';
 import { Table } from '@/components/ui/Table/Table';
@@ -22,17 +26,8 @@ import { useToast } from '@/components/ui/Toast/Toast';
 import { FormModal } from '@/components/layout/FormModal/FormModal';
 import CriarVencimentoModal from './components/CriarVencimentoModal/CriarVencimentoModal';
 import ConfigurarAlertaModal from './components/ConfigurarAlertaModal/ConfigurarAlertaModal';
-import type { Vencimento, VencimentoTipo } from '@/types';
+import type { TipoVencimentoPersonalizado, Vencimento } from '@/types';
 import styles from './page.module.scss';
-
-const TIPO_LABEL: Record<VencimentoTipo, string> = {
-  documento_umb: 'Documento de UMB',
-  certificacao_operador: 'Certificação de operador',
-  calibracao_equipamento: 'Calibração de equipamento',
-  manual: 'Outro',
-};
-
-const TIPO_OPTIONS = Object.entries(TIPO_LABEL).map(([value, label]) => ({ value, label }));
 
 function itemLabel(v: Vencimento): string {
   if (v.caminhao) return v.caminhao.placa;
@@ -51,6 +46,8 @@ export default function VencimentosPage() {
     vencimentos, isLoading, isError,
     marcarResolvido, reabrirVencimento, editarDataVencimento, excluirVencimento,
   } = useVencimentos(companyIds);
+  const { excluirTipo, isExcluindo: isExcluindoTipo } = useTiposVencimento();
+  const tiposPersonalizados = useMemo(() => company?.tiposVencimento ?? [], [company?.tiposVencimento]);
 
   const [aba, setAba] = useState<'ativos' | 'resolvidos'>('ativos');
   const [filtroTipo, setFiltroTipo] = useState('');
@@ -61,11 +58,19 @@ export default function VencimentosPage() {
   const [renovando, setRenovando] = useState(false);
   const [vencimentoParaExcluir, setVencimentoParaExcluir] = useState<Vencimento | null>(null);
   const [excluindo, setExcluindo] = useState(false);
+  const [tipoParaExcluir, setTipoParaExcluir] = useState<TipoVencimentoPersonalizado | null>(null);
+
+  const quantidadeDoTipoQuery = useQuery({
+    queryKey: ['vencimentosDoTipo', companyId, tipoParaExcluir?.id],
+    queryFn: () => contarVencimentosDoTipo({ companyId: companyId!, tipoId: tipoParaExcluir!.id }),
+    enabled: tipoParaExcluir !== null && companyId !== null,
+    gcTime: 0,
+  });
 
   const vencimentosFiltrados = useMemo(() => {
     return vencimentos
       .filter((v) => v.status === (aba === 'ativos' ? 'ativo' : 'resolvido'))
-      .filter((v) => (filtroTipo ? v.tipo === filtroTipo : true));
+      .filter((v) => (filtroTipo ? chaveDoTipo(v) === filtroTipo : true));
   }, [vencimentos, aba, filtroTipo]);
 
   const abrirRenovacao = (vencimento: Vencimento) => {
@@ -100,6 +105,27 @@ export default function VencimentosPage() {
     }
   };
 
+  const solicitarExclusaoDoTipo = (tipo: TipoVencimentoPersonalizado) => {
+    setModalConfigAberto(false);
+    setTipoParaExcluir(tipo);
+  };
+
+  const confirmarExclusaoDoTipo = async () => {
+    if (!tipoParaExcluir || !companyId) return;
+    try {
+      await excluirTipo({
+        companyId,
+        tipoId: tipoParaExcluir.id,
+        tiposAtuais: tiposPersonalizados,
+        alertaAtual: company?.alertaVencimento,
+      });
+      if (filtroTipo === tipoParaExcluir.id) setFiltroTipo('');
+      setTipoParaExcluir(null);
+    } catch {
+      toast({ title: 'Não foi possível excluir o tipo', description: 'O tipo continua cadastrado. Tente novamente.' });
+    }
+  };
+
   const resolver = async (vencimento: Vencimento) => {
     try {
       await marcarResolvido(vencimento.id);
@@ -130,7 +156,7 @@ export default function VencimentosPage() {
         <Select
           value={filtroTipo}
           onValueChange={setFiltroTipo}
-          options={TIPO_OPTIONS}
+          options={opcoesDeTipo(tiposPersonalizados)}
           resetOption="Todos os tipos"
           placeholder="Tipo"
           size="sm"
@@ -138,7 +164,7 @@ export default function VencimentosPage() {
         />
         <div className={styles.buttonsHolder}>
           <Button variant="ghost" icon={<Settings size={16} />} onClick={() => setModalConfigAberto(true)}>
-            Configurar alertas
+            Tipos e alertas
           </Button>
           <Button variant="brand" icon={<Plus size={16} />} onClick={() => setModalCriarAberto(true)}>
             Novo vencimento
@@ -176,7 +202,7 @@ export default function VencimentosPage() {
             </thead>
             <tbody>
               {vencimentosFiltrados.map((v) => {
-                const alerta = alertaParaTipo(company?.alertaVencimento, v.tipo);
+                const alerta = alertaParaChave(company?.alertaVencimento, chaveDoTipo(v));
                 const dataVencimento = v.dataVencimento.toDate();
                 const urgencia = urgenciaVencimento(dataVencimento, alerta, agora);
                 const horasRestantes = (dataVencimento.getTime() - agora.getTime()) / 36e5;
@@ -184,7 +210,7 @@ export default function VencimentosPage() {
 
                 return (
                   <tr key={v.id}>
-                    <td>{TIPO_LABEL[v.tipo]}</td>
+                    <td>{rotuloDoTipo(v)}</td>
                     <td>{itemLabel(v)}</td>
                     <td>{v.descricao || '—'}</td>
                     <td>
@@ -237,6 +263,7 @@ export default function VencimentosPage() {
           companyIds={companyIds}
           caminhoes={caminhoes}
           operadores={operadores}
+          tiposPersonalizados={tiposPersonalizados}
         />
       )}
 
@@ -246,8 +273,38 @@ export default function VencimentosPage() {
           onClose={() => setModalConfigAberto(false)}
           companyId={companyId}
           alertaVencimentoAtual={company?.alertaVencimento}
+          tiposAtuais={tiposPersonalizados}
+          onSolicitarExclusao={solicitarExclusaoDoTipo}
         />
       )}
+
+      <ConfirmModal
+        open={tipoParaExcluir !== null}
+        etapas={[
+          {
+            title: `Excluir o tipo "${tipoParaExcluir?.nome ?? ''}"?`,
+            tone: 'danger',
+            confirmLabel: 'Continuar',
+            carregando: quantidadeDoTipoQuery.isPending,
+            textoCarregando: 'Verificando vencimentos cadastrados...',
+            description: (
+              <p>
+                Esse tipo tem <strong>{quantidadeDoTipoQuery.data ?? 0} vencimento(s)</strong> cadastrado(s), ativos e
+                resolvidos. Ao excluir o tipo, todos eles serão apagados permanentemente.
+              </p>
+            ),
+          },
+          {
+            title: 'Confirmar exclusão definitiva',
+            tone: 'danger',
+            description: 'O tipo, os prazos de alerta dele e todos os vencimentos desse tipo serão removidos. Essa ação não pode ser desfeita.',
+            confirmLabel: 'Excluir tipo e vencimentos',
+          },
+        ]}
+        isConfirming={isExcluindoTipo}
+        onConfirm={confirmarExclusaoDoTipo}
+        onCancel={() => !isExcluindoTipo && setTipoParaExcluir(null)}
+      />
 
       <ConfirmModal
         open={vencimentoParaExcluir !== null}

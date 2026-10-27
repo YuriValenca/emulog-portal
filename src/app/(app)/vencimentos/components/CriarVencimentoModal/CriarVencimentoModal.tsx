@@ -7,15 +7,15 @@ import { Input } from '@/components/ui/Input/Input';
 import { Textarea } from '@/components/ui/Textarea/Textarea';
 import { useVencimentos } from '@/hooks/vencimentos/useVencimentos';
 import { rotuloCaminhao } from '@/helpers/rotuloCaminhao';
-import type { Caminhao, Operador, VencimentoTipo } from '@/types';
+import { opcoesDeTipo, type TipoPadrao } from '@/lib/vencimento';
+import type { Caminhao, Operador, TipoVencimentoPersonalizado, VencimentoTipo } from '@/types';
 import styles from './CriarVencimentoModal.module.scss';
 
-const TIPO_OPTIONS: { value: VencimentoTipo; label: string }[] = [
-  { value: 'documento_umb', label: 'Documento de UMB' },
-  { value: 'certificacao_operador', label: 'Certificação de operador' },
-  { value: 'calibracao_equipamento', label: 'Calibração de equipamento' },
-  { value: 'manual', label: 'Outro' },
-];
+const PLACEHOLDER_DO_TITULO: Partial<Record<VencimentoTipo, string>> = {
+  calibracao_equipamento: 'Ex: Sismógrafo SIS-04',
+  manual: 'Ex: Alvará da pedreira',
+  personalizado: 'Ex: UMB 03 ou Licença de operação',
+};
 
 interface CriarVencimentoModalProps {
   open: boolean;
@@ -25,14 +25,15 @@ interface CriarVencimentoModalProps {
   companyIds: string[];
   caminhoes: Caminhao[];
   operadores: Operador[];
+  tiposPersonalizados: TipoVencimentoPersonalizado[];
 }
 
 export default function CriarVencimentoModal({
-  open, onClose, companyId, uidUsuario, companyIds, caminhoes, operadores,
+  open, onClose, companyId, uidUsuario, companyIds, caminhoes, operadores, tiposPersonalizados,
 }: CriarVencimentoModalProps) {
   const { criarVencimento, isCriando } = useVencimentos(companyIds);
 
-  const [tipo, setTipo] = useState<VencimentoTipo>('documento_umb');
+  const [chaveDoTipo, setChaveDoTipo] = useState<string>('documento_umb');
   const [caminhaoId, setCaminhaoId] = useState('');
   const [operadorId, setOperadorId] = useState('');
   const [tituloManual, setTituloManual] = useState('');
@@ -40,9 +41,11 @@ export default function CriarVencimentoModal({
   const [dataVencimento, setDataVencimento] = useState('');
   const [erro, setErro] = useState<string | null>(null);
 
+  const tipoPersonalizado = tiposPersonalizados.find((t) => t.id === chaveDoTipo) ?? null;
+  const tipo: VencimentoTipo = tipoPersonalizado ? 'personalizado' : (chaveDoTipo as TipoPadrao);
   const precisaCaminhao = tipo === 'documento_umb';
   const precisaOperador = tipo === 'certificacao_operador';
-  const precisaTitulo = tipo === 'manual' || tipo === 'calibracao_equipamento';
+  const precisaTitulo = tipo === 'manual' || tipo === 'calibracao_equipamento' || tipo === 'personalizado';
 
   const handleSalvar = async () => {
     if (!dataVencimento) {
@@ -74,6 +77,7 @@ export default function CriarVencimentoModal({
         companyId,
         responsavelUid: uidUsuario,
         tipo,
+        tipoPersonalizado: tipoPersonalizado ? { id: tipoPersonalizado.id, nome: tipoPersonalizado.nome } : null,
         tituloManual: precisaTitulo ? tituloManual.trim() : null,
         caminhao: caminhao ? { id: caminhao.id, placa: caminhao.placa } : null,
         operador: operador ? { id: operador.id, nome: operador.nome } : null,
@@ -99,7 +103,7 @@ export default function CriarVencimentoModal({
     >
       <div className={styles.field}>
         <span className={styles.label}>Tipo</span>
-        <Select value={tipo} onValueChange={(v) => setTipo(v as VencimentoTipo)} options={TIPO_OPTIONS} disabled={isCriando} />
+        <Select value={chaveDoTipo} onValueChange={setChaveDoTipo} options={opcoesDeTipo(tiposPersonalizados)} disabled={isCriando} />
       </div>
 
       {precisaCaminhao && (
@@ -132,7 +136,7 @@ export default function CriarVencimentoModal({
         <Input
           id="vencimento-titulo"
           label="Título"
-          placeholder={tipo === 'calibracao_equipamento' ? 'Ex: Sismógrafo SIS-04' : 'Ex: Alvará da pedreira'}
+          placeholder={PLACEHOLDER_DO_TITULO[tipo]}
           value={tituloManual}
           onChange={(e) => setTituloManual(e.target.value)}
           maxLength={80}

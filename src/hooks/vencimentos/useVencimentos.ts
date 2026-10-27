@@ -7,12 +7,15 @@ import {
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase/client';
 import { chunk } from '@/lib/chunk';
-import { vencimentoSchema, type Vencimento, type VencimentoTipo } from '@/schemas/vencimento';
+import {
+  vencimentoSchema, type TipoVencimentoPersonalizado, type Vencimento, type VencimentoTipo,
+} from '@/schemas/vencimento';
 
 interface CriarVencimentoInput {
   companyId: string;
   responsavelUid: string;
   tipo: VencimentoTipo;
+  tipoPersonalizado: TipoVencimentoPersonalizado | null;
   tituloManual: string | null;
   caminhao: { id: string; placa: string } | null;
   operador: { id: string; nome: string } | null;
@@ -41,6 +44,7 @@ async function criarVencimento(input: CriarVencimentoInput) {
   await addDoc(collection(db, 'vencimentos'), {
     companyId: input.companyId,
     tipo: input.tipo,
+    tipoPersonalizado: input.tipoPersonalizado,
     tituloManual: input.tituloManual,
     caminhao: input.caminhao,
     operador: input.operador,

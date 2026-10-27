@@ -28,4 +28,5 @@ export type {
   VencimentoStatus,
   AlertaVencimento,
   AlertaVencimentoPorTipo,
+  TipoVencimentoPersonalizado,
 } from '@/schemas/vencimento';

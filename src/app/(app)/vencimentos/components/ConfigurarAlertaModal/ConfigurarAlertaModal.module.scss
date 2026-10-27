@@ -33,3 +33,61 @@
     height: var(--spacing-xxxlarge);
   }
 }
+
+.secao {
+  margin-top: var(--spacing-xsmall);
+  font-size: var(--font-size-small);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.vazio {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.nomeRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--spacing-xsmall);
+  align-items: end;
+}
+
+.excluir {
+  color: var(--crit);
+}
+
+.adicionar {
+  align-self: flex-start;
+}
+
+.cheio {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xsmall);
+  margin: 0;
+  padding: var(--spacing-small);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+// Com a classe da linha junto, ganha do `.linha:last-of-type`, que zerava o padding de baixo
+.linha.rascunho {
+  gap: var(--spacing-xsmall);
+  padding: var(--spacing-small);
+  margin-bottom: var(--spacing-default);
+  border: 1px dashed var(--brand);
+  border-radius: var(--radius-md);
+}
+
+.acoesDoRascunho {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--spacing-xsmall);
+}

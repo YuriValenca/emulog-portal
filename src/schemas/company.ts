@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { zTimestamp, zTimestampOrNull } from './common';
-import { alertaVencimentoPorTipoSchema } from './vencimento';
+import { alertaVencimentoPorTipoSchema, tipoVencimentoPersonalizadoSchema } from './vencimento';
 import { normalizarCnpj } from '@/helpers/formatCNPJ';
 
 export const companyModulesSchema = z.object({
@@ -29,6 +29,8 @@ export const companySchema = z.object({
   createdAt: zTimestamp,
   modules: companyModulesSchema.optional(),
   alertaVencimento: alertaVencimentoPorTipoSchema.optional(),
+  // Sem `.max`: o doc da empresa é lido no login e um parse que falha derruba o portal inteiro; o limite vale na escrita
+  tiposVencimento: z.array(tipoVencimentoPersonalizadoSchema).optional(),
   faixaDensidade: faixaDensidadeSchema.nullable().optional(),
 });
 
