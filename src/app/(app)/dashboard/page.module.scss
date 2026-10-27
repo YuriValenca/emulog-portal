@@ -19,21 +19,22 @@
 }
 
 .filtros {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  justify-content: start;
-  gap: var(--spacing-medium);
-}
-
-.filtrosLeft {
   display: flex;
-  gap: var(--spacing-medium);
-}
-
-.atualizando {
-  display: flex;
+  flex-wrap: wrap;
   align-items: flex-end;
-  padding-bottom: var(--spacing-small);
+  gap: var(--spacing-medium);
+
+  > * {
+    flex: 1 1 150px;
+  }
+}
+
+.filtros > .exportar {
+  flex: 0 0 auto;
+}
+
+.exportar {
+  margin-left: auto;
 }
 
 .skeletonCard {

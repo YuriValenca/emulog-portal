@@ -6,16 +6,17 @@ import { useLicencas } from './useLicencas';
 import { useRegrasDeteccao } from './ocorrencias/useRegrasDeteccao';
 import { calcularEstatisticasDeFogos, calcularEstatisticasDeLicencas } from '@/lib/dashboard';
 import type { ContextoFaixa } from '@/lib/densidade';
-import { inicioDoPeriodo, type Periodo } from '@/lib/periodo';
+import { intervaloDasDatas } from '@/lib/periodo';
+import type { IntervaloDigitado } from '@/helpers/dataLocal';
 
 export function useDashboardStats(
   companyId: string | null,
-  periodo: Periodo,
+  datas: IntervaloDigitado,
   caminhaoIds: string[],
   operadorIds: string[],
   contextoFaixa: ContextoFaixa
 ) {
-  const projetosQuery = useProjetosPeriodo(companyId, periodo);
+  const projetosQuery = useProjetosPeriodo(companyId, datas);
   const licencasQuery = useLicencas(companyId);
   const { regras } = useRegrasDeteccao(companyId);
 
@@ -25,14 +26,14 @@ export function useDashboardStats(
     return {
       ...calcularEstatisticasDeFogos(
         projetosQuery.data,
-        { inicio: inicioDoPeriodo(periodo, agora), caminhaoIds, operadorIds },
+        { ...intervaloDasDatas(datas), caminhaoIds, operadorIds },
         contextoFaixa,
         regras,
         agora
       ),
       ...calcularEstatisticasDeLicencas(licencasQuery.data, agora),
     };
-  }, [projetosQuery.data, licencasQuery.data, periodo, contextoFaixa, regras, caminhaoIds, operadorIds]);
+  }, [projetosQuery.data, licencasQuery.data, datas, contextoFaixa, regras, caminhaoIds, operadorIds]);
 
   return {
     data,
