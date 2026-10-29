@@ -5,6 +5,7 @@ import { criarHookCadastro } from './criarHookCadastro';
 interface NovaUmbInput {
   placa: string;
   tag: string;
+  modelo: string;
   companyId: string;
 }
 
@@ -12,11 +13,12 @@ interface EditarUmbInput {
   id: string;
   placa: string;
   tag: string;
+  modelo: string;
 }
 
-function camposCaminhao(input: { placa: string; tag: string }) {
+function camposCaminhao(input: { placa: string; tag: string; modelo: string }) {
   const placa = input.placa.trim().toUpperCase();
-  return { placa, tag: input.tag.trim(), descricao: `Caminhão — ${placa}` };
+  return { placa, tag: input.tag.trim(), modelo: input.modelo.trim(), descricao: `Caminhão — ${placa}` };
 }
 
 export const useCaminhoes = criarHookCadastro<Caminhao, NovaUmbInput, EditarUmbInput>({

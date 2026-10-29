@@ -16,9 +16,12 @@ interface UmbsTabProps {
 interface UmbFormValues {
   placa: string;
   tag: string;
+  modelo: string;
 }
 
-const initialValues: UmbFormValues = { placa: '', tag: '' };
+const LIMITE_MODELO_UMB = 100;
+
+const initialValues: UmbFormValues = { placa: '', tag: '', modelo: '' };
 
 export function UmbsTab({ companyId }: UmbsTabProps) {
   const { itens: caminhoes, isLoading, criar: criarCaminhao, isCriando, editar: editarCaminhao, isEditando, excluir: excluirCaminhao } =
@@ -27,10 +30,10 @@ export function UmbsTab({ companyId }: UmbsTabProps) {
   const { modalOpen, editando, values, setValues, erro, salvando, abrir, fechar, handleSalvar } =
     useCadastroForm<Caminhao, UmbFormValues>({
       initialValues,
-      toFormValues: (c) => ({ placa: c.placa, tag: c.tag ?? '' }),
+      toFormValues: (c) => ({ placa: c.placa, tag: c.tag ?? '', modelo: c.modelo ?? '' }),
       validate: (v) => (!v.placa.trim() ? 'Informe a placa da UMB.' : null),
-      criar: (v) => criarCaminhao({ placa: v.placa.trim(), tag: v.tag.trim(), companyId: v.companyId }),
-      editar: (v) => editarCaminhao({ id: v.id, placa: v.placa.trim(), tag: v.tag.trim() }),
+      criar: (v) => criarCaminhao({ placa: v.placa, tag: v.tag, modelo: v.modelo, companyId: v.companyId }),
+      editar: (v) => editarCaminhao({ id: v.id, placa: v.placa, tag: v.tag, modelo: v.modelo }),
       companyId,
       isCriando,
       isEditando,
@@ -45,11 +48,12 @@ export function UmbsTab({ companyId }: UmbsTabProps) {
       isLoading={isLoading}
       items={caminhoes}
       emptyMessage="Nenhuma UMB cadastrada."
-      columns={['1fr', '1fr', '96px']}
+      columns={['1fr', '1fr', '2fr', '96px']}
       headers={
         <>
           <th>Placa</th>
           <th>Tag</th>
+          <th>Modelo</th>
           <th />
         </>
       }
@@ -62,6 +66,7 @@ export function UmbsTab({ companyId }: UmbsTabProps) {
         <tr key={c.id}>
           <td>{c.placa}</td>
           <td>{c.tag || '—'}</td>
+          <td>{c.modelo || '—'}</td>
           <td className={styles.actionsCell}>
             <div className={styles.actionsRow}>
               <Button variant="ghost" onClick={() => abrir(c)}>
@@ -98,6 +103,16 @@ export function UmbsTab({ companyId }: UmbsTabProps) {
         placeholder="Ex: UMB-03"
         value={values.tag}
         onChange={(e) => setValues({ ...values, tag: e.target.value })}
+        disabled={salvando}
+      />
+      <Input
+        id="umb-modelo"
+        label="Modelo (opcional)"
+        placeholder="Ex: Scania P360 com bomba de emulsão"
+        value={values.modelo}
+        onChange={(e) => setValues({ ...values, modelo: e.target.value })}
+        maxLength={LIMITE_MODELO_UMB}
+        showCharCount
         disabled={salvando}
       />
     </CadastroPanel>
