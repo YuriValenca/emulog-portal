@@ -24,8 +24,7 @@ interface EmpresaFormModalProps {
 }
 
 const NENHUMA_MATRIZ = 'nenhuma';
-const LOGO_MAX_WIDTH = 400;
-const LOGO_QUALITY = 0.7;
+const LARGURA_MAXIMA_LOGO = 400;
 
 const empresaFormSchema = z.object({
   name: z.string().min(1, 'Nome é obrigatório.'),
@@ -40,7 +39,7 @@ const empresaFormSchema = z.object({
 
 type EmpresaFormFields = z.infer<typeof empresaFormSchema>;
 
-function resizeImageToBase64(file: File, maxWidth: number, quality: number): Promise<string> {
+function reduzirLogoParaPng(file: File, maxWidth: number): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => {
@@ -56,7 +55,7 @@ function resizeImageToBase64(file: File, maxWidth: number, quality: number): Pro
           return;
         }
         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        resolve(canvas.toDataURL('image/jpeg', quality));
+        resolve(canvas.toDataURL('image/png'));
       };
       img.onerror = () => reject(new Error('image-load-failed'));
       img.src = reader.result as string;
@@ -137,7 +136,7 @@ export default function EmpresaFormModal({ visible, onClose, empresaEditando, em
     setLogoError(null);
     setUploadingLogo(true);
     try {
-      const base64 = await resizeImageToBase64(file, LOGO_MAX_WIDTH, LOGO_QUALITY);
+      const base64 = await reduzirLogoParaPng(file, LARGURA_MAXIMA_LOGO);
       setValue('logo', base64, { shouldDirty: true });
     } catch {
       setLogoError('Não foi possível processar a imagem.');
